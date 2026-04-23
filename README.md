@@ -178,7 +178,7 @@ Open the displayed URL (e.g. http://localhost:3001) in your browser.
 |GET|/`api/activity`|required|Recent 20 activities|
 |GET|/`api/backup`|required|Full database backup (JSON)|
 
-**All protected routes require `Authorization: Bearer <token>` header.**
+*All protected routes require `Authorization: Bearer <token>` header.*
 
 ## Deployment
 For production, use the provided `nginx/retailx.conf` and `deploy.sh` script on a fresh Ubuntu server.
