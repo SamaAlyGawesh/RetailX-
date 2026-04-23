@@ -11,6 +11,56 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('Backend not available – using empty data');
     }
 
+    // ========== NAVIGATION BAR ==========
+    document.getElementById('homeLink').onclick = (e) => {
+        e.preventDefault();
+        navigateToPage('homePage');
+    };
+
+    document.getElementById('navHome').onclick = (e) => {
+        e.preventDefault();
+        navigateToPage('homePage');
+    };
+    document.getElementById('navDashboard').onclick = (e) => {
+        e.preventDefault();
+        if (!appState.isAuthenticated) { navigateToPage('authPage'); return; }
+        if (!hasPermission('dashboard')) return;
+        navigateToPage('dashboardPage');
+    };
+    document.getElementById('navInventory').onclick = (e) => {
+        e.preventDefault();
+        if (!appState.isAuthenticated) { navigateToPage('authPage'); return; }
+        if (!hasPermission('inventory')) return;
+        navigateToPage('inventoryPage');
+    };
+    document.getElementById('navSales').onclick = (e) => {
+        e.preventDefault();
+        if (!appState.isAuthenticated) { navigateToPage('authPage'); return; }
+        if (!hasPermission('sales')) return;
+        navigateToPage('salesPage');
+    };
+    document.getElementById('navReports').onclick = (e) => {
+        e.preventDefault();
+        if (!appState.isAuthenticated) { navigateToPage('authPage'); return; }
+        if (!hasPermission('reports')) return;
+        navigateToPage('reportsPage');
+    };
+    document.getElementById('navSuppliers').onclick = (e) => {
+        e.preventDefault();
+        if (!appState.isAuthenticated) { navigateToPage('authPage'); return; }
+        if (!hasPermission('suppliers')) return;
+        navigateToPage('suppliersPage');
+    };
+    document.getElementById('navSettings').onclick = (e) => {
+        e.preventDefault();
+        if (!appState.isAuthenticated) { navigateToPage('authPage'); return; }
+        if (!hasPermission('settings')) return;
+        navigateToPage('settingsPage');
+    };
+
+    // Get Started button on home page
+    document.getElementById('getStartedBtn').onclick = () => navigateToPage('authPage');
+
     // Theme toggle
     document.getElementById('themeToggle').onclick = () => {
         document.body.classList.toggle('light-theme');
@@ -43,11 +93,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('quickSuppliersBtn').onclick = (e) => { e.preventDefault(); if (hasPermission('suppliers')) navigateToPage('suppliersPage'); };
     document.getElementById('quickReportsBtn').onclick = (e) => { e.preventDefault(); if (hasPermission('reports')) navigateToPage('reportsPage'); };
 
-    document.getElementById('quickLowStockBtn').onclick = (e) => {
+        document.getElementById('quickLowStockBtn').onclick = (e) => {
         e.preventDefault();
+        if (!appState.isAuthenticated) { navigateToPage('authPage'); return; }
         const low = inventoryData.filter(p => p.quantity > 0 && p.quantity <= p.reorderLevel);
         const out = inventoryData.filter(p => p.quantity === 0);
-        alert(`Low Stock (${low.length}):\n${low.map(p => `${p.name}: ${p.quantity}`).join('\n')}\n\nOut of Stock (${low.length}):\n${out.map(p => p.name).join('\n')}`);
+        alert(`Low Stock (${low.length}):\n${low.map(p => `${p.name}: ${p.quantity}`).join('\n')}\n\nOut of Stock (${out.length}):\n${out.map(p => p.name).join('\n')}`);
     };
 
     document.getElementById('quickProfileBtn').onclick = (e) => {

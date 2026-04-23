@@ -1,5 +1,9 @@
 # retailx - Inventory
 
+## Admin User
+- Email: admin@retailx.com
+- Password: admin123
+
 ## Project Structure
 ```text
 retailx/
