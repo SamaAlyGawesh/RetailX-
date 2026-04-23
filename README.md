@@ -130,8 +130,8 @@ Open the displayed URL (e.g. http://localhost:3001) in your browser.
 > Note: The frontend connects to http://localhost:3000/api. If you change the backend port, edit frontend/js/config.js.
 
 ## User Roles & Permissions
-|Permission|Administrator|Inventory|Clerk|Cashier|Sales Rep|
-|----------|-------------|---------|-----|-------|---------|
+|Permission|Administrator|Inventory Clerk|Cashier|Sales Rep|
+|----------|-------------|---------------|-------|---------|
 |Dashboard|✔|✔|✔|✔|
 |Inventory|✔|✔|–|–|
 |Add / Delete Product|✔|✔|–|–|
@@ -147,7 +147,7 @@ Open the displayed URL (e.g. http://localhost:3001) in your browser.
 |Method|Endpoint|Description|
 |------|--------|-----------|
 |POST|`/api/auth/register`|Create new user|
-|POST|`/api/auth/login|Login`, returns JWT|
+|POST|`/api/auth/login`|Login, returns JWT|
 
 ### Products
 |Method|Endpoint|Auth|Description|
