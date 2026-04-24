@@ -37,3 +37,22 @@ function formatPrice(price) {
 
 let currentLang = 'en';
 let editingSupplierId = null;
+
+function applyLanguage() {
+    const langObj = translations[currentLang] || translations['en'];
+    for (const id in langObj) {
+        const el = document.getElementById(id);
+        if (el) {
+            if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                if (el.placeholder !== undefined) el.placeholder = langObj[id];
+            } else {
+                el.innerText = langObj[id];
+            }
+        }
+    }
+    // Update the language button text
+    const langSpan = document.querySelector('#languageToggle span');
+    if (langSpan) langSpan.innerText = currentLang === 'en' ? 'العربية' : 'English';
+    // RTL support
+    document.body.classList.toggle('rtl', currentLang === 'ar');
+}
