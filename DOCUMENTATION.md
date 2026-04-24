@@ -142,7 +142,6 @@ Permissions are defined in `frontend/js/config.js`. The middleware `requireRole`
 ▼
 [SQLite] (file: retailx.db)
 
-
 SSL is provided by Certbot (Let's Encrypt).  
 The `deploy.sh` script automates the entire setup.
 ```

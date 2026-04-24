@@ -120,7 +120,7 @@ node server.js
 - Password: `admin123`
 
 ### 3. Frontend setup
-Open a new terminal in the frontend folder and serve the files (you cannot open `index.html` directly because of CORS):
+Open a new terminal in the `frontend` folder and serve the files (you cannot open `index.html` directly because of CORS):
 ```bash
 cd frontend
 npx serve .
