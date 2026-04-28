@@ -6,7 +6,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!appState.isAuthenticated || !hasPermission('sales')) return;
         await apiGetProducts();
         const available = inventoryData.filter(p => p.quantity > 0);
-        if (available.length === 0) return;
+        if (available.length === 0) {
+	    alert('No products available with quantity > 0. Please add stock first.');
+	    return;
+	}
 
         const select = document.getElementById('saleProduct');
         select.innerHTML = available.map(p =>
@@ -14,8 +17,10 @@ document.addEventListener('DOMContentLoaded', () => {
         ).join('');
         document.getElementById('saleQuantity').value = 1;
         document.getElementById('saleCustomer').value = 'Walk-in Customer';
-        document.getElementById('saleTotal').innerText = available[0].price.toFixed(2);
-        document.getElementById('currencySymbolDisplay').innerText = appState.currency;
+        const totEl = document.getElementById('saleTotal');
+	if (totEl) totEl.innerText = available[0].price.toFixed(2);
+        const currEl = document.getElementById('currencySymbolDisplay');
+	if (currEl) currEl.innerText = appState.currency;
         document.getElementById('newSaleModal').classList.add('active');
     };
 

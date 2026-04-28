@@ -2,15 +2,16 @@
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Load initial data from backend
-    try {
-        await apiGetProducts();
-        await apiGetSales();
-        await apiGetSuppliers();
-        await apiGetActivity();
-    } catch (err) {
-        console.log('Backend not available – using empty data');
-    }
-
+	if(appState.isAuthenticated){
+	    try {
+	        await apiGetProducts();
+	        await apiGetSales();
+	        await apiGetSuppliers();
+        	await apiGetActivity();
+	    } catch (err) {
+        	console.log('Backend not available – using empty data');
+	    }
+	}
     // ========== NAVIGATION BAR ==========
     document.getElementById('homeLink').onclick = (e) => {
         e.preventDefault();
