@@ -1,6 +1,6 @@
 // config.js - Global app state & constants
 
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = '/api';
 
 const appState = {
     isAuthenticated: false,
