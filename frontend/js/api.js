@@ -27,11 +27,12 @@ async function apiRegister(name, email, password, role) {
     return api('POST', '/auth/register', { name, email, password, role });
 }
 
-// ========== PRODUCTS ==========
-async function apiGetProducts(search = '') {
-    const data = await api('GET', `/products${search ? `?search=${encodeURIComponent(search)}` : ''}`);
-    inventoryData = data;
-    return data;
+// ========== PRODUCTS (Pagination) ==========
+async function apiGetProducts(page = 1, limit = 15, search = '') {
+    const data = await api('GET', `/products?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`);
+    // البيانات تأتي كـ { products, total, page, pages }
+    inventoryData = data.products;  // نضع المصفوفة فقط للتوافق مع الكود القديم
+    return data;                    // نعيد الكائن كاملاً لاستعماله في pagination
 }
 
 async function apiCreateProduct(product) {
@@ -46,10 +47,10 @@ async function apiDeleteProduct(id) {
     return api('DELETE', `/products/${id}`);
 }
 
-// ========== SALES ==========
-async function apiGetSales() {
-    const data = await api('GET', '/sales');
-    salesData = data;
+// ========== SALES (Pagination) ==========
+async function apiGetSales(page = 1, limit = 15) {
+    const data = await api('GET', `/sales?page=${page}&limit=${limit}`);
+    salesData = data.sales;
     return data;
 }
 
@@ -61,10 +62,10 @@ async function apiDeleteSale(id) {
     return api('DELETE', `/sales/${id}`);
 }
 
-// ========== SUPPLIERS ==========
-async function apiGetSuppliers() {
-    const data = await api('GET', '/suppliers');
-    suppliersData = data;
+// ========== SUPPLIERS (Pagination) ==========
+async function apiGetSuppliers(page = 1, limit = 15) {
+    const data = await api('GET', `/suppliers?page=${page}&limit=${limit}`);
+    suppliersData = data.suppliers;
     return data;
 }
 
@@ -90,4 +91,14 @@ async function apiGetActivity() {
 // ========== BACKUP ==========
 async function apiGetBackup() {
     return api('GET', '/backup');
+}
+
+// ========== USERS (Pagination) ==========
+async function apiGetUsers(page = 1, limit = 15) {
+    const data = await api('GET', `/users?page=${page}&limit=${limit}`);
+    return data;  // { users, total, page, pages }
+}
+
+async function apiUpdateUserRole(userId, newRole) {
+    return api('PATCH', `/users/${userId}/role`, { role: newRole });
 }

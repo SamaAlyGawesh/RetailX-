@@ -20,10 +20,13 @@ let usersDatabase = [];
 
 // Role-based permissions
 const permissions = {
-    administrator: { dashboard: true, inventory: true, sales: true, reports: true, suppliers: true, settings: true, addProduct: true, importExport: true },
+    administrator: { dashboard: true, inventory: true, sales: true, reports: true, suppliers: true, settings: true, addProduct: true, importExport: true, manageUsers: true },
     clerk: { dashboard: true, inventory: true, reports: true, addProduct: true, suppliers: false, settings: false, sales: false, importExport: false },
-    cashier: { dashboard: true, sales: true, inventory: false, reports: false, suppliers: false, settings: false, addProduct: false, importExport: false },
-    sales: { dashboard: true, sales: true, reports: true, inventory: false, suppliers: false, settings: false, addProduct: false, importExport: false }
+    cashier: { dashboard: false, sales: true, inventory: false, reports: false, suppliers: false, settings: false, addProduct: false, importExport: false },
+    sales: { dashboard: false, sales: true, reports: true, inventory: false, suppliers: false, settings: false, addProduct: false, importExport: false },
+    user: { dashboard: false, inventory: false, sales: false, reports: false, suppliers: false, settings: false, addProduct: false, importExport: false },
+    viewer: { dashboard: false, inventory: false, sales: false, reports: false, suppliers: false, settings: false, addProduct: false, importExport: false },
+	guest: { dashboard: false, inventory: false, sales: false, reports: false, suppliers: false, settings: false, addProduct: false, importExport: false, manageUsers: false }
 };
 
 function hasPermission(permission) {
@@ -55,4 +58,36 @@ function applyLanguage() {
     if (langSpan) langSpan.innerText = currentLang === 'en' ? 'العربية' : 'English';
     // RTL support
     document.body.classList.toggle('rtl', currentLang === 'ar');
+}
+function saveAuthState() {
+    localStorage.setItem('retailx_token', appState.token);
+    localStorage.setItem('retailx_user', JSON.stringify(appState.currentUser));
+}
+
+function loadAuthState() {
+    const token = localStorage.getItem('retailx_token');
+    const user = localStorage.getItem('retailx_user');
+    if (token && user) {
+        appState.token = token;
+        appState.currentUser = JSON.parse(user);
+        appState.isAuthenticated = true;
+    }
+}
+
+function clearAuthState() {
+    localStorage.removeItem('retailx_token');
+    localStorage.removeItem('retailx_user');
+}
+
+function updateAuthUI() {
+    const userNameDisplay = document.getElementById('userNameDisplay');
+    const signOutLink = document.getElementById('signOutLink');
+    
+    if (appState.isAuthenticated && appState.currentUser) {
+        userNameDisplay.innerText = appState.currentUser.name;   // أو 'Sign Out' لو تحب
+        signOutLink.innerHTML = '<i class="fas fa-sign-out-alt"></i> Sign Out';
+    } else {
+        userNameDisplay.innerText = 'Sign In';
+        signOutLink.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+    }
 }

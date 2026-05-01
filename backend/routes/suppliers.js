@@ -1,4 +1,4 @@
-// routes/suppliers.js
+// backend/routes/suppliers.js
 const express = require('express');
 const { getDB } = require('../db');
 const { authenticate, requireRole } = require('../authMiddleware');
@@ -7,15 +7,29 @@ const router = express.Router();
 router.use(authenticate);
 
 router.get('/', (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 15;
+    const offset = (page - 1) * limit;
+
     const db = getDB();
-    const suppliers = db.prepare('SELECT * FROM suppliers ORDER BY id DESC').all();
+    const totalRow = db.prepare('SELECT COUNT(*) as total FROM suppliers').get();
+    const total = totalRow?.total || 0;
+
+    const suppliers = db.prepare('SELECT * FROM suppliers ORDER BY id DESC LIMIT ? OFFSET ?').all(limit, offset);
     const result = suppliers.map(s => ({
         ...s,
         productsSuppliedList: JSON.parse(s.productsSuppliedList || '[]')
     }));
-    res.json(result);
+
+    res.json({
+        suppliers: result,
+        total,
+        page,
+        pages: Math.ceil(total / limit)
+    });
 });
 
+// POST, PUT, DELETE تبقى كما هي
 router.post('/', requireRole('administrator'), (req, res) => {
     const { name, contact, email, phone, productsSuppliedList, leadTime } = req.body;
     if (!name || !email) return res.status(400).json({ error: 'Name and email required' });

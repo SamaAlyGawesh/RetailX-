@@ -376,7 +376,50 @@ body.rtl .stat-card { border-left: none; border-right: 4px solid var(--primary);
     body.light-theme .nav-links { background: white; }
     body.light-theme .nav-links a { border-color: var(--light-border); }
 }
+/* ===== Fix Tables Overflow & Filter Styling ===== */
 
+/* أي كارد فيه جدول يبقى القابل للتمرير الأفقي */
+.card:has(table) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* الحد الأدنى لعرض الجداول عشان الأعمدة متفصلش */
+.inventory-table {
+    min-width: 1100px;
+    width: 100%;
+    table-layout: auto;
+}
+
+/* تقليل حجم حقول الفلترة وجعلها مناسبة */
+#inventoryFilterRow input,
+#salesFilterRow input,
+#supplierFilterRow input,
+#dashboardFilterRow input,
+#filterRow input {
+    width: 100%;
+    max-width: 100%;
+    padding: 6px 8px;
+    font-size: 12px;
+    background: var(--dark-bg);
+    color: var(--dark-text);
+    border: 1px solid var(--dark-border);
+    border-radius: 4px;
+}
+
+#inventoryFilterRow select,
+#salesFilterRow select,
+#supplierFilterRow select,
+#dashboardFilterRow select,
+#filterRow select {
+    width: 100%;
+    padding: 6px 8px;
+    font-size: 12px;
+    background: var(--dark-bg);
+    color: var(--dark-text);
+    border: 1px solid var(--dark-border);
+    border-radius: 4px;
+}
 @media (max-width: 480px) {
     .container { padding: 0 15px; }
     .stat-card .value { font-size: 1.5rem; }

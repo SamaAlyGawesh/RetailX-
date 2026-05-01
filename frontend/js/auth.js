@@ -1,6 +1,12 @@
 // auth.js - Authentication logic
 
 document.addEventListener('DOMContentLoaded', () => {
+	loadAuthState();
+	if (appState.isAuthenticated) {
+		document.getElementById('userNameDisplay').innerText = appState.currentUser.name;
+		applyRoleBasedAccess();
+	}
+	updateAuthUI();
     // Tab switching
     document.getElementById('signInTab').onclick = () => {
         document.getElementById('signInTab').classList.add('active');
@@ -31,6 +37,8 @@ document.addEventListener('DOMContentLoaded', () => {
             renderSuppliersTable();
             renderRecentActivity();
             alert(`Welcome ${appState.currentUser.name}!`);
+			saveAuthState();
+			updateAuthUI();
         } catch (err) {
             alert(err.message || 'Invalid credentials');
         }
@@ -54,15 +62,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Sign Out
-    document.getElementById('signOutLink').onclick = (e) => {
-        e.preventDefault();
+    // Sign In / Sign Out link (dynamic)
+	document.getElementById('signOutLink').onclick = (e) => {
+    e.preventDefault();
+    if (appState.isAuthenticated) {
+        // Logout
         appState.isAuthenticated = false;
         appState.currentUser = null;
         appState.token = null;
         document.getElementById('userNameDisplay').innerText = 'Sign In';
+        clearAuthState();
+        updateAuthUI();
+		applyRoleBasedAccess();
         navigateToPage('authPage');
-    };
+    } else {
+        navigateToPage('authPage');
+    }
+};
 
     // User dropdown
     document.getElementById('userDropdown').onclick = (e) => {

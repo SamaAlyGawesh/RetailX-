@@ -22,6 +22,7 @@ app.use('/api/suppliers', require('./routes/suppliers'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/activity', require('./routes/activity'));
 app.use('/api/backup', require('./routes/backup'));
+app.use('/api/users', require('./routes/users'));
 
 // Serve frontend in production
 app.use(express.static('../frontend'));

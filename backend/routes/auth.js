@@ -8,9 +8,12 @@ const { JWT_SECRET } = require('../authMiddleware');
 const router = express.Router();
 
 router.post('/register', (req, res) => {
-    const { name, email, password, role } = req.body;
+    let { name, email, password, role } = req.body;
+	if (role && role !== 'user') {
+		return res.status(403).json({ error: 'Cannot self-assign role' });
+	}
+	role = 'user';
     if (!name || !email || !password) return res.status(400).json({ error: 'Name, email and password required' });
-
     const db = getDB();
     const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
     if (existing) return res.status(400).json({ error: 'Email already registered' });

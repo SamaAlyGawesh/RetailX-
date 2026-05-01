@@ -28,7 +28,8 @@
                     <li><a href="#" id="navSales"><i class="fas fa-shopping-cart"></i> <span id="navSalesText">Sales</span></a></li>
                     <li><a href="#" id="navReports"><i class="fas fa-chart-pie"></i> <span id="navReportsText">Reports</span></a></li>
                     <li><a href="#" id="navSuppliers"><i class="fas fa-truck"></i> <span id="navSuppliersText">Suppliers</span></a></li>
-                    <li><a href="#" id="navSettings"><i class="fas fa-cog"></i> <span id="navSettingsText">Settings</span></a></li>
+					<li><a href="#" id="navUsers"><i class="fas fa-users"></i> <span id="navUsersText">Users</span></a></li>
+                    <!--<li><a href="#" id="navSettings"><i class="fas fa-cog"></i> <span id="navSettingsText">Settings</span></a></li> -->
                 </ul>
                 <div style="display: flex; gap: 10px;">
                     <button class="language-toggle" id="languageToggle"><i class="fas fa-globe"></i> <span id="langText">العربية</span></button>
@@ -70,14 +71,7 @@
                     <div class="form-group"><label id="emailLabel2">Email Address</label><input type="email" id="signupEmail" class="form-control" required></div>
                     <div class="form-group"><label id="passwordLabel2">Password</label><input type="password" id="signupPassword" class="form-control" required></div>
                     <div class="form-group"><label id="confirmLabel">Confirm Password</label><input type="password" id="signupConfirmPassword" class="form-control" required></div>
-                    <div class="form-group"><label id="roleLabel">Role</label>
-                        <select id="signupRole" class="form-control">
-                            <option value="administrator">Administrator - Full access</option>
-                            <option value="clerk">Inventory Clerk - Inventory & Reports only</option>
-                            <option value="cashier">Cashier - Sales only</option>
-                            <option value="sales">Sales Rep - Sales & Reports only</option>
-                        </select>
-                    </div>
+                    <input type="hidden" id="signupRole" value="user">
                     <button type="submit" class="btn btn-success" style="width: 100%;"><i class="fas fa-user-plus"></i> <span id="createAccountText">Create Account</span></button>
                 </form>
             </div>
@@ -138,7 +132,34 @@
                     <div class="card-header" style="display: flex; justify-content: space-between;">
                         <h3 id="inventoryStatusTitle">Inventory Status</h3><button class="btn btn-sm btn-outline" id="viewAllInventory"><span id="viewAllText">View All</span></button>
                     </div>
-                    <table class="inventory-table"><thead><tr><th id="productCol">Product</th><th id="skuCol">SKU</th><th id="qtyCol">Quantity</th><th id="statusCol">Status</th><th id="actionCol">Actions</th></tr></thead><tbody id="dashboardInventoryTable"></tbody></table>
+                    <table class="inventory-table" id="dashboardInventoryTableMain">
+						<thead>
+							<tr>
+								<th>#</th>   <!-- عمود الترقيم -->
+								<th data-sort="name">Product <span class="sort-arrow"></span></th>
+								<th data-sort="sku">SKU <span class="sort-arrow"></span></th>
+								<th data-sort="quantity">Quantity <span class="sort-arrow"></span></th>
+								<th data-sort="status">Status <span class="sort-arrow"></span></th>
+								<th>Actions</th>
+							</tr>
+							<tr id="dashboardFilterRow">
+								<th></th>    <!-- فاضي للترقيم -->
+								<th><input type="text" id="filterDashProduct" placeholder="Name"></th>
+								<th><input type="text" id="filterDashSKU" placeholder="SKU"></th>
+								<th><input type="number" id="filterDashQuantity" placeholder="Qty"></th>
+								<th>
+									<select id="filterDashStatus">
+										<option value="">All</option>
+										<option value="in">In Stock</option>
+										<option value="low">Low Stock</option>
+										<option value="out">Out of Stock</option>
+									</select>
+								</th>
+								<th></th>
+							</tr>
+						</thead>
+						<tbody id="dashboardInventoryTable"></tbody>
+					</table>
                 </div>
                 <div class="card"><h3 id="recentActivityTitle">Recent Activity</h3><ul class="activity-list" id="recentActivity"></ul></div>
             </div>
@@ -152,17 +173,84 @@
             <div class="card">
                 <div class="card-header" style="display: flex; justify-content: space-between;"><h3 id="productInventoryTitle">Product Inventory</h3><div><button class="btn btn-sm btn-outline" id="exportInventory"><i class="fas fa-file-export"></i> <span id="exportText">Export</span></button></div></div>
                 <input type="text" id="inventorySearch" class="form-control" placeholder="Search products..." style="margin-bottom: 20px;">
-                <table class="inventory-table"><thead><tr><th id="productNameCol">Product Name</th><th id="skuCol2">SKU</th><th id="categoryCol">Category</th><th id="qtyCol2">Quantity</th><th id="reorderCol">Reorder Level</th><th id="priceCol">Price</th><th id="statusCol2">Status</th><th id="actionsCol">Actions</th></tr></thead><tbody id="inventoryTable"></tbody></table>
+                <table class="inventory-table" id="inventoryTableMain">
+					<thead>
+						<tr>
+							<th>#</th>   <!-- عمود الترقيم -->
+							<th data-sort="name">Product Name <span class="sort-arrow"></span></th>
+							<th data-sort="sku">SKU <span class="sort-arrow"></span></th>
+							<th data-sort="category">Category <span class="sort-arrow"></span></th>
+							<th data-sort="quantity">Quantity <span class="sort-arrow"></span></th>
+							<th data-sort="reorderLevel">Reorder Level <span class="sort-arrow"></span></th>
+							<th data-sort="price">Price <span class="sort-arrow"></span></th>
+							<th data-sort="status">Status <span class="sort-arrow"></span></th>
+							<th>Actions</th>
+						</tr>
+						<tr id="inventoryFilterRow">
+							<th></th>    <!-- فاضي للترقيم -->
+							<th><input type="text" id="filterProductName" placeholder="Name"></th>
+							<th><input type="text" id="filterSKU" placeholder="SKU"></th>
+							<th><input type="text" id="filterCategory" placeholder="Category"></th>
+							<th><input type="number" id="filterQuantity" placeholder="Qty"></th>
+							<th><input type="number" id="filterReorder" placeholder="Min"></th>
+							<th><input type="number" id="filterPrice" placeholder="Price" step="0.01"></th>
+							<th>
+								<select id="filterStatus">
+									<option value="">All</option>
+									<option value="in">In Stock</option>
+									<option value="low">Low Stock</option>
+									<option value="out">Out of Stock</option>
+								</select>
+							</th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody id="inventoryTable"></tbody>
+				</table>
+				<div id="inventoryPagination" class="pagination-container"></div>
             </div>
         </div>
     </section>
-
+	
     <!-- ========== SALES PAGE ========== -->
     <section id="salesPage" class="page">
         <div class="container">
             <div class="dashboard-header"><h2 id="salesTitle">Sales</h2><div><button class="btn btn-primary" id="addNewSale"><i class="fas fa-plus"></i> <span id="newSaleBtnText">New Sale</span></button></div></div>
             <div class="stats-grid"><div class="stat-card"><h4 id="todaySalesLabel2">Today's Sales</h4><div class="value" id="todaySalesValue">$0</div></div><div class="stat-card"><h4 id="monthlyLabel">This Month</h4><div class="value" id="monthlySalesValue">$0</div></div><div class="stat-card"><h4 id="transactionsLabel">Transactions</h4><div class="value" id="transactionCount">0</div></div></div>
-            <div class="card"><h3 id="recentSalesTitle">Recent Sales</h3><table class="inventory-table"><thead><tr><th id="dateCol">Date & Time</th><th id="transIdCol">Transaction ID</th><th id="customerCol">Customer</th><th id="itemsCol">Items</th><th id="totalCol">Total Amount</th><th id="statusCol3">Status</th><th id="actionsCol2">Actions</th></tr></thead><tbody id="salesTable"></tbody></table></div>
+            <div class="card"><h3 id="recentSalesTitle">Recent Sales</h3>
+			<table class="inventory-table" id="salesTableMain">
+				<thead>
+					<tr>
+						<th>#</th>   <!-- عمود الترقيم -->
+						<th data-sort="date">Date & Time <span class="sort-arrow"></span></th>
+						<th data-sort="id">Transaction ID <span class="sort-arrow"></span></th>
+						<th data-sort="customer">Customer <span class="sort-arrow"></span></th>
+						<th data-sort="items">Items <span class="sort-arrow"></span></th>
+						<th data-sort="total">Total Amount <span class="sort-arrow"></span></th>
+						<th data-sort="status">Status <span class="sort-arrow"></span></th>
+						<th>Actions</th>
+					</tr>
+					<tr id="salesFilterRow">
+						<th></th>    <!-- فاضي للترقيم -->
+						<th><input type="text" id="filterSaleDate" placeholder="Date"></th>
+						<th><input type="text" id="filterTransID" placeholder="ID"></th>
+						<th><input type="text" id="filterCustomer" placeholder="Customer"></th>
+						<th><input type="text" id="filterItems" placeholder="Items"></th>
+						<th><input type="number" id="filterTotal" placeholder="Total" step="0.01"></th>
+						<th>
+							<select id="filterSaleStatus">
+								<option value="">All</option>
+								<option value="Completed">Completed</option>
+								<option value="Pending">Pending</option>
+							</select>
+						</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody id="salesTable"></tbody>
+			</table>
+			<div id="salesPagination" class="pagination-container"></div>
+			</div>
         </div>
     </section>
 
@@ -185,12 +273,83 @@
 
     <!-- ========== SUPPLIERS PAGE ========== -->
     <section id="suppliersPage" class="page">
-        <div class="container">
-            <div class="dashboard-header"><h2 id="suppliersTitle">Supplier Management</h2><button class="btn btn-primary" id="addNewSupplier"><i class="fas fa-plus"></i> <span id="addSupplierText">Add Supplier</span></button></div>
-            <div class="card"><h3 id="supplierListTitle">Supplier List</h3><table class="inventory-table"><thead><tr><th id="supplierNameCol">Supplier Name</th><th id="contactCol">Contact Person</th><th id="emailCol">Email</th><th id="phoneCol">Phone</th><th id="productsCol">Products Supplied</th><th id="leadTimeCol">Lead Time</th><th id="actionsCol3">Actions</th></tr></thead><tbody id="suppliersTable"></tbody></table></div>
-        </div>
-    </section>
-
+		<div class="container">
+			<div class="dashboard-header"><h2 id="suppliersTitle">Supplier Management</h2><button class="btn btn-primary" id="addNewSupplier"><i class="fas fa-plus"></i> <span id="addSupplierText">Add Supplier</span></button></div>
+			<div class="card"><h3 id="supplierListTitle">Supplier List</h3>
+				<table class="inventory-table" id="suppliersTableMain">
+					<thead>
+						<tr>
+							<th>#</th>   <!-- عمود الترقيم -->
+							<th data-sort="name">Supplier Name <span class="sort-arrow"></span></th>
+							<th data-sort="contact">Contact Person <span class="sort-arrow"></span></th>
+							<th data-sort="email">Email <span class="sort-arrow"></span></th>
+							<th data-sort="phone">Phone <span class="sort-arrow"></span></th>
+							<th>Products Supplied</th>
+							<th data-sort="leadTime">Lead Time <span class="sort-arrow"></span></th>
+							<th>Actions</th>
+						</tr>
+						<tr id="supplierFilterRow">
+							<th></th>    <!-- فاضي للترقيم -->
+							<th><input type="text" id="filterSupplierName" placeholder="Supplier name"></th>
+							<th><input type="text" id="filterContact" placeholder="Contact"></th>
+							<th><input type="text" id="filterSupplierEmail" placeholder="Email"></th>
+							<th><input type="text" id="filterSupplierPhone" placeholder="Phone"></th>
+							<th><input type="text" id="filterProductsSupplied" placeholder="Product"></th>
+							<th><input type="number" id="filterLeadTime" placeholder="Days" style="width:80px;"></th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody id="suppliersTable"></tbody>
+				</table>
+				<div id="supplierPagination" class="pagination-container"></div>
+			</div>
+		</div>
+	</section>
+	<!-- ========== USERS PAGE ========== -->
+	<section id="usersPage" class="page">
+		<div class="container">
+			<div class="dashboard-header">
+				<h2 id="usersTitle">User Management</h2>
+			</div>
+			<div class="card">
+				<h3 id="userListTitle">All Users</h3>
+				<table class="inventory-table" id="usersTableMain">
+					<thead>
+						<tr>
+							<th>#</th>   <!-- عمود الترقيم -->
+							<th data-sort="id">ID <span class="sort-arrow"></span></th>
+							<th data-sort="name">Name <span class="sort-arrow"></span></th>
+							<th data-sort="email">Email <span class="sort-arrow"></span></th>
+							<th data-sort="role">Role <span class="sort-arrow"></span></th>
+							<th>Change Role</th>
+							<th>Actions</th>
+						</tr>
+						<tr id="filterRow">
+							<th></th>    <!-- فاضي للترقيم -->
+							<th><input type="text" id="filterId" placeholder="ID" style="width:80px;"></th>
+							<th><input type="text" id="filterName" placeholder="Name"></th>
+							<th><input type="text" id="filterEmail" placeholder="Email"></th>
+							<th>
+								<select id="filterRole">
+									<option value="">All</option>
+									<option value="user">user</option>
+									<option value="viewer">viewer</option>
+									<option value="sales">sales</option>
+									<option value="cashier">cashier</option>
+									<option value="clerk">clerk</option>
+									<option value="administrator">administrator</option>
+								</select>
+							</th>
+							<th></th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody id="usersTable"></tbody>
+				</table>
+				<div id="userPagination" class="pagination-container"></div>
+			</div>
+		</div>
+	</section>
     <!-- ========== SETTINGS PAGE ========== -->
     <section id="settingsPage" class="page">
         <div class="container">
@@ -318,5 +477,7 @@
     <script src="js/chatbot.js"></script>
     <script src="js/app.js"></script>
     <script src="js/responsive.js"></script>
+	<script src="js/users.js"></script>
+	<script src="js/pagination.js"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-// routes/sales.js
+// backend/routes/sales.js
 const express = require('express');
 const { getDB } = require('../db');
 const { authenticate, requireRole } = require('../authMiddleware');
@@ -7,11 +7,25 @@ const router = express.Router();
 router.use(authenticate);
 
 router.get('/', (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 15;
+    const offset = (page - 1) * limit;
+
     const db = getDB();
-    const sales = db.prepare('SELECT * FROM sales ORDER BY created_at DESC').all();
-    res.json(sales);
+    const totalRow = db.prepare('SELECT COUNT(*) as total FROM sales').get();
+    const total = totalRow?.total || 0;
+
+    const sales = db.prepare('SELECT * FROM sales ORDER BY created_at DESC LIMIT ? OFFSET ?').all(limit, offset);
+
+    res.json({
+        sales,
+        total,
+        page,
+        pages: Math.ceil(total / limit)
+    });
 });
 
+// POST, DELETE تبقى كما هي
 router.post('/', requireRole('administrator', 'cashier', 'sales'), (req, res) => {
     const { customer, productId, quantity, cashier } = req.body;
     if (!productId || !quantity) return res.status(400).json({ error: 'Product and quantity required' });

@@ -89,7 +89,12 @@ const translations = {
         editCancelText: "Cancel", editUpdateText: "Update Stock",
         cashierName: "Cashier Name", today: "Today", total: "Total", sales: "sales",
         saleCompleted: "Sale completed!",
-        cashierLabel: "Cashier: ", totalLabel: "Total: "
+        cashierLabel: "Cashier: ", totalLabel: "Total: ",
+		navUsersText: "Users",
+		usersTitle: "User Management",
+		userListTitle: "All Users",
+		changeRoleLabel: "Change Role",
+		saveRoleBtn: "Save Role"
     },
     ar: {
         logoText: "ريتيل إكس", navHomeText: "الرئيسية", navDashboardText: "لوحة التحكم", navInventoryText: "المخزون",
@@ -179,6 +184,11 @@ const translations = {
         editCancelText: "إلغاء", editUpdateText: "تحديث المخزون",
         cashierName: "اسم الكاشير", today: "اليوم", total: "الإجمالي", sales: "مبيعات",
         saleCompleted: "تم إتمام البيع!",
-        cashierLabel: "الكاشير: ", totalLabel: "الإجمالي: "
+        cashierLabel: "الكاشير: ", totalLabel: "الإجمالي: ",
+		navUsersText: "المستخدمين",
+		usersTitle: "إدارة المستخدمين",
+		userListTitle: "جميع المستخدمين",
+		changeRoleLabel: "تغيير الدور",
+		saveRoleBtn: "حفظ الدور"
     }
 };
