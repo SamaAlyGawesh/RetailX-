@@ -5,6 +5,7 @@ let supplierSort = { field: 'name', order: 'asc' };
 let currentSupplierPage = 1;
 const supplierLimit = 15;
 let totalSupplierPages = 1;
+let editingSupplierId = null;   // <-- مهم يكون معرف
 
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('addNewSupplier').onclick = () => {
@@ -116,17 +117,12 @@ function renderSuppliersTableHTML(suppliers) {
         return;
     }
     const startNumber = (currentSupplierPage - 1) * supplierLimit + 1;
-
     tbody.innerHTML = suppliers.map((s, index) => {
         const productsHtml = (s.productsSuppliedList || []).map(p => `<span class="supplier-product-badge">${p}</span>`).join('') || '<span class="supplier-product-badge">No products</span>';
         return `<tr>
             <td>${startNumber + index}</td>
-            <td>${s.name}</td>
-            <td>${s.contact || '-'}</td>
-            <td>${s.email}</td>
-            <td>${s.phone || '-'}</td>
-            <td><div class="supplier-products-list">${productsHtml}</div></td>
-            <td>${s.leadTime} days</td>
+            <td>${s.name}</td><td>${s.contact || '-'}</td><td>${s.email}</td><td>${s.phone || '-'}</td>
+            <td><div class="supplier-products-list">${productsHtml}</div></td><td>${s.leadTime} days</td>
             <td><button class="btn btn-sm btn-primary" onclick="editSupplier(${s.id})"><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-danger" onclick="deleteSupplier(${s.id})"><i class="fas fa-trash"></i></button></td>
         </tr>`;
     }).join('');
@@ -138,8 +134,24 @@ function updateSupplierSortArrows() {
     if (active) active.textContent = supplierSort.order === 'asc' ? ' ▲' : ' ▼';
 }
 
-// Existing functions
-window.editSupplier = function(id) { /* ... بدون تغيير ... */ };
+// ========== دوال المودال ==========
+window.editSupplier = function(id) {
+    if (!hasPermission('suppliers')) return;
+    const s = suppliersData.find(s => s.id === id);
+    if (!s) return;
+    document.getElementById('supplierNameInput').value = s.name;
+    document.getElementById('supplierContactInput').value = s.contact || '';
+    document.getElementById('supplierEmailInput').value = s.email;
+    document.getElementById('supplierPhoneInput').value = s.phone || '';
+    document.getElementById('supplierLeadTimeInput').value = s.leadTime;
+    const select = document.getElementById('supplierProductsSelect');
+    for (let i = 0; i < select.options.length; i++) {
+        select.options[i].selected = s.productsSuppliedList?.includes(select.options[i].value) || false;
+    }
+    editingSupplierId = id;
+    document.getElementById('addSupplierModal').classList.add('active');
+};
+
 window.deleteSupplier = async function(id) {
     if (!hasPermission('suppliers')) return;
     if (!confirm('Delete this supplier?')) return;
@@ -148,4 +160,14 @@ window.deleteSupplier = async function(id) {
         await loadSupplierPage(currentSupplierPage);
     } catch (err) { alert(err.message); }
 };
-function clearSupplierForm() { /* ... بدون تغيير ... */ }
+
+function clearSupplierForm() {
+    document.getElementById('supplierNameInput').value = '';
+    document.getElementById('supplierContactInput').value = '';
+    document.getElementById('supplierEmailInput').value = '';
+    document.getElementById('supplierPhoneInput').value = '';
+    document.getElementById('supplierLeadTimeInput').value = '5';
+    const select = document.getElementById('supplierProductsSelect');
+    for (let i = 0; i < select.options.length; i++) select.options[i].selected = false;
+    editingSupplierId = null;
+}
