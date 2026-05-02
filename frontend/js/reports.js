@@ -54,10 +54,68 @@ document.addEventListener('DOMContentLoaded', () => {
 function generateReportView(type) {
     let title = '', html = '';
     if (type === 'stock') {
-        title = 'Stock Summary';
-        html = '<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%"><tr style="background:#6d28d9;color:white"><th>Product</th><th>SKU</th><th>Qty</th><th>Price</th></tr>';
-        inventoryData.forEach(p => html += `<tr><td>${p.name}</td><td>${p.sku}</td><td>${p.quantity}</td><td>${formatPrice(p.price)}</td></tr>`);
-        html += '</table>';
+        title = 'Stock Summary by Category';
+        // تجميع المنتجات حسب الفئة
+        const grouped = {};
+        inventoryData.forEach(p => {
+            const cat = p.category || 'Uncategorized';
+            if (!grouped[cat]) grouped[cat] = [];
+            grouped[cat].push(p);
+        });
+
+        // ترتيب الفئات أبجدياً
+        const categories = Object.keys(grouped).sort();
+
+        html = `<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%;font-size:14px;">
+            <thead>
+                <tr style="background:#6d28d9;color:white;">
+                    <th>Product</th><th>SKU</th><th>Category</th><th>Qty</th><th>Price</th><th>Total Value</th>
+                </tr>
+            </thead>
+            <tbody>`;
+
+        let grandQty = 0, grandValue = 0;
+
+        categories.forEach(cat => {
+            const products = grouped[cat];
+            html += `<tr style="background:#2d3748;color:#e2e8f0;"><td colspan="6"><strong>${cat}</strong> (${products.length} products)</td></tr>`;
+
+            let catQty = 0, catValue = 0;
+            products.forEach(p => {
+                const total = p.price * p.quantity;
+                html += `<tr>
+                    <td>${p.name}</td>
+                    <td>${p.sku}</td>
+                    <td>${p.category}</td>
+                    <td>${p.quantity}</td>
+                    <td>${formatPrice(p.price)}</td>
+                    <td>${formatPrice(total)}</td>
+                </tr>`;
+                catQty += p.quantity;
+                catValue += total;
+            });
+
+            // صف إجمالي الفئة
+            html += `<tr style="background:#1a202c;color:#cbd5e0;font-weight:bold;">
+                <td colspan="3">Subtotal – ${cat}</td>
+                <td>${catQty}</td>
+                <td></td>
+                <td>${formatPrice(catValue)}</td>
+            </tr>`;
+            grandQty += catQty;
+            grandValue += catValue;
+        });
+
+        // صف الإجمالي الكلي
+        html += `<tr style="background:#6d28d9;color:white;font-weight:bold;">
+            <td colspan="3">Grand Total</td>
+            <td>${grandQty}</td>
+            <td></td>
+            <td>${formatPrice(grandValue)}</td>
+        </tr>`;
+
+        html += '</tbody></table>';
+
     } else if (type === 'lowstock') {
         title = 'Low Stock Alert';
         html = '<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%"><tr style="background:#6d28d9;color:white"><th>Product</th><th>Current</th><th>Reorder</th></tr>';
