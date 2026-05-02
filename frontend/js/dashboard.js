@@ -53,6 +53,13 @@ function updateDashboardStats() {
     const monthlySales = salesData.filter(s => new Date(s.date).getMonth() === new Date().getMonth()).reduce((s, i) => s + i.total, 0);
     document.getElementById('monthlySalesValue').innerText = formatPrice(monthlySales);
     document.getElementById('transactionCount').innerText = salesData.length;
+	// تحديث شارة التنبيه في القائمة
+	const badge = document.getElementById('dashboardBadge');
+	if (badge) {
+		const lowStockCount = inventoryData.filter(p => p.quantity > 0 && p.quantity <= p.reorderLevel).length;
+		badge.innerText = lowStockCount;
+		badge.style.display = lowStockCount > 0 ? 'flex' : 'none';
+	}
 }
 
 function renderRecentActivity() {
