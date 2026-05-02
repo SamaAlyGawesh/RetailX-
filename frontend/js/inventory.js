@@ -90,13 +90,15 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadInventoryPage(page) {
     currentInventoryPage = page;
     const search = document.getElementById('inventorySearch')?.value || '';
-    const data = await apiGetProducts(page, inventoryLimit, search);
+    // نستخدم fetch مباشرة عشان ما نغيرش inventoryData العالمية
+    const data = await api('GET', `/products?page=${page}&limit=${inventoryLimit}&search=${encodeURIComponent(search)}`);
     currentInventory = data.products;
     totalInventoryPages = data.pages;
     applyInventoryFilters();
 }
 
 function applyInventoryFilters() {
+	let filtered = [...currentInventory]; // نعمل نسخة من بيانات الصفحة
     // الفلترة المحلية بعد جلب الصفحة (لأن السيرفر يدعم البحث فقط، لكن الفلاتر الأخرى نطبقها هنا)
     const name = (document.getElementById('filterProductName')?.value || '').toLowerCase();
     const sku = (document.getElementById('filterSKU')?.value || '').toLowerCase();
