@@ -174,10 +174,27 @@ document.addEventListener('DOMContentLoaded', async () => {
 function navigateToPage(pageId) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById(pageId).classList.add('active');
-    if (pageId === 'dashboardPage') { updateDashboardStats(); renderDashboardInventory(); renderRecentActivity(); }
+    
+    if (pageId === 'dashboardPage') { 
+        updateDashboardStats(); 
+        renderDashboardInventory(); 
+        renderRecentActivity(); 
+    }
     if (pageId === 'inventoryPage') renderInventoryTable();
     if (pageId === 'salesPage') renderSalesTable();
     if (pageId === 'suppliersPage') renderSuppliersTable();
+    if (pageId === 'reportsPage') {
+        // استدعاء الرسوم البيانية بعد أن تصبح عناصر Canvas جاهزة
+        setTimeout(() => {
+            if (typeof renderMonthlySalesChart === 'function') {
+                renderMonthlySalesChart();
+            }
+            if (typeof renderTopProductsChart === 'function') {
+                renderTopProductsChart();
+            }
+        }, 100);
+    }
+    
     window.scrollTo(0, 0);
 }
 
