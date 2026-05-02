@@ -366,6 +366,10 @@ function renderTopProductsChart() {
     const ctx = document.getElementById('topProductsChart')?.getContext('2d');
     if (!ctx) return;
 
+    // تدمير القديم
+    const existingChart = Chart.getChart('topProductsChart');
+    if (existingChart) existingChart.destroy();
+
     const from = document.getElementById('salesDateFrom')?.value || '';
     const to = document.getElementById('salesDateTo')?.value || '';
 
@@ -388,18 +392,33 @@ function renderTopProductsChart() {
     });
 
     const sorted = Object.entries(productSales).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+    if (sorted.length === 0) {
+        // لا توجد بيانات كافية، نعرض رسالة في المخطط
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['No data available'],
+                datasets: [{
+                    data: [1],
+                    backgroundColor: ['#334155']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    tooltip: { enabled: false },
+                    legend: { display: true }
+                }
+            }
+        });
+        return;
+    }
+
     const productIds = sorted.map(e => Number(e[0]));
     const products = inventoryData.filter(p => productIds.includes(p.id));
     const labels = products.map(p => p.name);
     const data = sorted.map(e => e[1]);
-
-    if (labels.length === 0) {
-        console.warn('No matching products found for Top 5 chart');
-        return;
-    }
-
-	const existingChart = Chart.getChart('topProductsChart');
-    if (existingChart) existingChart.destroy();
 
     new Chart(ctx, {
         type: 'doughnut',
