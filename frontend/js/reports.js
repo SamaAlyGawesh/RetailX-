@@ -194,7 +194,7 @@ function generateReportView(type, extra) {
         html = '<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%"><tr style="background:#6d28d9;color:white"><th>Name</th><th>Contact</th><th>Email</th><th>Lead Time</th></tr>';
         suppliersData.forEach(s => html += `<tr><td>${s.name}</td><td>${s.contact||'-'}</td><td>${s.email}</td><td>${s.leadTime} days</td></tr>`);
         html += '</table>';
-	} } else if (type === 'topselling') {
+	} else if (type === 'topselling') {
 		// قراءة الفترة من extra
 		const from = extra?.from || document.getElementById('topSellingDateFrom')?.value || '';
 		const to = extra?.to || document.getElementById('topSellingDateTo')?.value || '';
