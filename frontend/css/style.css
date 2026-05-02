@@ -490,7 +490,12 @@ body.light-theme input[type="date"] {
     color: var(--light-text);
     border: 1px solid var(--light-border);
 }
-
+/* تمكين التمرير في نافذة التقارير الطويلة */
+#reportViewModal .modal-content {
+    max-height: 80vh;
+    overflow-y: auto;
+    max-width: 850px;
+}
 @media (max-width: 480px) {
     .container { padding: 0 15px; }
     .stat-card .value { font-size: 1.5rem; }

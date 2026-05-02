@@ -194,18 +194,38 @@ function generateReportView(type, extra) {
         html = '<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%"><tr style="background:#6d28d9;color:white"><th>Name</th><th>Contact</th><th>Email</th><th>Lead Time</th></tr>';
         suppliersData.forEach(s => html += `<tr><td>${s.name}</td><td>${s.contact||'-'}</td><td>${s.email}</td><td>${s.leadTime} days</td></tr>`);
         html += '</table>';
-	} else if (type === 'topselling') {
-		title = 'Top Selling Products';
-		// حساب مجموع الكميات والإيرادات لكل منتج
+	} } else if (type === 'topselling') {
+		// قراءة الفترة من extra
+		const from = extra?.from || document.getElementById('topSellingDateFrom')?.value || '';
+		const to = extra?.to || document.getElementById('topSellingDateTo')?.value || '';
+
+		// فلترة المبيعات
+		let filteredSales = salesData;
+		if (from || to) {
+			filteredSales = salesData.filter(s => {
+				const saleDate = new Date(s.date);
+				if (isNaN(saleDate.getTime())) return false;
+				if (from && saleDate < new Date(from)) return false;
+				if (to && saleDate > new Date(to + 'T23:59:59')) return false;
+				return true;
+			});
+			title = 'Top Selling Products';
+			if (from) title += ` from ${from}`;
+			if (to) title += ` to ${to}`;
+		} else {
+			title = 'Top Selling Products (All Time)';
+		}
+
+		// حساب الكميات والإيرادات لكل منتج
 		const productStats = {};
-		salesData.forEach(s => {
+		filteredSales.forEach(s => {
 			const pid = Number(s.productId);
 			if (!pid) return;
 			if (!productStats[pid]) productStats[pid] = { qty: 0, revenue: 0 };
 			productStats[pid].qty += s.items || 0;
 			productStats[pid].revenue += s.total || 0;
 		});
-		// ربط بالمنتجات
+
 		const productList = Object.entries(productStats).map(([pid, stats]) => {
 			const product = inventoryData.find(p => p.id === Number(pid));
 			return {
@@ -214,11 +234,30 @@ function generateReportView(type, extra) {
 				qty: stats.qty,
 				revenue: stats.revenue
 			};
-		}).sort((a, b) => b.qty - a.qty); // ترتيب تنازلي حسب الكمية
+		}).sort((a, b) => b.qty - a.qty);
 
-		html = '<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%"><tr style="background:#6d28d9;color:white"><th>Product</th><th>SKU</th><th>Quantity Sold</th><th>Total Revenue</th></tr>';
-		productList.forEach(p => html += `<tr><td>${p.name}</td><td>${p.sku}</td><td>${p.qty}</td><td>${formatPrice(p.revenue)}</td></tr>`);
-		html += '</table>';
+		// حساب الإجمالي
+		let totalQty = 0, totalRevenue = 0;
+		let rows = '';
+		productList.forEach(p => {
+			totalQty += p.qty;
+			totalRevenue += p.revenue;
+			rows += `<tr><td>${p.name}</td><td>${p.sku}</td><td>${p.qty}</td><td>${formatPrice(p.revenue)}</td></tr>`;
+		});
+
+		html = `<div style="max-height: 60vh; overflow-y: auto;">
+			<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%;font-size:14px;">
+				<thead><tr style="background:#6d28d9;color:white;position:sticky;top:0;">
+					<th>Product</th><th>SKU</th><th>Quantity Sold</th><th>Total Revenue</th>
+				</tr></thead>
+				<tbody>${rows}</tbody>
+				<tfoot><tr style="background:#1a202c;color:#cbd5e0;font-weight:bold;position:sticky;bottom:0;">
+					<td colspan="2">Grand Total</td>
+					<td>${totalQty}</td>
+					<td>${formatPrice(totalRevenue)}</td>
+				</tr></tfoot>
+			</table>
+		</div>`;
 	}
     document.getElementById('reportTitle').innerText = title;
     document.getElementById('reportContent').innerHTML = html;
@@ -232,28 +271,43 @@ function generateReportDownload(type) {
     else if (type === 'sales') { csv = 'ID,Date,Customer,Items,Total\n'; salesData.forEach(s => csv += `"${s.id}","${s.date}","${s.customer}",${s.items},${s.total}\n`); }
     else if (type === 'value') { csv = 'Name,Qty,UnitPrice,TotalValue\n'; inventoryData.forEach(p => csv += `"${p.name}",${p.quantity},${p.price},${(p.price*p.quantity).toFixed(2)}\n`); }
     else if (type === 'supplier') { csv = 'Name,Contact,Email,LeadTime\n'; suppliersData.forEach(s => csv += `"${s.name}","${s.contact||''}","${s.email}",${s.leadTime}\n`); }
-	    else if (type === 'topselling') {
-        csv = 'Product,SKU,QuantitySold,TotalRevenue\n';
-        const productStats = {};
-        salesData.forEach(s => {
-            const pid = Number(s.productId);
-            if (!pid) return;
-            if (!productStats[pid]) productStats[pid] = { qty: 0, revenue: 0 };
-            productStats[pid].qty += s.items || 0;
-            productStats[pid].revenue += s.total || 0;
-        });
-        const productList = Object.entries(productStats).map(([pid, stats]) => {
-            const product = inventoryData.find(p => p.id === Number(pid));
-            return {
-                name: product ? product.name : 'Unknown (ID ' + pid + ')',
-                sku: product ? product.sku : '-',
-                qty: stats.qty,
-                revenue: stats.revenue
-            };
-        }).sort((a, b) => b.qty - a.qty);
-        productList.forEach(p => csv += `"${p.name}","${p.sku}",${p.qty},${p.revenue}\n`);
-        filename = 'topselling_report.csv';
-    }
+	else if (type === 'topselling') {
+		const from = document.getElementById('topSellingDateFrom')?.value || '';
+		const to = document.getElementById('topSellingDateTo')?.value || '';
+
+		let filteredSales = salesData;
+		if (from || to) {
+			filteredSales = salesData.filter(s => {
+				const saleDate = new Date(s.date);
+				if (isNaN(saleDate.getTime())) return false;
+				if (from && saleDate < new Date(from)) return false;
+				if (to && saleDate > new Date(to + 'T23:59:59')) return false;
+				return true;
+			});
+		}
+
+		const productStats = {};
+		filteredSales.forEach(s => {
+			const pid = Number(s.productId);
+			if (!pid) return;
+			if (!productStats[pid]) productStats[pid] = { qty: 0, revenue: 0 };
+			productStats[pid].qty += s.items || 0;
+			productStats[pid].revenue += s.total || 0;
+		});
+		const productList = Object.entries(productStats).map(([pid, stats]) => {
+			const product = inventoryData.find(p => p.id === Number(pid));
+			return {
+				name: product ? product.name : 'Unknown (ID ' + pid + ')',
+				sku: product ? product.sku : '-',
+				qty: stats.qty,
+				revenue: stats.revenue
+			};
+		}).sort((a, b) => b.qty - a.qty);
+
+		csv = 'Product,SKU,QuantitySold,TotalRevenue\n';
+		productList.forEach(p => csv += `"${p.name}","${p.sku}",${p.qty},${p.revenue}\n`);
+		filename = 'topselling_report.csv';
+	}
     const blob = new Blob([csv], { type: 'text/csv' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
