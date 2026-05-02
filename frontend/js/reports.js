@@ -166,12 +166,29 @@ function generateReportView(type, extra) {
             </tr></tfoot></table>`;
 
     } else if (type === 'value') {
-        title = 'Inventory Value';
-        html = '<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%"><tr style="background:#6d28d9;color:white"><th>Product</th><th>Qty</th><th>Unit Price</th><th>Total Value</th></tr>';
-        inventoryData.forEach(p => html += `<tr><td>${p.name}</td><td>${p.quantity}</td><td>${formatPrice(p.price)}</td><td>${formatPrice(p.price * p.quantity)}</td></tr>`);
-        html += '</table>';
-
-    } else if (type === 'supplier') {
+		title = 'Inventory Value';
+		let totalQty = 0;
+		let totalValue = 0;
+		
+		html = '<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%">' +
+			   '<tr style="background:#6d28d9;color:white"><th>Product</th><th>Qty</th><th>Unit Price</th><th>Total Value</th></tr>';
+		
+		inventoryData.forEach(p => {
+			const val = p.price * p.quantity;
+			totalQty += p.quantity;
+			totalValue += val;
+			html += `<tr><td>${p.name}</td><td>${p.quantity}</td><td>${formatPrice(p.price)}</td><td>${formatPrice(val)}</td></tr>`;
+		});
+		
+		// صف الإجمالي
+		html += `<tr style="background:#1a202c;color:#cbd5e0;font-weight:bold;">
+					<td>Grand Total</td>
+					<td>${totalQty}</td>
+					<td></td>
+					<td>${formatPrice(totalValue)}</td>
+				 </tr>`;
+		html += '</table>';
+	} else if (type === 'supplier') {
         title = 'Supplier Performance';
         html = '<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%"><tr style="background:#6d28d9;color:white"><th>Name</th><th>Contact</th><th>Email</th><th>Lead Time</th></tr>';
         suppliersData.forEach(s => html += `<tr><td>${s.name}</td><td>${s.contact||'-'}</td><td>${s.email}</td><td>${s.leadTime} days</td></tr>`);
