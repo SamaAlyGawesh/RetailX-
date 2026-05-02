@@ -230,34 +230,51 @@ function renderTopProductsChart() {
     const ctx = document.getElementById('topProductsChart')?.getContext('2d');
     if (!ctx) return;
 
-    // حساب أكثر 5 منتجات مبيعاً (من المبيعات)
+    // قراءة الفترة من حقول التصفية (إن وجدت)
+    const from = document.getElementById('salesDateFrom')?.value || '';
+    const to = document.getElementById('salesDateTo')?.value || '';
+
+    // فلترة المبيعات حسب الفترة (كما في generateReportView للنوع 'sales')
+    let filteredSales = salesData;
+    if (from || to) {
+        filteredSales = salesData.filter(s => {
+            const saleDate = new Date(s.date);
+            if (isNaN(saleDate.getTime())) return false;
+            if (from && saleDate < new Date(from)) return false;
+            if (to && saleDate > new Date(to + 'T23:59:59')) return false;
+            return true;
+        });
+    }
+
+    // حساب أكثر 5 منتجات مبيعاً من المبيعات المفلترة
     const productSales = {};
-    salesData.forEach(s => {
-        const pid = Number(s.productId);   // تحويل إلى رقم
+    filteredSales.forEach(s => {
+        const pid = Number(s.productId);
         if (!pid) return;
         productSales[pid] = (productSales[pid] || 0) + (s.items || 0);
     });
 
     const sorted = Object.entries(productSales).sort((a, b) => b[1] - a[1]).slice(0, 5);
     const productIds = sorted.map(e => Number(e[0]));
-    
-    // البحث عن المنتجات في inventoryData
     const products = inventoryData.filter(p => productIds.includes(p.id));
     const labels = products.map(p => p.name);
     const data = sorted.map(e => e[1]);
 
-    // إذا لم نجد أي منتجات، نتوقف
     if (labels.length === 0) {
         console.warn('No matching products found for Top 5 chart');
         return;
     }
+
+    // تدمير المخطط السابق إذا وُجد لتجنب تراكب المخططات
+    const existingChart = Chart.getChart(ctx);
+    if (existingChart) existingChart.destroy();
 
     new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels,
             datasets: [{
-                data: data.slice(0, labels.length),  // تطابق الأطوال
+                data: data.slice(0, labels.length),
                 backgroundColor: ['#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#3b82f6'].slice(0, labels.length)
             }]
         },
