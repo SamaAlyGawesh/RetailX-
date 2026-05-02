@@ -425,7 +425,42 @@ body.rtl .stat-card { border-left: none; border-right: 4px solid var(--primary);
 #reportViewModal .modal-content {
     max-width: 850px;
 }
+/* تنسيق عناصر التقرير */
+.report-option h4 {
+    margin-bottom: 8px;
+}
 
+.report-filter-select {
+    width: 100%;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    background: var(--dark-bg);
+    color: var(--dark-text);
+    border: 1px solid var(--dark-border);
+    font-size: 13px;
+}
+
+.report-date-fields {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.report-date-fields input[type="date"] {
+    flex: 1;
+    padding: 7px 10px;
+    background: var(--dark-bg);
+    color: var(--dark-text);
+    border: 1px solid var(--dark-border);
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+.report-actions {
+    display: flex;
+    gap: 8px;
+}
 @media (max-width: 480px) {
     .container { padding: 0 15px; }
     .stat-card .value { font-size: 1.5rem; }
