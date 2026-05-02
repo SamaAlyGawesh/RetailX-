@@ -233,33 +233,39 @@ function renderTopProductsChart() {
     // حساب أكثر 5 منتجات مبيعاً (من المبيعات)
     const productSales = {};
     salesData.forEach(s => {
-        if (!s.productId) return;
-        productSales[s.productId] = (productSales[s.productId] || 0) + s.items;
+        const pid = Number(s.productId);   // تحويل إلى رقم
+        if (!pid) return;
+        productSales[pid] = (productSales[pid] || 0) + (s.items || 0);
     });
+
     const sorted = Object.entries(productSales).sort((a, b) => b[1] - a[1]).slice(0, 5);
-    const productIds = sorted.map(e => e[0]);
+    const productIds = sorted.map(e => Number(e[0]));
+    
+    // البحث عن المنتجات في inventoryData
     const products = inventoryData.filter(p => productIds.includes(p.id));
     const labels = products.map(p => p.name);
     const data = sorted.map(e => e[1]);
+
+    // إذا لم نجد أي منتجات، نتوقف
+    if (labels.length === 0) {
+        console.warn('No matching products found for Top 5 chart');
+        return;
+    }
 
     new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels,
             datasets: [{
-                data,
-                backgroundColor: ['#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#3b82f6']
+                data: data.slice(0, labels.length),  // تطابق الأطوال
+                backgroundColor: ['#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#3b82f6'].slice(0, labels.length)
             }]
         },
         options: {
             responsive: true,
             plugins: {
-                tooltip: {
-                    enabled: true
-                },
-                legend: {
-                    position: 'bottom'
-                }
+                tooltip: { enabled: true },
+                legend: { position: 'bottom' }
             }
         }
     });
