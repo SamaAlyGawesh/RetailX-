@@ -5,9 +5,10 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.onclick = async () => {
             if (!hasPermission('reports')) return;
             const type = btn.getAttribute('data-report');
-            await apiGetProducts();
-            await apiGetSales();
-            await apiGetSuppliers();
+            // جلب جميع البيانات (بدون pagination) لتكون متاحة لجميع التقارير
+			await apiGetProducts(1, 9999);
+			await apiGetSales(1, 9999);
+			await apiGetSuppliers(1, 9999);
 
             let extra = {};
             if (type === 'stock') {
@@ -231,6 +232,28 @@ function generateReportDownload(type) {
     else if (type === 'sales') { csv = 'ID,Date,Customer,Items,Total\n'; salesData.forEach(s => csv += `"${s.id}","${s.date}","${s.customer}",${s.items},${s.total}\n`); }
     else if (type === 'value') { csv = 'Name,Qty,UnitPrice,TotalValue\n'; inventoryData.forEach(p => csv += `"${p.name}",${p.quantity},${p.price},${(p.price*p.quantity).toFixed(2)}\n`); }
     else if (type === 'supplier') { csv = 'Name,Contact,Email,LeadTime\n'; suppliersData.forEach(s => csv += `"${s.name}","${s.contact||''}","${s.email}",${s.leadTime}\n`); }
+	    else if (type === 'topselling') {
+        csv = 'Product,SKU,QuantitySold,TotalRevenue\n';
+        const productStats = {};
+        salesData.forEach(s => {
+            const pid = Number(s.productId);
+            if (!pid) return;
+            if (!productStats[pid]) productStats[pid] = { qty: 0, revenue: 0 };
+            productStats[pid].qty += s.items || 0;
+            productStats[pid].revenue += s.total || 0;
+        });
+        const productList = Object.entries(productStats).map(([pid, stats]) => {
+            const product = inventoryData.find(p => p.id === Number(pid));
+            return {
+                name: product ? product.name : 'Unknown (ID ' + pid + ')',
+                sku: product ? product.sku : '-',
+                qty: stats.qty,
+                revenue: stats.revenue
+            };
+        }).sort((a, b) => b.qty - a.qty);
+        productList.forEach(p => csv += `"${p.name}","${p.sku}",${p.qty},${p.revenue}\n`);
+        filename = 'topselling_report.csv';
+    }
     const blob = new Blob([csv], { type: 'text/csv' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
