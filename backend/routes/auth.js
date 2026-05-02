@@ -9,6 +9,7 @@ const router = express.Router();
 
 router.post('/register', (req, res) => {
     let { name, email, password, role } = req.body;
+	email = email.toLowerCase();
 	if (role && role !== 'user') {
 		return res.status(403).json({ error: 'Cannot self-assign role' });
 	}
@@ -25,6 +26,7 @@ router.post('/register', (req, res) => {
 
 router.post('/login', (req, res) => {
     const { email, password } = req.body;
+	email = email.toLowerCase();
     if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
 
     const db = getDB();
