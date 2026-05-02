@@ -45,6 +45,10 @@ document.addEventListener('DOMContentLoaded', () => {
         a.download = 'report.csv';
         a.click();
     };
+	if (window.location.hash === '#reports' || document.getElementById('reportsPage').classList.contains('active')) {
+		renderMonthlySalesChart();
+		renderTopProductsChart();
+	}
 });
 
 function generateReportView(type) {
@@ -103,4 +107,66 @@ function exportCSV(data, filename) {
     a.href = URL.createObjectURL(blob);
     a.download = filename;
     a.click();
+}
+
+function renderMonthlySalesChart() {
+    const ctx = document.getElementById('monthlySalesChart')?.getContext('2d');
+    if (!ctx) return;
+
+    // تجميع المبيعات حسب الشهر (آخر 6 أشهر)
+    const monthly = {};
+    salesData.forEach(s => {
+        const d = new Date(s.date);
+        if (isNaN(d.getTime())) return;
+        const key = d.toLocaleString('default', { month: 'short', year: 'numeric' });
+        monthly[key] = (monthly[key] || 0) + s.total;
+    });
+    const sorted = Object.entries(monthly).sort((a, b) => new Date(a[0]) - new Date(b[0])).slice(-6);
+    const labels = sorted.map(e => e[0]);
+    const data = sorted.map(e => e[1]);
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Sales ($)',
+                data,
+                borderColor: '#8b5cf6',
+                backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+}
+
+function renderTopProductsChart() {
+    const ctx = document.getElementById('topProductsChart')?.getContext('2d');
+    if (!ctx) return;
+
+    // حساب أكثر 5 منتجات مبيعاً (من المبيعات)
+    const productSales = {};
+    salesData.forEach(s => {
+        if (!s.productId) return;
+        productSales[s.productId] = (productSales[s.productId] || 0) + s.items;
+    });
+    const sorted = Object.entries(productSales).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const productIds = sorted.map(e => e[0]);
+    const products = inventoryData.filter(p => productIds.includes(p.id));
+    const labels = products.map(p => p.name);
+    const data = sorted.map(e => e[1]);
+
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels,
+            datasets: [{
+                data,
+                backgroundColor: ['#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#3b82f6']
+            }]
+        },
+        options: { responsive: true }
+    });
 }
