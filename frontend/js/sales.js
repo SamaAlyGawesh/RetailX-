@@ -174,9 +174,89 @@ window.deleteSale = async function(id) {
 };
 
 window.printInvoice = function(id) {
-    const sale = salesData.find(s => s.id === id);
-    if (!sale) return;
-    const win = window.open('', '_blank');
-    win.document.write(`<html><head><title>Invoice ${sale.id}</title><style>body{font-family:Arial;padding:40px} h1{color:#6d28d9} .total{font-size:20px;font-weight:bold;color:#6d28d9}</style></head><body><h1>RetailX</h1><p>Invoice: ${sale.id}</p><p>Date: ${sale.date}</p><p>Customer: ${sale.customer}</p><p>Items: ${sale.items}</p><p class="total">Total: ${formatPrice(sale.total)}</p><button onclick="window.print()">Print</button></body></html>`);
-    win.document.close();
+    let sale = salesData.find(s => s.id === id);
+    
+    // نحاول نجيب اسم المنتج من inventoryData لو productId موجود
+    let productName = 'Product Purchase';
+    if (sale && sale.productId && inventoryData) {
+        const product = inventoryData.find(p => p.id === sale.productId);
+        if (product) {
+            productName = product.name;
+        }
+    }
+
+    if (sale) {
+        let win = window.open('', '_blank', 'width=800,height=600');
+        win.document.write(`
+            <html><head><title>Invoice ${sale.id}</title>
+            <style>
+                body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+                .invoice { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+                .header { text-align: center; border-bottom: 2px solid #6d28d9; padding-bottom: 20px; margin-bottom: 20px; }
+                .header h1 { color: #6d28d9; margin: 0; font-size: 32px; }
+                .header p { color: #666; margin: 5px 0 0; }
+                .details { display: flex; justify-content: space-between; margin-bottom: 30px; }
+                .details div { font-size: 14px; line-height: 1.6; }
+                .details strong { color: #333; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+                th { background: #f8f8f8; font-weight: 600; }
+                .total { text-align: right; font-size: 20px; font-weight: bold; color: #6d28d9; margin-top: 20px; }
+                .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; }
+                .footer p { margin: 5px 0; }
+                button { margin-top: 20px; padding: 12px 24px; background: #6d28d9; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+                button:hover { background: #5b21b6; }
+                @media print { body { background: white; } .invoice { box-shadow: none; } button { display: none; } }
+            </style>
+            </head><body>
+            <div class="invoice">
+                <div class="header">
+                    <h1>RetailX</h1>
+                    <p>Smart Inventory Management</p>
+                </div>
+                <div class="details">
+                    <div>
+                        <strong>Invoice Number:</strong> ${sale.id}<br>
+                        <strong>Date:</strong> ${sale.date}<br>
+                        <strong>Cashier:</strong> ${sale.cashier || 'N/A'}
+                    </div>
+                    <div style="text-align: right;">
+                        <strong>Customer:</strong> ${sale.customer}<br>
+                        <strong>Status:</strong> <span style="color: #10b981;">${sale.status}</span>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th>Quantity</th>
+                            <th>Unit Price</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>${productName}</td>
+                            <td>${sale.items}</td>
+                            <td>${appState.currency}${(sale.total / sale.items).toFixed(2)}</td>
+                            <td>${appState.currency}${sale.total.toFixed(2)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="total">
+                    Total Amount: ${appState.currency}${sale.total.toFixed(2)}
+                </div>
+                <div class="footer">
+                    <p>Thank you for shopping with RetailX!</p>
+                    <p>support@retailx.com | Cairo, Egypt</p>
+                </div>
+            </div>
+            <div style="text-align:center;">
+                <button onclick="window.print()">🖨️ Print Invoice</button>
+                <button onclick="window.close()" style="background: #f5f5f5; color: #333; margin-left: 10px;">Close</button>
+            </div>
+            </body></html>
+        `);
+        win.document.close();
+    }
 };
