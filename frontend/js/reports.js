@@ -193,8 +193,32 @@ function generateReportView(type, extra) {
         html = '<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%"><tr style="background:#6d28d9;color:white"><th>Name</th><th>Contact</th><th>Email</th><th>Lead Time</th></tr>';
         suppliersData.forEach(s => html += `<tr><td>${s.name}</td><td>${s.contact||'-'}</td><td>${s.email}</td><td>${s.leadTime} days</td></tr>`);
         html += '</table>';
-    }
+	} else if (type === 'topselling') {
+		title = 'Top Selling Products';
+		// حساب مجموع الكميات والإيرادات لكل منتج
+		const productStats = {};
+		salesData.forEach(s => {
+			const pid = Number(s.productId);
+			if (!pid) return;
+			if (!productStats[pid]) productStats[pid] = { qty: 0, revenue: 0 };
+			productStats[pid].qty += s.items || 0;
+			productStats[pid].revenue += s.total || 0;
+		});
+		// ربط بالمنتجات
+		const productList = Object.entries(productStats).map(([pid, stats]) => {
+			const product = inventoryData.find(p => p.id === Number(pid));
+			return {
+				name: product ? product.name : 'Unknown (ID ' + pid + ')',
+				sku: product ? product.sku : '-',
+				qty: stats.qty,
+				revenue: stats.revenue
+			};
+		}).sort((a, b) => b.qty - a.qty); // ترتيب تنازلي حسب الكمية
 
+		html = '<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%"><tr style="background:#6d28d9;color:white"><th>Product</th><th>SKU</th><th>Quantity Sold</th><th>Total Revenue</th></tr>';
+		productList.forEach(p => html += `<tr><td>${p.name}</td><td>${p.sku}</td><td>${p.qty}</td><td>${formatPrice(p.revenue)}</td></tr>`);
+		html += '</table>';
+	}
     document.getElementById('reportTitle').innerText = title;
     document.getElementById('reportContent').innerHTML = html;
     document.getElementById('reportViewModal').classList.add('active');
