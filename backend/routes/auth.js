@@ -1,42 +1,112 @@
-// routes/auth.js
+// backend/routes/auth.js
 const express = require('express');
+const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { getDB } = require('../db');
 const { JWT_SECRET } = require('../authMiddleware');
 
-const router = express.Router();
-
+// ========== REGISTER ==========
 router.post('/register', (req, res) => {
-    let { name, email, password, role } = req.body;
-	email = email.toLowerCase();
-	if (role && role !== 'user') {
-		return res.status(403).json({ error: 'Cannot self-assign role' });
-	}
-	role = 'user';
-    if (!name || !email || !password) return res.status(400).json({ error: 'Name, email and password required' });
-    const db = getDB();
-    const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-    if (existing) return res.status(400).json({ error: 'Email already registered' });
+    try {
+        let { name, email, password, role } = req.body;
 
-    const hash = bcrypt.hashSync(password, 10);
-    const result = db.prepare('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)').run(name, email, hash, role || 'clerk');
-    res.json({ id: result.lastInsertRowid, name, email, role });
+        // تحويل الإيميل إلى حروف صغيرة
+        if (email) email = email.toLowerCase().trim();
+
+        // منع تعيين دور غير "user" ذاتياً
+        if (role && role !== 'user') {
+            return res.status(403).json({ error: 'Cannot self-assign role' });
+        }
+        role = 'user';
+
+        // التحقق من الحقول المطلوبة
+        if (!name || !email || !password) {
+            return res.status(400).json({ error: 'Name, email and password required' });
+        }
+
+        const db = getDB();
+
+        // التأكد من أن الإيميل غير مسجل مسبقاً
+        const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+        if (existing) {
+            return res.status(400).json({ error: 'Email already registered' });
+        }
+
+        // تجزئة كلمة المرور
+        const hashedPassword = bcrypt.hashSync(password, 10);
+
+        // إدخال المستخدم الجديد
+        db.prepare('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)').run(
+            name, email, hashedPassword, role
+        );
+
+        // تسجيل النشاط
+        db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run(
+            'user', `New user registered: ${name}`, new Date().toLocaleString()
+        );
+
+        res.status(201).json({ message: 'Account created successfully' });
+
+    } catch (err) {
+        console.error('Registration error:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 });
 
+// ========== LOGIN ==========
 router.post('/login', (req, res) => {
-    const { email, password } = req.body;
-	email = email.toLowerCase();
-    if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+    try {
+        let { email, password } = req.body;
 
-    const db = getDB();
-    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
-    if (!user || !bcrypt.compareSync(password, user.password)) {
-        return res.status(401).json({ error: 'Invalid credentials' });
+        // تحويل الإيميل إلى حروف صغيرة
+        if (email) email = email.toLowerCase().trim();
+
+        console.log('Login attempt:', email);  // للتشخيص فقط، يمكن إزالته لاحقاً
+
+        if (!email || !password) {
+            return res.status(400).json({ error: 'Email and password required' });
+        }
+
+        const db = getDB();
+        const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+
+        if (!user) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        const validPassword = bcrypt.compareSync(password, user.password);
+        if (!validPassword) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        // إنشاء JWT
+        const token = jwt.sign(
+            { id: user.id, email: user.email, role: user.role, name: user.name },
+            JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+
+        // إرجاع التوكن وبيانات المستخدم (بدون كلمة المرور)
+        res.json({
+            token,
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            }
+        });
+
+        // تسجيل النشاط
+        db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run(
+            'login', `${user.name} logged in`, new Date().toLocaleString()
+        );
+
+    } catch (err) {
+        console.error('Login error:', err);
+        res.status(500).json({ error: 'Internal server error' });
     }
-
-    const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name }, JWT_SECRET, { expiresIn: '24h' });
-    res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
 });
 
 module.exports = router;
