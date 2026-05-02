@@ -45,16 +45,16 @@ for (let i = 1; i <= 1000; i++) {
 
 // 3. Sales (5000)
 console.log('Inserting 5000 sales...');
-const insertSale = db.prepare('INSERT INTO sales (id, date, customer, items, total, status, cashier) VALUES (?, ?, ?, ?, ?, ?, ?)');
+const insertSale = db.prepare('INSERT INTO sales (id, date, customer, items, total, status, cashier, productId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
 const productIds = db.prepare('SELECT id, price FROM products').all();
 for (let i = 1; i <= 5000; i++) {
     const product = pick(productIds);
     const qty = random(1, 5);
     const total = (product.price * qty).toFixed(2);
     const id = 'TXN-' + Date.now() + '-' + i;
-    const date = new Date(Date.now() - random(0, 90 * 24 * 60 * 60 * 1000)).toLocaleString(); // خلال آخر 90 يوم
+    const date = new Date(Date.now() - random(0, 90 * 24 * 60 * 60 * 1000)).toLocaleString();
     const customer = pick(firstNames) + ' ' + pick(lastNames);
-    insertSale.run(id, date, customer, qty, total, 'Completed', 'Admin');
+    insertSale.run(id, date, customer, qty, total, 'Completed', 'Admin', product.id);
 }
 
 // 4. Activity logs

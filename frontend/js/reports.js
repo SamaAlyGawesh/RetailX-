@@ -251,6 +251,16 @@ function renderTopProductsChart() {
                 backgroundColor: ['#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#3b82f6']
             }]
         },
-        options: { responsive: true }
+        options: {
+            responsive: true,
+            plugins: {
+                tooltip: {
+                    enabled: true
+                },
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
     });
 }
