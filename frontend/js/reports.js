@@ -330,6 +330,10 @@ function renderMonthlySalesChart() {
     const ctx = document.getElementById('monthlySalesChart')?.getContext('2d');
     if (!ctx) return;
 
+    // تدمير المخطط القديم إذا وُجد
+    const existingChart = Chart.getChart('monthlySalesChart');
+    if (existingChart) existingChart.destroy();
+
     const monthly = {};
     salesData.forEach(s => {
         const d = new Date(s.date);
@@ -394,7 +398,7 @@ function renderTopProductsChart() {
         return;
     }
 
-    const existingChart = Chart.getChart(ctx);
+	const existingChart = Chart.getChart('topProductsChart');
     if (existingChart) existingChart.destroy();
 
     new Chart(ctx, {
