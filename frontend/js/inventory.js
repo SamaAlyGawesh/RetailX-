@@ -82,7 +82,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Initial load
+    if (appState.isAuthenticated) {
     loadInventoryPage(1);
+	}
 });
 
 async function loadInventoryPage(page) {

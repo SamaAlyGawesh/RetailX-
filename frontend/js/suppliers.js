@@ -5,13 +5,12 @@ let supplierSort = { field: 'name', order: 'asc' };
 let currentSupplierPage = 1;
 const supplierLimit = 15;
 let totalSupplierPages = 1;
-let editingSupplierId = null;   // <-- مهم يكون معرف
-
+let supplierEditingId = null;   // <-- مهم يكون معرف
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('addNewSupplier').onclick = () => {
         if (!hasPermission('suppliers')) return;
         clearSupplierForm();
-        editingSupplierId = null;
+        supplierEditingId = null;
         document.getElementById('addSupplierModal').classList.add('active');
     };
 
@@ -31,8 +30,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (!supplier.name || !supplier.email) return alert('Name and email required');
         try {
-            if (editingSupplierId) {
-                await apiUpdateSupplier(editingSupplierId, supplier);
+            if (supplierEditingId) {
+                await apiUpdateSupplier(supplierEditingId, supplier);
             } else {
                 await apiCreateSupplier(supplier);
             }
@@ -60,7 +59,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    if (appState.isAuthenticated) {
     loadSupplierPage(1);
+	}
 });
 
 async function loadSupplierPage(page) {
@@ -148,7 +149,7 @@ window.editSupplier = function(id) {
     for (let i = 0; i < select.options.length; i++) {
         select.options[i].selected = s.productsSuppliedList?.includes(select.options[i].value) || false;
     }
-    editingSupplierId = id;
+    supplierEditingId = id;
     document.getElementById('addSupplierModal').classList.add('active');
 };
 
@@ -169,5 +170,5 @@ function clearSupplierForm() {
     document.getElementById('supplierLeadTimeInput').value = '5';
     const select = document.getElementById('supplierProductsSelect');
     for (let i = 0; i < select.options.length; i++) select.options[i].selected = false;
-    editingSupplierId = null;
+    supplierEditingId = null;
 }

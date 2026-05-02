@@ -76,7 +76,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Initial load
+    if (appState.isAuthenticated) {
     loadSalesPage(1);
+	}
 });
 
 async function loadSalesPage(page) {
