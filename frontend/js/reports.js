@@ -2,23 +2,23 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.view-report').forEach(btn => {
-		btn.onclick = async () => {
-			if (!hasPermission('reports')) return;
-			const type = btn.getAttribute('data-report');
-			await apiGetProducts();
-			await apiGetSales();
-			await apiGetSuppliers();
+        btn.onclick = async () => {
+            if (!hasPermission('reports')) return;
+            const type = btn.getAttribute('data-report');
+            await apiGetProducts();
+            await apiGetSales();
+            await apiGetSuppliers();
 
-			let extra = {};
-			if (type === 'stock') {
-				extra.category = document.getElementById('stockCategoryFilter')?.value || '';
-			} else if (type === 'sales') {
-				extra.from = document.getElementById('salesDateFrom')?.value || '';
-				extra.to = document.getElementById('salesDateTo')?.value || '';
-			}
-			generateReportView(type, extra);
-		};
-	});
+            let extra = {};
+            if (type === 'stock') {
+                extra.category = document.getElementById('stockCategoryFilter')?.value || '';
+            } else if (type === 'sales') {
+                extra.from = document.getElementById('salesDateFrom')?.value || '';
+                extra.to = document.getElementById('salesDateTo')?.value || '';
+            }
+            generateReportView(type, extra);
+        };
+    });
 
     document.querySelectorAll('.download-report').forEach(btn => {
         btn.onclick = async () => {
@@ -53,30 +53,32 @@ document.addEventListener('DOMContentLoaded', () => {
         a.download = 'report.csv';
         a.click();
     };
-	if (window.location.hash === '#reports' || document.getElementById('reportsPage').classList.contains('active')) {
-		renderMonthlySalesChart();
-		renderTopProductsChart();
-	}
-	// Populate category filter on page load
-	const stockCatFilter = document.getElementById('stockCategoryFilter');
-	if (stockCatFilter) {
-		const populateCategories = async () => {
-			await apiGetProducts(1, 9999);
-			const cats = [...new Set(inventoryData.map(p => p.category).filter(Boolean))].sort();
-			cats.forEach(cat => {
-				const opt = document.createElement('option');
-				opt.value = cat;
-				opt.textContent = cat;
-				stockCatFilter.appendChild(opt);
-			});
-		};
-		populateCategories();
-	}
+
+    if (window.location.hash === '#reports' || document.getElementById('reportsPage').classList.contains('active')) {
+        renderMonthlySalesChart();
+        renderTopProductsChart();
+    }
+
+    // Populate category filter on page load
+    const stockCatFilter = document.getElementById('stockCategoryFilter');
+    if (stockCatFilter) {
+        const populateCategories = async () => {
+            await apiGetProducts(1, 9999);
+            const cats = [...new Set(inventoryData.map(p => p.category).filter(Boolean))].sort();
+            cats.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                stockCatFilter.appendChild(opt);
+            });
+        };
+        populateCategories();
+    }
 });
 
 function generateReportView(type, extra) {
     let title = '', html = '';
-    
+
     if (type === 'stock') {
         let filteredData = inventoryData;
         let categoryFilter = extra?.category || document.getElementById('stockCategoryFilter')?.value || '';
@@ -87,7 +89,6 @@ function generateReportView(type, extra) {
             title = 'Stock Summary – All Categories';
         }
 
-        // تجميع المنتجات حسب الفئة
         const grouped = {};
         filteredData.forEach(p => {
             const cat = p.category || 'Uncategorized';
@@ -130,7 +131,7 @@ function generateReportView(type, extra) {
         let filteredSales = salesData;
         const from = extra?.from || document.getElementById('salesDateFrom')?.value || '';
         const to = extra?.to || document.getElementById('salesDateTo')?.value || '';
-        
+
         if (from || to) {
             filteredSales = salesData.filter(s => {
                 const saleDate = new Date(s.date);
@@ -146,9 +147,23 @@ function generateReportView(type, extra) {
             title = 'Sales Report (All Time)';
         }
 
-        html = '<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%"><tr style="background:#6d28d9;color:white"><th>ID</th><th>Date</th><th>Customer</th><th>Items</th><th>Total</th></tr>';
-        filteredSales.forEach(s => html += `<tr><td>${s.id}</td><td>${s.date}</td><td>${s.customer}</td><td>${s.items}</td><td>${formatPrice(s.total)}</td></tr>`);
-        html += '</table>';
+        let totalItems = 0;
+        let totalAmount = 0;
+        let rows = '';
+        filteredSales.forEach(s => {
+            totalItems += s.items || 0;
+            totalAmount += s.total || 0;
+            rows += `<tr><td>${s.id}</td><td>${s.date}</td><td>${s.customer}</td><td>${s.items}</td><td>${formatPrice(s.total)}</td></tr>`;
+        });
+
+        html = `<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%">
+            <thead><tr style="background:#6d28d9;color:white"><th>ID</th><th>Date</th><th>Customer</th><th>Items</th><th>Total</th></tr></thead>
+            <tbody>${rows}</tbody>
+            <tfoot><tr style="background:#1a202c;color:#cbd5e0;font-weight:bold;">
+                <td colspan="3">Grand Total</td>
+                <td>${totalItems}</td>
+                <td>${formatPrice(totalAmount)}</td>
+            </tr></tfoot></table>`;
 
     } else if (type === 'value') {
         title = 'Inventory Value';
@@ -197,7 +212,6 @@ function renderMonthlySalesChart() {
     const ctx = document.getElementById('monthlySalesChart')?.getContext('2d');
     if (!ctx) return;
 
-    // تجميع المبيعات حسب الشهر (آخر 6 أشهر)
     const monthly = {};
     salesData.forEach(s => {
         const d = new Date(s.date);
@@ -230,11 +244,9 @@ function renderTopProductsChart() {
     const ctx = document.getElementById('topProductsChart')?.getContext('2d');
     if (!ctx) return;
 
-    // قراءة الفترة من حقول التصفية (إن وجدت)
     const from = document.getElementById('salesDateFrom')?.value || '';
     const to = document.getElementById('salesDateTo')?.value || '';
 
-    // فلترة المبيعات حسب الفترة (كما في generateReportView للنوع 'sales')
     let filteredSales = salesData;
     if (from || to) {
         filteredSales = salesData.filter(s => {
@@ -246,7 +258,6 @@ function renderTopProductsChart() {
         });
     }
 
-    // حساب أكثر 5 منتجات مبيعاً من المبيعات المفلترة
     const productSales = {};
     filteredSales.forEach(s => {
         const pid = Number(s.productId);
@@ -265,7 +276,6 @@ function renderTopProductsChart() {
         return;
     }
 
-    // تدمير المخطط السابق إذا وُجد لتجنب تراكب المخططات
     const existingChart = Chart.getChart(ctx);
     if (existingChart) existingChart.destroy();
 
