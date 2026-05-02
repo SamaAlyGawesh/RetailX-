@@ -184,6 +184,12 @@ function navigateToPage(pageId) {
     if (pageId === 'salesPage') renderSalesTable();
     if (pageId === 'suppliersPage') renderSuppliersTable();
     if (pageId === 'reportsPage') {
+        // تدمير المخططات القديمة أولاً (لتجنب تراكم المخططات الوهمية)
+        const monthlyChart = Chart.getChart('monthlySalesChart');
+        if (monthlyChart) monthlyChart.destroy();
+        const topChart = Chart.getChart('topProductsChart');
+        if (topChart) topChart.destroy();
+
         // استدعاء الرسوم البيانية بعد أن تصبح عناصر Canvas جاهزة
         setTimeout(() => {
             if (typeof renderMonthlySalesChart === 'function') {
@@ -192,7 +198,7 @@ function navigateToPage(pageId) {
             if (typeof renderTopProductsChart === 'function') {
                 renderTopProductsChart();
             }
-        }, 100);
+        }, 200);
     }
     
     window.scrollTo(0, 0);
