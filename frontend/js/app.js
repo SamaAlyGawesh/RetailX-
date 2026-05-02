@@ -91,7 +91,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Get Started button on home page
     safeBind('getStartedBtn', () => {
     if (appState.isAuthenticated) {
-        navigateToPage('dashboardPage');   // أو 'homePage' إذا أردت
+        if (hasPermission('dashboard')) {
+            navigateToPage('dashboardPage');
+        } else {
+            navigateToPage('homePage');   // أو صفحة بديلة لو حابب
+        }
     } else {
         navigateToPage('authPage');
     }
