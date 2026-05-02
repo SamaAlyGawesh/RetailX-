@@ -107,7 +107,7 @@ function applyInventoryFilters() {
     const reorder = document.getElementById('filterReorder')?.value;
     const price = document.getElementById('filterPrice')?.value;
     const status = document.getElementById('filterStatus')?.value;
-
+	/*
     let filtered = currentInventory.filter(p => {
         const matchName = name ? p.name.toLowerCase().includes(name) : true;
         const matchSKU = sku ? p.sku.toLowerCase().includes(sku) : true;
@@ -121,7 +121,7 @@ function applyInventoryFilters() {
         else if (status === 'out') matchStatus = p.quantity === 0;
         return matchName && matchSKU && matchCat && matchQty && matchReorder && matchPrice && matchStatus;
     });
-
+	*/
     // ترتيب (لأن البيانات قد لا تكون مرتبة حسب حقل الفرز من الخادم)
     filtered.sort((a, b) => {
         let valA = a[inventorySort.field];
