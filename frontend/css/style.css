@@ -503,6 +503,10 @@ body.light-theme input[type="date"] {
     transition: color 0.2s;
 }
 
+#invoiceDetailModal .inventory-table {
+    min-width: auto;
+    width: 100%;
+}
 
 @media (max-width: 480px) {
     .container { padding: 0 15px; }
