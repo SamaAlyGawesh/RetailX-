@@ -446,17 +446,48 @@
         </div>
     </div>
 
-    <!-- New Sale Modal -->
-    <div class="modal" id="newSaleModal">
-        <div class="modal-content">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 20px;"><h3 id="newSaleModalTitle">Create New Sale</h3><button class="close-modal" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button></div>
-            <div class="form-group"><label id="customerNameLabel">Customer Name</label><input type="text" id="saleCustomer" class="form-control" value="Walk-in Customer"></div>
-            <div class="form-group"><label id="productLabel">Product</label><select id="saleProduct" class="form-control"></select></div>
-            <div class="form-group"><label id="quantityLabel">Quantity</label><input type="number" id="saleQuantity" class="form-control" value="1" min="1"></div>
-            <div class="form-group"><label id="totalAmountLabel">Total Amount: <span id="currencySymbolDisplay">$</span><span id="saleTotal">0.00</span></label></div>
-            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;"><button class="btn btn-outline close-modal"><span id="cancelSaleBtnText">Cancel</span></button><button class="btn btn-success" id="processSale"><span id="processSaleBtnText">Process Sale</span></button></div>
-        </div>
-    </div>
+    <!-- New Sale Modal (Multi-Product) -->
+	<div class="modal" id="newSaleModal">
+		<div class="modal-content" style="max-width: 700px;">
+			<div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+				<h3 id="newSaleModalTitle">Create New Sale</h3>
+				<button class="close-modal" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button>
+			</div>
+			<div class="form-group"><label>Customer Name</label><input type="text" id="saleCustomer" class="form-control" value="Walk-in Customer"></div>
+
+			<!-- جدول المنتجات -->
+			<table class="sale-items-table" id="saleItemsTable">
+				<thead>
+					<tr>
+						<th>Product</th>
+						<th style="width:80px;">Qty</th>
+						<th>Unit Price</th>
+						<th>Total</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody id="saleItemsBody">
+					<!-- صفوف ديناميكية -->
+				</tbody>
+			</table>
+			<button class="btn btn-sm btn-outline" id="addSaleItemBtn" style="margin-bottom:15px;"><i class="fas fa-plus"></i> Add Product</button>
+
+			<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:15px;">
+				<div class="form-group"><label>Discount (%)</label><input type="number" id="saleDiscount" class="form-control" value="0" min="0" max="100" oninput="updateSaleTotal()"></div>
+				<div class="form-group"><label>Payment Method</label><select id="salePaymentMethod" class="form-control"><option>Cash</option><option>Card</option><option>Credit</option></select></div>
+			</div>
+			<div class="form-group"><label>Notes</label><input type="text" id="saleNotes" class="form-control" placeholder="Any notes..."></div>
+
+			<div style="text-align:right; font-size:18px; margin-bottom:15px;">
+				Total: <strong id="saleGrandTotal">$0.00</strong>
+			</div>
+
+			<div style="display: flex; gap: 10px; justify-content: flex-end;">
+				<button class="btn btn-outline close-modal">Cancel</button>
+				<button class="btn btn-success" id="processSale">Process Sale</button>
+			</div>
+		</div>
+	</div>
 
     <!-- Edit Product Stock Modal -->
     <div class="modal" id="editProductModal">

@@ -102,3 +102,7 @@ async function apiGetUsers(page = 1, limit = 15) {
 async function apiUpdateUserRole(userId, newRole) {
     return api('PATCH', `/users/${userId}/role`, { role: newRole });
 }
+
+async function apiCreateMultiSale(customer, items, discount, paymentMethod, notes, cashier) {
+    return api('POST', '/sales/multi', { customer, items, discount, paymentMethod, notes, cashier });
+}

@@ -1,4 +1,4 @@
-// sales.js - Sales processing with filtering, sorting & pagination
+// sales.js - Multi-product sales with discount, payment method & notes
 
 let currentSales = [];
 let salesSort = { field: 'date', order: 'desc' };
@@ -6,47 +6,80 @@ let currentSalesPage = 1;
 const salesLimit = 15;
 let totalSalesPages = 1;
 
+// سلة المنتجات المؤقتة للفاتورة الحالية
+let saleItems = []; // [{ productId, name, price, quantity }]
+
 document.addEventListener('DOMContentLoaded', () => {
-    // New sale button (بدون تغيير)
+
+    // ========== فتح مودال بيع جديد ==========
     document.getElementById('addNewSale').onclick = async function(e) {
         e.preventDefault();
         if (!appState.isAuthenticated || !hasPermission('sales')) return;
-        //await apiGetProducts();
-		const allProds = await apiGetProducts(1, 9999);
-		inventoryData = allProds.products; // نحدث المخزون المحلي بكل المنتجات
-        const available = inventoryData.filter(p => p.quantity > 0);
-        if (available.length === 0) {
-            alert('No products available with quantity > 0. Please add stock first.');
-            return;
-        }
 
-        const select = document.getElementById('saleProduct');
-        select.innerHTML = available.map(p =>
-            `<option value="${p.id}" data-price="${p.price}">${p.name} - ${formatPrice(p.price)} (Stock: ${p.quantity})</option>`
-        ).join('');
-        document.getElementById('saleQuantity').value = 1;
+        await apiGetProducts(1, 9999);   // جميع المنتجات
+        saleItems = [];                  // تفريغ السلة القديمة
         document.getElementById('saleCustomer').value = 'Walk-in Customer';
-        const totEl = document.getElementById('saleTotal');
-        if (totEl) totEl.innerText = available[0].price.toFixed(2);
-        const currEl = document.getElementById('currencySymbolDisplay');
-        if (currEl) currEl.innerText = appState.currency;
+        document.getElementById('saleDiscount').value = 0;
+        document.getElementById('salePaymentMethod').value = 'Cash';
+        document.getElementById('saleNotes').value = '';
+
+        // أفرغ الجدول وأضف أول صف
+        document.getElementById('saleItemsBody').innerHTML = '';
+        addSaleItemRow();
+        updateSaleTotal();
         document.getElementById('newSaleModal').classList.add('active');
     };
 
-    document.getElementById('saleQuantity').addEventListener('input', updateSaleTotal);
-    document.getElementById('saleProduct').addEventListener('change', updateSaleTotal);
+    // ========== زر إضافة صف جديد ==========
+    document.getElementById('addSaleItemBtn').onclick = () => addSaleItemRow();
 
+    // ========== حذف صف ==========
+    document.getElementById('saleItemsBody').addEventListener('click', (e) => {
+        if (e.target.closest('.remove-sale-item')) {
+            const row = e.target.closest('tr');
+            const index = Array.from(row.parentNode.children).indexOf(row);
+            saleItems.splice(index, 1);
+            row.remove();
+            updateSaleTotal();
+        }
+    });
+
+    // ========== تغيير المنتج / الكمية ==========
+    document.getElementById('saleItemsBody').addEventListener('input', (e) => {
+        const row = e.target.closest('tr');
+        if (!row) return;
+        const index = Array.from(row.parentNode.children).indexOf(row);
+        if (e.target.classList.contains('sale-product-select')) {
+            const opt = e.target.selectedOptions[0];
+            saleItems[index].productId = parseInt(e.target.value);
+            saleItems[index].name = opt.text;
+            saleItems[index].price = parseFloat(opt.dataset.price);
+        } else if (e.target.classList.contains('sale-qty-input')) {
+            saleItems[index].quantity = parseInt(e.target.value) || 1;
+        }
+        updateRowTotal(row, index);
+        updateSaleTotal();
+    });
+
+    // ========== تنفيذ البيع ==========
     document.getElementById('processSale').onclick = async function(e) {
         e.preventDefault();
         if (!appState.isAuthenticated || !hasPermission('sales')) return;
-        const select = document.getElementById('saleProduct');
-        const productId = parseInt(select.value);
-        const qty = parseInt(document.getElementById('saleQuantity').value);
+        if (saleItems.length === 0) return alert('Add at least one product.');
+
         const customer = document.getElementById('saleCustomer').value || 'Walk-in Customer';
-        if (isNaN(qty) || qty < 1) return alert('Invalid quantity');
+        const discount = parseFloat(document.getElementById('saleDiscount').value) || 0;
+        const paymentMethod = document.getElementById('salePaymentMethod').value;
+        const notes = document.getElementById('saleNotes').value;
+
+        const items = saleItems.map(item => ({
+            productId: item.productId,
+            quantity: item.quantity
+        }));
+
         try {
-            await apiCreateSale(customer, productId, qty, appState.currentUser.name);
-            await apiGetProducts();
+            await apiCreateMultiSale(customer, items, discount, paymentMethod, notes, appState.currentUser.name);
+            await apiGetProducts(1, 9999); // تحديث المخزون
             await loadSalesPage(currentSalesPage);
             renderInventoryTable();
             renderDashboardInventory();
@@ -56,14 +89,14 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) { alert(err.message); }
     };
 
-    // Filter events (reset page to 1)
+    // ========== أحداث الفلاتر ==========
     ['filterSaleDate','filterTransID','filterCustomer','filterItems','filterTotal','filterSaleStatus'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('input', () => { currentSalesPage = 1; loadSalesPage(1); });
     });
     document.getElementById('filterSaleStatus')?.addEventListener('change', () => { currentSalesPage = 1; loadSalesPage(1); });
 
-    // Sorting
+    // ========== الفرز ==========
     document.querySelectorAll('#salesTableMain th[data-sort]').forEach(th => {
         th.style.cursor = 'pointer';
         th.addEventListener('click', () => {
@@ -75,15 +108,59 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Initial load
-    if (appState.isAuthenticated) {
-    loadSalesPage(1);
-	}
+    if (appState.isAuthenticated) loadSalesPage(1);
 });
 
+// ========== دوال السلة ==========
+function addSaleItemRow() {
+    const productOptions = inventoryData
+        .map(p => `<option value="${p.id}" data-price="${p.price}">${p.name} - ${formatPrice(p.price)} (${p.quantity} in stock)</option>`)
+        .join('');
+
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td><select class="form-control sale-product-select" style="width:100%;">${productOptions}</select></td>
+        <td><input type="number" class="form-control sale-qty-input" value="1" min="1"></td>
+        <td class="unit-price">$0.00</td>
+        <td class="row-total">$0.00</td>
+        <td><button class="btn btn-sm btn-danger remove-sale-item"><i class="fas fa-times"></i></button></td>
+    `;
+    document.getElementById('saleItemsBody').appendChild(row);
+
+    const select = row.querySelector('.sale-product-select');
+    const opt = select.selectedOptions[0];
+    const price = parseFloat(opt?.dataset.price) || 0;
+
+    saleItems.push({
+        productId: parseInt(select.value),
+        name: opt?.text || '',
+        price: price,
+        quantity: 1
+    });
+
+    row.querySelector('.unit-price').innerText = formatPrice(price);
+    row.querySelector('.row-total').innerText = formatPrice(price);
+    if (saleItems.length === 1) updateSaleTotal();
+}
+
+function updateRowTotal(row, index) {
+    const item = saleItems[index];
+    if (!item) return;
+    const total = item.price * item.quantity;
+    row.querySelector('.row-total').innerText = formatPrice(total);
+    row.querySelector('.unit-price').innerText = formatPrice(item.price);
+}
+
+function updateSaleTotal() {
+    let subtotal = saleItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const discount = parseFloat(document.getElementById('saleDiscount')?.value) || 0;
+    const grandTotal = subtotal - (subtotal * discount / 100);
+    document.getElementById('saleGrandTotal').innerText = formatPrice(grandTotal > 0 ? grandTotal : 0);
+}
+
+// ========== دوال الصفحة والجدول (باقية دون تغيير كبير) ==========
 async function loadSalesPage(page) {
     currentSalesPage = page;
-    // استخدام fetch مباشر بدلاً من apiGetSales عشان ما نغيرش salesData العالمية
     const data = await api('GET', `/sales?page=${page}&limit=${salesLimit}`);
     currentSales = data.sales;
     totalSalesPages = data.pages;
@@ -108,7 +185,6 @@ function applySalesFilters() {
         return matchDate && matchID && matchCust && matchItems && matchTotal && matchStatus;
     });
 
-    // Sort
     filtered.sort((a, b) => {
         let valA = a[salesSort.field];
         let valB = b[salesSort.field];
@@ -120,13 +196,7 @@ function applySalesFilters() {
     });
 
     renderSalesTableHTML(filtered);
-    renderPagination(currentSalesPage, totalSalesPages, 'salesPagination', (page) => {
-        loadSalesPage(page);
-    });
-}
-
-async function renderSalesTable() {
-    await loadSalesPage(currentSalesPage);
+    renderPagination(currentSalesPage, totalSalesPages, 'salesPagination', (page) => loadSalesPage(page));
 }
 
 function renderSalesTableHTML(sales) {
@@ -156,14 +226,11 @@ function updateSalesSortArrows() {
     if (active) active.textContent = salesSort.order === 'asc' ? ' ▲' : ' ▼';
 }
 
-// Keep existing functions
-function updateSaleTotal() {
-    const select = document.getElementById('saleProduct');
-    const qty = parseInt(document.getElementById('saleQuantity').value) || 1;
-    const price = parseFloat(select.options[select.selectedIndex]?.getAttribute('data-price') || 0);
-    document.getElementById('saleTotal').innerText = (price * qty).toFixed(2);
+async function renderSalesTable() {
+    await loadSalesPage(currentSalesPage);
 }
 
+// ========== دوال أخرى ==========
 window.deleteSale = async function(id) {
     if (appState.currentUser?.role !== 'administrator') return;
     if (!confirm('Delete this sale?')) return;
@@ -174,90 +241,11 @@ window.deleteSale = async function(id) {
     } catch (err) { alert(err.message); }
 };
 
+// شرط بسيط للطباعة (يمكن تطويره لاحقاً)
 window.printInvoice = function(id) {
-    let sale = salesData.find(s => s.id === id);
-    
-    // نحاول نجيب اسم المنتج من inventoryData لو productId موجود
-    let productName = 'Product Purchase';
-    if (sale && sale.productId && inventoryData) {
-        const product = inventoryData.find(p => p.id === sale.productId);
-        if (product) {
-            productName = product.name;
-        }
-    }
-
-    if (sale) {
-        let win = window.open('', '_blank', 'width=800,height=600');
-        win.document.write(`
-            <html><head><title>Invoice ${sale.id}</title>
-            <style>
-                body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; background: #f5f5f5; }
-                .invoice { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
-                .header { text-align: center; border-bottom: 2px solid #6d28d9; padding-bottom: 20px; margin-bottom: 20px; }
-                .header h1 { color: #6d28d9; margin: 0; font-size: 32px; }
-                .header p { color: #666; margin: 5px 0 0; }
-                .details { display: flex; justify-content: space-between; margin-bottom: 30px; }
-                .details div { font-size: 14px; line-height: 1.6; }
-                .details strong { color: #333; }
-                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-                th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
-                th { background: #f8f8f8; font-weight: 600; }
-                .total { text-align: right; font-size: 20px; font-weight: bold; color: #6d28d9; margin-top: 20px; }
-                .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; }
-                .footer p { margin: 5px 0; }
-                button { margin-top: 20px; padding: 12px 24px; background: #6d28d9; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
-                button:hover { background: #5b21b6; }
-                @media print { body { background: white; } .invoice { box-shadow: none; } button { display: none; } }
-            </style>
-            </head><body>
-            <div class="invoice">
-                <div class="header">
-                    <h1>RetailX</h1>
-                    <p>Smart Inventory Management</p>
-                </div>
-                <div class="details">
-                    <div>
-                        <strong>Invoice Number:</strong> ${sale.id}<br>
-                        <strong>Date:</strong> ${sale.date}<br>
-                        <strong>Cashier:</strong> ${sale.cashier || 'N/A'}
-                    </div>
-                    <div style="text-align: right;">
-                        <strong>Customer:</strong> ${sale.customer}<br>
-                        <strong>Status:</strong> <span style="color: #10b981;">${sale.status}</span>
-                    </div>
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Description</th>
-                            <th>Quantity</th>
-                            <th>Unit Price</th>
-                            <th>Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>${productName}</td>
-                            <td>${sale.items}</td>
-                            <td>${appState.currency}${(sale.total / sale.items).toFixed(2)}</td>
-                            <td>${appState.currency}${sale.total.toFixed(2)}</td>
-                        </tr>
-                    </tbody>
-                </table>
-                <div class="total">
-                    Total Amount: ${appState.currency}${sale.total.toFixed(2)}
-                </div>
-                <div class="footer">
-                    <p>Thank you for shopping with RetailX!</p>
-                    <p>support@retailx.com | Cairo, Egypt</p>
-                </div>
-            </div>
-            <div style="text-align:center;">
-                <button onclick="window.print()">🖨️ Print Invoice</button>
-                <button onclick="window.close()" style="background: #f5f5f5; color: #333; margin-left: 10px;">Close</button>
-            </div>
-            </body></html>
-        `);
-        win.document.close();
-    }
+    const sale = salesData.find(s => s.id === id);
+    if (!sale) return;
+    const win = window.open('', '_blank');
+    win.document.write(`<h1>Invoice ${sale.id}</h1><pre>${JSON.stringify(sale, null, 2)}</pre><button onclick="window.print()">Print</button>`);
+    win.document.close();
 };

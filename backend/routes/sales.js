@@ -52,4 +52,49 @@ router.delete('/:id', requireRole('administrator'), (req, res) => {
     res.json({ success: true });
 });
 
+
+// POST /api/sales/multi
+router.post('/multi', requireRole('administrator', 'cashier', 'sales'), (req, res) => {
+    const { customer, items, discount, paymentMethod, notes, cashier } = req.body;
+    if (!items || !Array.isArray(items) || items.length === 0)
+        return res.status(400).json({ error: 'Items array required' });
+
+    const db = getDB();
+    const saleDate = new Date().toLocaleString();
+    const saleId = 'TXN-' + Date.now();
+
+    let subtotal = 0;
+    let totalItemsCount = 0;
+
+    for (const item of items) {
+        const product = db.prepare('SELECT * FROM products WHERE id = ?').get(item.productId);
+        if (!product) return res.status(404).json({ error: `Product ${item.productId} not found` });
+        if (product.quantity < item.quantity) {
+            return res.status(400).json({ error: `Insufficient stock for ${product.name}` });
+        }
+        subtotal += product.price * item.quantity;
+        totalItemsCount += item.quantity;
+    }
+
+    const discountAmount = (subtotal * (discount || 0)) / 100;
+    const grandTotal = subtotal - discountAmount;
+
+    // تسجيل كل منتج على حدة في جدول sales
+    const insertSale = db.prepare('INSERT INTO sales (id, date, customer, items, total, status, cashier, productId) VALUES (?,?,?,?,?,?,?,?)');
+    for (const item of items) {
+        const product = db.prepare('SELECT * FROM products WHERE id = ?').get(item.productId);
+        db.prepare('UPDATE products SET quantity = quantity - ? WHERE id = ?').run(item.quantity, item.productId);
+        insertSale.run(saleId + '-' + item.productId, saleDate, customer, item.quantity, product.price * item.quantity, 'Completed', cashier, item.productId);
+    }
+
+    // نشاط
+    db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run(
+        'sale',
+        `Multi-sale ${saleId}: ${totalItemsCount} items, total ${grandTotal}`,
+        saleDate
+    );
+
+    res.status(201).json({ id: saleId, total: grandTotal });
+});
+
 module.exports = router;
