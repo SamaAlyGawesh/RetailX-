@@ -211,19 +211,21 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('saleDate').value = local;
     };
 	
-	// ملء فلتر الفئة في جدول المبيعات
-	const populateSaleCategoryFilter = async () => {
-		await apiGetProducts(1, 9999);
-		const categories = [...new Set(inventoryData.map(p => p.category).filter(Boolean))].sort();
-		const select = document.getElementById('filterSaleCategory');
-		if (select) {
-			select.innerHTML = '<option value="">All</option>';
-			categories.forEach(c => {
-				select.innerHTML += `<option value="${c}">${c}</option>`;
-			});
-		}
-	};
-	populateSaleCategoryFilter();
+		// ملء فلتر الفئة في جدول المبيعات (فقط إذا كان المستخدم مسجلاً)
+	if (appState.isAuthenticated) {
+		const populateSaleCategoryFilter = async () => {
+			await apiGetProducts(1, 9999);
+			const categories = [...new Set(inventoryData.map(p => p.category).filter(Boolean))].sort();
+			const select = document.getElementById('filterSaleCategory');
+			if (select) {
+				select.innerHTML = '<option value="">All</option>';
+				categories.forEach(c => {
+					select.innerHTML += `<option value="${c}">${c}</option>`;
+				});
+			}
+		};
+		populateSaleCategoryFilter();
+	}
 	document.getElementById('filterSaleCategory').addEventListener('change', () => {
 		currentSalesPage = 1;
 		loadSalesPage(1);
