@@ -128,43 +128,54 @@ function generateReportView(type, extra) {
         html += '</table>';
 
     } else if (type === 'sales') {
-        // فلترة حسب النطاق الزمني
-        let filteredSales = salesData;
-        const from = extra?.from || document.getElementById('salesDateFrom')?.value || '';
-        const to = extra?.to || document.getElementById('salesDateTo')?.value || '';
+		// فلترة حسب النطاق الزمني
+		let filteredSales = salesData;
+		const from = extra?.from || document.getElementById('salesDateFrom')?.value || '';
+		const to = extra?.to || document.getElementById('salesDateTo')?.value || '';
 
-        if (from || to) {
-            filteredSales = salesData.filter(s => {
-                const saleDate = new Date(s.date);
-                if (isNaN(saleDate.getTime())) return false;
-                if (from && saleDate < new Date(from)) return false;
-                if (to && saleDate > new Date(to + 'T23:59:59')) return false;
-                return true;
-            });
-            title = 'Sales Report';
-            if (from) title += ` from ${from}`;
-            if (to) title += ` to ${to}`;
-        } else {
-            title = 'Sales Report (All Time)';
-        }
+		if (from || to) {
+			filteredSales = salesData.filter(s => {
+				const saleDate = new Date(s.date);
+				if (isNaN(saleDate.getTime())) return false;
+				if (from && saleDate < new Date(from)) return false;
+				if (to && saleDate > new Date(to + 'T23:59:59')) return false;
+				return true;
+			});
+			title = 'Sales Report';
+			if (from) title += ` from ${from}`;
+			if (to) title += ` to ${to}`;
+		} else {
+			title = 'Sales Report (All Time)';
+		}
 
-        let totalItems = 0;
-        let totalAmount = 0;
-        let rows = '';
-        filteredSales.forEach(s => {
-            totalItems += s.items || 0;
-            totalAmount += s.total || 0;
-            rows += `<tr><td>${s.id}</td><td>${s.date}</td><td>${s.customer}</td><td>${s.items}</td><td>${formatPrice(s.total)}</td></tr>`;
-        });
+		// تجميع الفواتير
+		const grouped = groupSales(filteredSales);
 
-        html = `<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%">
-            <thead><tr style="background:#6d28d9;color:white"><th>ID</th><th>Date</th><th>Customer</th><th>Items</th><th>Total</th></tr></thead>
-            <tbody>${rows}</tbody>
-            <tfoot><tr style="background:#1a202c;color:#cbd5e0;font-weight:bold;">
-                <td colspan="3">Grand Total</td>
-                <td>${totalItems}</td>
-                <td>${formatPrice(totalAmount)}</td>
-            </tr></tfoot></table>`;
+		let grandTotal = 0;
+		let totalItems = 0;
+		let rows = '';
+		grouped.forEach(g => {
+			totalItems += g.items;
+			grandTotal += g.total;
+			rows += `<tr>
+				<td>${g.id}</td>
+				<td>${g.date}</td>
+				<td>${g.customer}</td>
+				<td>${g.items}</td>
+				<td>${formatPrice(g.total)}</td>
+			</tr>`;
+		});
+
+		html = `<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%">
+			<thead><tr style="background:#6d28d9;color:white">
+				<th>ID</th><th>Date</th><th>Customer</th><th>Items</th><th>Total</th>
+			</tr></thead>
+			<tbody>${rows}</tbody>
+			<tfoot><tr style="background:#1a202c;color:#cbd5e0;font-weight:bold;">
+				<td colspan="3">Grand Total</td>
+				<td>${totalItems}</td>
+				<td>${formatPrice(grandTotal)}</td>
+			</tr></tfoot></table>`;
 
     } else if (type === 'value') {
 		title = 'Inventory Value';
