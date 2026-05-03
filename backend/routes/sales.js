@@ -45,10 +45,30 @@ router.post('/', requireRole('administrator', 'cashier', 'sales'), (req, res) =>
     res.status(201).json({ id, total });
 });
 
+// الجديد – يرجع الكمية للمنتج إذا كان ProductId موجود
 router.delete('/:id', requireRole('administrator'), (req, res) => {
     const db = getDB();
-    db.prepare('DELETE FROM sales WHERE id = ?').run(req.params.id);
-    db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run('alert', `Sale ${req.params.id} deleted`, new Date().toLocaleString());
+    const saleId = req.params.id;
+
+    // 1. نجيب الفاتورة
+    const sale = db.prepare('SELECT * FROM sales WHERE id = ?').get(saleId);
+    if (!sale) {
+        return res.status(404).json({ error: 'Sale not found' });
+    }
+
+    // 2. لو الفاتورة فيها productId، نرجع الكمية للمنتج
+    if (sale.productId) {
+        db.prepare('UPDATE products SET quantity = quantity + ? WHERE id = ?')
+          .run(sale.items, sale.productId);
+    }
+
+    // 3. نحذف الفاتورة
+    db.prepare('DELETE FROM sales WHERE id = ?').run(saleId);
+
+    // 4. تسجيل نشاط
+    db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)')
+      .run('alert', `Sale ${saleId} deleted and stock restored`, new Date().toLocaleString());
+
     res.json({ success: true });
 });
 
