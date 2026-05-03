@@ -8,6 +8,7 @@ let totalSalesPages = 1;
 
 // سلة المنتجات المؤقتة للفاتورة الحالية
 let saleItems = []; // [{ productId, name, price, quantity }]
+let isProcessingSale = false; // مانع تكرار الضغط
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -68,6 +69,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // ========== تنفيذ البيع ==========
     document.getElementById('processSale').onclick = async function(e) {
         e.preventDefault();
+		// منع الضغط المتكرر
+		if (isProcessingSale) return;
         if (!appState.isAuthenticated || !hasPermission('sales')) return;
 
         // ---------- التحققات ----------
@@ -129,21 +132,31 @@ document.addEventListener('DOMContentLoaded', () => {
 			alert('Future date is not allowed for sales.');
 			return;
 		}
-        const items = saleItems.map(item => ({
-            productId: item.productId,
-            quantity: item.quantity
-        }));
-
-        try {
-            await apiCreateMultiSale(customer, items, discount, paymentMethod, notes, appState.currentUser.name, utcDateStr);
-            await apiGetProducts(1, 9999); // تحديث المخزون
-            await loadSalesPage(currentSalesPage);
-            renderInventoryTable();
-            renderDashboardInventory();
-            updateDashboardStats();
-            document.getElementById('newSaleModal').classList.remove('active');
-            alert('Sale completed!');
-        } catch (err) { alert(err.message); }
+		// تعطيل الزر وتغيير النص
+		isProcessingSale = true;
+		const btn = document.getElementById('processSale');
+		btn.disabled = true;
+		btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+		
+        const items = saleItems.map(item => ({ productId: item.productId, quantity: item.quantity }));
+    
+		try {
+			await apiCreateMultiSale(customer, items, discount, paymentMethod, notes, appState.currentUser.name, utcDateStr);
+			await apiGetProducts(1, 9999);
+			await loadSalesPage(currentSalesPage);
+			renderInventoryTable();
+			renderDashboardInventory();
+			updateDashboardStats();
+			document.getElementById('newSaleModal').classList.remove('active');
+			alert('Sale completed!');
+		} catch (err) {
+			alert(err.message);
+		} finally {
+			// إعادة الزر لحالته الأصلية مهما حدث
+			isProcessingSale = false;
+			btn.disabled = false;
+			btn.innerHTML = 'Process Sale';
+		}
     };
 
     // ========== أحداث الفلاتر ==========
