@@ -81,14 +81,15 @@ router.post('/multi', requireRole('administrator', 'cashier', 'sales'), (req, re
 
     const db = getDB();
     let saleDate = req.body.saleDate || new Date().toLocaleString();
-	// إذا أُرسل تاريخ مخصص، تأكد من أنه صالح
 	if (req.body.saleDate) {
 		const parsed = new Date(req.body.saleDate);
 		if (!isNaN(parsed.getTime())) {
-			saleDate = parsed.toLocaleString(); // تحويله لنفس الصيغة المستخدمة
-		}
-		if (parsed > new Date()) {
-			return res.status(400).json({ error: 'Future date is not allowed' });
+			saleDate = parsed.toLocaleString();
+			// السماح بفارق دقيقة واحدة فقط
+			const now = new Date();
+			if (parsed.getTime() > now.getTime() + 60000) {
+				return res.status(400).json({ error: 'Future date is not allowed' });
+			}
 		}
 	}
     const saleId = 'TXN-' + Date.now();
