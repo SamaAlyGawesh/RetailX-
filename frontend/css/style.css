@@ -496,6 +496,14 @@ body.light-theme input[type="date"] {
     overflow-y: auto;
     max-width: 850px;
 }
+
+.stock-info {
+    font-weight: 600;
+    text-align: center;
+    transition: color 0.2s;
+}
+
+
 @media (max-width: 480px) {
     .container { padding: 0 15px; }
     .stat-card .value { font-size: 1.5rem; }

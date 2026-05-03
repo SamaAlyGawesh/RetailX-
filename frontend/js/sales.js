@@ -64,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 quantity: saleItems[index].quantity || 1
             };
             refreshAllRows();
+			updateStockCell(row, saleItems[index].productId);
         } else if (e.target.classList.contains('sale-qty-input')) {
             saleItems[index].quantity = parseInt(e.target.value) || 1;
         }
@@ -188,13 +189,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function addSaleItemRow() {
     const row = document.createElement('tr');
-    // بناء قائمة الفئات الفريدة من inventoryData
     const categories = [...new Set(inventoryData.map(p => p.category).filter(Boolean))].sort();
     const catOptions = ['<option value="">All</option>', ...categories.map(c => `<option value="${c}">${c}</option>`)].join('');
 
     row.innerHTML = `
         <td><select class="form-control sale-product-select" style="width:100%;"></select></td>
         <td><select class="form-control sale-category-select" style="width:100%;">${catOptions}</select></td>
+        <td class="stock-info" style="text-align:center; font-weight:600;">-</td>
         <td><input type="number" class="form-control sale-qty-input" value="1" min="1"></td>
         <td class="unit-price">$0.00</td>
         <td class="row-total">$0.00</td>
@@ -202,12 +203,9 @@ function addSaleItemRow() {
     `;
     document.getElementById('saleItemsBody').appendChild(row);
 
-    // إضافة عنصر مبدئي إلى saleItems
     saleItems.push({ productId: null, name: '', price: 0, quantity: 1, category: '' });
-
-    // تحديث الخيارات بناءً على الفئة المختارة (الافتراضية "All")
     refreshSingleRowCategory(row, saleItems.length - 1);
-    // تعيين أول منتج
+
     const select = row.querySelector('.sale-product-select');
     if (select.options.length > 0) {
         select.selectedIndex = 0;
@@ -222,14 +220,13 @@ function addSaleItemRow() {
         };
         row.querySelector('.unit-price').innerText = formatPrice(saleItems[idx].price);
         row.querySelector('.row-total').innerText = formatPrice(saleItems[idx].price);
+        updateStockCell(row, saleItems[idx].productId);
     }
 
-    // ربط تغيير الفئة بتحديث المنتجات
     const catSelect = row.querySelector('.sale-category-select');
     catSelect.addEventListener('change', () => {
         const rowIndex = Array.from(row.parentNode.children).indexOf(row);
         refreshSingleRowCategory(row, rowIndex);
-        // إعادة تعيين المنتج الأول
         const prodSelect = row.querySelector('.sale-product-select');
         if (prodSelect.options.length > 0) {
             prodSelect.selectedIndex = 0;
@@ -379,6 +376,7 @@ function refreshSingleRowCategory(row, index) {
         .join('');
 
     prodSelect.innerHTML = optionsHtml;
+	updateStockCell(row, saleItems[index]?.productId);
 }
 
 function refreshAllRows() {
@@ -386,4 +384,18 @@ function refreshAllRows() {
     rows.forEach((row, index) => {
         refreshSingleRowCategory(row, index);
     });
+}
+
+function updateStockCell(row, productId) {
+    const stockCell = row.querySelector('.stock-info');
+    if (!stockCell) return;
+    const product = inventoryData.find(p => p.id === productId);
+    if (product) {
+        stockCell.textContent = product.quantity;
+        if (product.quantity === 0) stockCell.style.color = 'var(--danger)';
+        else if (product.quantity <= product.reorderLevel) stockCell.style.color = 'var(--warning)';
+        else stockCell.style.color = 'var(--secondary)';
+    } else {
+        stockCell.textContent = '-';
+    }
 }
