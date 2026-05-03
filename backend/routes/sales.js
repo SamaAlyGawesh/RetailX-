@@ -80,7 +80,14 @@ router.post('/multi', requireRole('administrator', 'cashier', 'sales'), (req, re
         return res.status(400).json({ error: 'Items array required' });
 
     const db = getDB();
-    const saleDate = new Date().toLocaleString();
+    let saleDate = req.body.saleDate || new Date().toLocaleString();
+	// إذا أُرسل تاريخ مخصص، تأكد من أنه صالح
+	if (req.body.saleDate) {
+		const parsed = new Date(req.body.saleDate);
+		if (!isNaN(parsed.getTime())) {
+			saleDate = parsed.toLocaleString(); // تحويله لنفس الصيغة المستخدمة
+		}
+	}
     const saleId = 'TXN-' + Date.now();
 
     let subtotal = 0;

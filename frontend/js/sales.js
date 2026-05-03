@@ -25,6 +25,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // أفرغ الجدول وأضف أول صف
         document.getElementById('saleItemsBody').innerHTML = '';
+        // تعبئة التاريخ الحالي تلقائياً
+        const now = new Date();
+        const localDatetime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        document.getElementById('saleDate').value = localDatetime;
         addSaleItemRow();
         updateSaleTotal();
         document.getElementById('newSaleModal').classList.add('active');
@@ -62,68 +66,69 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ========== تنفيذ البيع ==========
-	document.getElementById('processSale').onclick = async function(e) {
-		e.preventDefault();
-		if (!appState.isAuthenticated || !hasPermission('sales')) return;
+    document.getElementById('processSale').onclick = async function(e) {
+        e.preventDefault();
+        if (!appState.isAuthenticated || !hasPermission('sales')) return;
 
-		// ---------- التحققات ----------
-		// 1. التأكد من وجود عنصر واحد على الأقل في السلة
-		if (saleItems.length === 0) {
-			alert('Add at least one product.');
-			return;
-		}
+        // ---------- التحققات ----------
+        // 1. التأكد من وجود عنصر واحد على الأقل في السلة
+        if (saleItems.length === 0) {
+            alert('Add at least one product.');
+            return;
+        }
 
-		// 2. التحقق من صحة كل عنصر
-		for (let i = 0; i < saleItems.length; i++) {
-			const item = saleItems[i];
-			if (!item.productId) {
-				alert(`Please select a product for row ${i + 1}.`);
-				return;
-			}
-			if (!item.quantity || item.quantity < 1) {
-				alert(`Quantity for row ${i + 1} must be at least 1.`);
-				return;
-			}
-			// التأكد من وجود مخزون كافٍ (اختياري)
-			const product = inventoryData.find(p => p.id === item.productId);
-			if (product && item.quantity > product.quantity) {
-				alert(`${product.name} has only ${product.quantity} in stock. Please reduce the quantity.`);
-				return;
-			}
-		}
+        // 2. التحقق من صحة كل عنصر
+        for (let i = 0; i < saleItems.length; i++) {
+            const item = saleItems[i];
+            if (!item.productId) {
+                alert(`Please select a product for row ${i + 1}.`);
+                return;
+            }
+            if (!item.quantity || item.quantity < 1) {
+                alert(`Quantity for row ${i + 1} must be at least 1.`);
+                return;
+            }
+            // التأكد من وجود مخزون كافٍ
+            const product = inventoryData.find(p => p.id === item.productId);
+            if (product && item.quantity > product.quantity) {
+                alert(`${product.name} has only ${product.quantity} in stock. Please reduce the quantity.`);
+                return;
+            }
+        }
 
-		// 3. تجهيز القيم مع التحقق منها
-		const customer = document.getElementById('saleCustomer').value.trim() || 'Walk-in Customer';
-		if (!customer) {
-			alert('Please enter a customer name.');
-			return;
-		}
+        // 3. تجهيز القيم مع التحقق منها
+        const customer = document.getElementById('saleCustomer').value.trim() || 'Walk-in Customer';
+        if (!customer) {
+            alert('Please enter a customer name.');
+            return;
+        }
 
-		const discount = parseFloat(document.getElementById('saleDiscount').value) || 0;
-		if (discount < 0 || discount > 100) {
-			alert('Discount must be between 0 and 100.');
-			return;
-		}
+        const discount = parseFloat(document.getElementById('saleDiscount').value) || 0;
+        if (discount < 0 || discount > 100) {
+            alert('Discount must be between 0 and 100.');
+            return;
+        }
 
-		const paymentMethod = document.getElementById('salePaymentMethod').value;
-		const notes = document.getElementById('saleNotes').value;
+        const paymentMethod = document.getElementById('salePaymentMethod').value;
+        const notes = document.getElementById('saleNotes').value;
+        const saleDate = document.getElementById('saleDate').value;   // <-- أضف هذا
 
-		const items = saleItems.map(item => ({
-			productId: item.productId,
-			quantity: item.quantity
-		}));
+        const items = saleItems.map(item => ({
+            productId: item.productId,
+            quantity: item.quantity
+        }));
 
-		try {
-			await apiCreateMultiSale(customer, items, discount, paymentMethod, notes, appState.currentUser.name);
-			await apiGetProducts(1, 9999); // تحديث المخزون
-			await loadSalesPage(currentSalesPage);
-			renderInventoryTable();
-			renderDashboardInventory();
-			updateDashboardStats();
-			document.getElementById('newSaleModal').classList.remove('active');
-			alert('Sale completed!');
-		} catch (err) { alert(err.message); }
-	};
+        try {
+            await apiCreateMultiSale(customer, items, discount, paymentMethod, notes, appState.currentUser.name, saleDate);
+            await apiGetProducts(1, 9999); // تحديث المخزون
+            await loadSalesPage(currentSalesPage);
+            renderInventoryTable();
+            renderDashboardInventory();
+            updateDashboardStats();
+            document.getElementById('newSaleModal').classList.remove('active');
+            alert('Sale completed!');
+        } catch (err) { alert(err.message); }
+    };
 
     // ========== أحداث الفلاتر ==========
     ['filterSaleDate','filterTransID','filterCustomer','filterItems','filterTotal','filterSaleStatus'].forEach(id => {
@@ -145,6 +150,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     if (appState.isAuthenticated) loadSalesPage(1);
+
+    // ========== زر Today ==========
+    document.getElementById('fillTodayBtn').onclick = () => {
+        const n = new Date();
+        const local = new Date(n.getTime() - n.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        document.getElementById('saleDate').value = local;
+    };
 });
 
 // ========== دوال السلة ==========
@@ -277,7 +289,7 @@ window.deleteSale = async function(id) {
     } catch (err) { alert(err.message); }
 };
 
-// شرط بسيط للطباعة (يمكن تطويره لاحقاً)
+// طباعة الفاتورة (سيتم تحسينها لاحقاً)
 window.printInvoice = function(id) {
     const sale = salesData.find(s => s.id === id);
     if (!sale) return;
