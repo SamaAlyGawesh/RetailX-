@@ -221,16 +221,18 @@
 			<table class="inventory-table" id="salesTableMain">
 				<thead>
 					<tr>
-						<th data-sort="date">Date & Time <span class="sort-arrow"></span></th>
-						<th data-sort="id">Transaction ID <span class="sort-arrow"></span></th>
+						<th>#</th>
+						<th data-sort="date">Date <span class="sort-arrow"></span></th>
+						<th data-sort="id">Invoice ID <span class="sort-arrow"></span></th>
 						<th data-sort="customer">Customer <span class="sort-arrow"></span></th>
 						<th data-sort="items">Items <span class="sort-arrow"></span></th>
-						<th data-sort="total">Total Amount <span class="sort-arrow"></span></th>
-						<th data-sort="category">Category <span class="sort-arrow"></span></th>
+						<th data-sort="total">Total <span class="sort-arrow"></span></th>
+						<th>Category</th>
 						<th data-sort="status">Status <span class="sort-arrow"></span></th>
 						<th>Actions</th>
 					</tr>
 					<tr id="salesFilterRow">
+						<th></th>
 						<th><input type="text" id="filterSaleDate" placeholder="Date"></th>
 						<th><input type="text" id="filterTransID" placeholder="ID"></th>
 						<th><input type="text" id="filterCustomer" placeholder="Customer"></th>
@@ -255,8 +257,22 @@
 			</table>
 			<div id="salesPagination" class="pagination-container"></div>
 			</div>
-        </div>
-    </section>
+		</div>
+	</section>
+	<!-- مودال تفاصيل الفاتورة -->
+	<div class="modal" id="invoiceDetailModal">
+		<div class="modal-content" style="max-width: 800px; max-height: 80vh; overflow-y: auto;">
+			<div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--primary); padding-bottom: 15px; margin-bottom: 20px;">
+				<h2 style="margin:0;">Invoice Details</h2>
+				<button class="close-modal" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button>
+			</div>
+			<div id="invoiceDetailContent"></div>
+			<div style="text-align: right; margin-top: 20px;">
+				<button class="btn btn-primary" id="printInvoiceBtn"><i class="fas fa-print"></i> Print Invoice</button>
+				<button class="btn btn-outline close-modal">Close</button>
+			</div>
+		</div>
+	</div>
 
     <!-- ========== REPORTS PAGE ========== -->
     <section id="reportsPage" class="page">

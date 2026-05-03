@@ -106,3 +106,7 @@ async function apiUpdateUserRole(userId, newRole) {
 async function apiCreateMultiSale(customer, items, discount, paymentMethod, notes, cashier, saleDate) {
     return api('POST', '/sales/multi', { customer, items, discount, paymentMethod, notes, cashier, saleDate });
 }
+
+async function apiDeleteInvoice(baseId) {
+    return api('DELETE', `/sales/group/${baseId}`);
+}

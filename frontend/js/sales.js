@@ -9,6 +9,45 @@ let totalSalesPages = 1;
 let saleItems = [];
 let isProcessingSale = false;
 
+// ========== دوال تجميع الفواتير ==========
+function groupSales(salesArray) {
+    const grouped = {};
+    salesArray.forEach(s => {
+        // استخراج baseId (الجزء قبل آخر "-")
+        const parts = s.id.split('-');
+        parts.pop(); // إزالة productId الملحق
+        const baseId = parts.join('-');
+        if (!grouped[baseId]) {
+            grouped[baseId] = {
+                id: baseId,
+                date: s.date,
+                customer: s.customer,
+                items: 0,
+                total: 0,
+                status: s.status,
+                products: [],
+                categories: new Set()
+            };
+        }
+        const group = grouped[baseId];
+        group.items += s.items || 0;
+        group.total += s.total || 0;
+        group.products.push({
+            productId: s.productId,
+            name: inventoryData.find(p => p.id === s.productId)?.name || 'Unknown',
+            category: s.category || '',
+            quantity: s.items,
+            unitPrice: s.total / s.items,
+            total: s.total
+        });
+        if (s.category) group.categories.add(s.category);
+    });
+    return Object.values(grouped).map(g => ({
+        ...g,
+        category: Array.from(g.categories).join(', ')
+    }));
+}
+
 document.addEventListener('DOMContentLoaded', () => {
 
     // ========== فتح مودال بيع جديد ==========
@@ -259,7 +298,8 @@ function updateSaleTotal() {
 // ========== دوال الصفحة والجدول (باقية دون تغيير كبير) ==========
 async function loadSalesPage(page) {
     currentSalesPage = page;
-    const data = await api('GET', `/sales?page=${page}&limit=${salesLimit}`);
+    const data = await api('GET', `/sales?page=${page}&limit=9999`); // نجلب الكل للتجميع
+    // salesData = data.sales; // لا نستخدم المتغير العالمي
     currentSales = data.sales;
     totalSalesPages = data.pages;
     applySalesFilters();
@@ -269,22 +309,27 @@ function applySalesFilters() {
     const date = (document.getElementById('filterSaleDate')?.value || '').toLowerCase();
     const transID = (document.getElementById('filterTransID')?.value || '').toLowerCase();
     const customer = (document.getElementById('filterCustomer')?.value || '').toLowerCase();
-    const items = (document.getElementById('filterItems')?.value || '').toLowerCase();
+    const items = document.getElementById('filterItems')?.value;
     const total = document.getElementById('filterTotal')?.value;
     const status = document.getElementById('filterSaleStatus')?.value;
-	const filterCategory = document.getElementById('filterSaleCategory')?.value || '';
-	
-    let filtered = currentSales.filter(s => {
-        const matchDate = date ? (s.date || '').toLowerCase().includes(date) : true;
-        const matchID = transID ? (s.id || '').toString().toLowerCase().includes(transID) : true;
-        const matchCust = customer ? (s.customer || '').toLowerCase().includes(customer) : true;
-        const matchItems = items ? (s.items || '').toString().toLowerCase().includes(items) : true;
-        const matchTotal = total ? Math.abs(s.total - total) < 0.001 : true;
-        const matchStatus = status ? s.status === status : true;
-        const matchCategory = filterCategory ? (s.category || '').toLowerCase() === filterCategory.toLowerCase() : true;
-		return matchDate && matchID && matchCust && matchItems && matchTotal && matchCategory && matchStatus;
+    const filterCategory = document.getElementById('filterSaleCategory')?.value || '';
+
+    // تجميع الفواتير أولاً
+    let grouped = groupSales(currentSales);
+
+    // تطبيق الفلاتر على المجموعات
+    let filtered = grouped.filter(g => {
+        const matchDate = date ? (g.date || '').toLowerCase().includes(date) : true;
+        const matchID = transID ? g.id.toLowerCase().includes(transID) : true;
+        const matchCust = customer ? g.customer.toLowerCase().includes(customer) : true;
+        const matchItems = items ? g.items == items : true;
+        const matchTotal = total ? Math.abs(g.total - total) < 0.001 : true;
+        const matchStatus = status ? g.status === status : true;
+        const matchCategory = filterCategory ? g.category.toLowerCase().includes(filterCategory.toLowerCase()) : true;
+        return matchDate && matchID && matchCust && matchItems && matchTotal && matchCategory && matchStatus;
     });
 
+    // ترتيب
     filtered.sort((a, b) => {
         let valA = a[salesSort.field];
         let valB = b[salesSort.field];
@@ -299,25 +344,28 @@ function applySalesFilters() {
     renderPagination(currentSalesPage, totalSalesPages, 'salesPagination', (page) => loadSalesPage(page));
 }
 
-function renderSalesTableHTML(sales) {
+function renderSalesTableHTML(groups) {
     const tbody = document.getElementById('salesTable');
     if (!tbody) return;
     const isAdmin = appState.currentUser?.role === 'administrator';
     const startNumber = (currentSalesPage - 1) * salesLimit + 1;
 
-    tbody.innerHTML = sales.map((s, index) => {
-        const deleteBtn = isAdmin ? `<button class="btn btn-sm btn-danger" onclick="deleteSale('${s.id}')"><i class="fas fa-trash"></i></button> ` : '';
+    tbody.innerHTML = groups.map((g, index) => {
+        const deleteBtn = isAdmin ? `<button class="btn btn-sm btn-danger" onclick="deleteInvoice('${g.id}')"><i class="fas fa-trash"></i></button> ` : '';
         return `<tr>
-					<td>${startNumber + index}</td>
-					<td>${s.date}</td>
-					<td>${s.id}</td>
-					<td>${s.customer}</td>
-					<td>${s.items}</td>
-					<td>${formatPrice(s.total)}</td>
-					<td>${s.category || '-'}</td>
-					<td><span class="stock-status stock-in">${s.status}</span></td>
-					<td>${deleteBtn}<button class="btn btn-sm btn-primary" onclick="printInvoice('${s.id}')"><i class="fas fa-print"></i></button></td>
-				</tr>`;
+            <td>${startNumber + index}</td>
+            <td>${g.date}</td>
+            <td>${g.id}</td>
+            <td>${g.customer}</td>
+            <td>${g.items}</td>
+            <td>${formatPrice(g.total)}</td>
+            <td>${g.category || '-'}</td>
+            <td><span class="stock-status stock-in">${g.status}</span></td>
+            <td>
+                <button class="btn btn-sm btn-primary" onclick="viewInvoice('${g.id}')"><i class="fas fa-eye"></i></button>
+                ${deleteBtn}
+            </td>
+        </tr>`;
     }).join('');
 }
 
@@ -420,3 +468,95 @@ function updateStockCell(row, productId) {
         stockCell.textContent = '-';
     }
 }
+
+// ========== دوال الفاتورة ==========
+window.viewInvoice = function(baseId) {
+    const group = groupSales(currentSales).find(g => g.id === baseId);
+    if (!group) return;
+
+    const productsHtml = group.products.map(p => `
+        <tr>
+            <td>${p.name}</td>
+            <td>${p.category || '-'}</td>
+            <td>${p.quantity}</td>
+            <td>${formatPrice(p.unitPrice)}</td>
+            <td>${formatPrice(p.total)}</td>
+        </tr>
+    `).join('');
+
+    document.getElementById('invoiceDetailContent').innerHTML = `
+        <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+            <div><strong>Invoice:</strong> ${group.id}<br><strong>Date:</strong> ${group.date}<br><strong>Customer:</strong> ${group.customer}</div>
+            <div><strong>Status:</strong> ${group.status}</div>
+        </div>
+        <table class="inventory-table">
+            <thead><tr><th>Product</th><th>Category</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead>
+            <tbody>${productsHtml}</tbody>
+            <tfoot><tr style="font-weight:bold;"><td colspan="4">Grand Total</td><td>${formatPrice(group.total)}</td></tr></tfoot>
+        </table>
+    `;
+
+    // تخزين baseId لزر الطباعة
+    document.getElementById('printInvoiceBtn').onclick = () => {
+        printInvoiceFromGroup(group);
+    };
+
+    document.getElementById('invoiceDetailModal').classList.add('active');
+};
+
+function printInvoiceFromGroup(group) {
+    const win = window.open('', '_blank');
+    const productsRows = group.products.map(p => `
+        <tr><td>${p.name}</td><td>${p.quantity}</td><td>${formatPrice(p.unitPrice)}</td><td>${formatPrice(p.total)}</td></tr>
+    `).join('');
+    win.document.write(`
+        <html><head><title>Invoice ${group.id}</title>
+        <style>
+            body { font-family: 'Segoe UI', Arial; padding: 20px; background: #f5f5f5; }
+            .invoice { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+            .header { text-align: center; border-bottom: 2px solid #6d28d9; padding-bottom: 20px; margin-bottom: 20px; }
+            .header h1 { color: #6d28d9; margin:0; font-size: 32px; }
+            .details { display: flex; justify-content: space-between; margin-bottom: 30px; font-size:14px; }
+            table { width:100%; border-collapse: collapse; margin-bottom:20px; }
+            th, td { padding:12px; text-align:left; border-bottom:1px solid #eee; }
+            th { background:#f8f8f8; }
+            .total { text-align:right; font-size:20px; font-weight:bold; color:#6d28d9; margin-top:20px; }
+            .footer { text-align:center; margin-top:30px; padding-top:20px; border-top:1px solid #eee; font-size:12px; color:#999; }
+            button { margin-top:20px; padding:12px 24px; background: #6d28d9; color:white; border:none; border-radius:6px; cursor:pointer; }
+            @media print { body { background:white; } .invoice { box-shadow:none; } button { display:none; } }
+        </style>
+        </head><body>
+        <div class="invoice">
+            <div class="header"><h1>RetailX</h1><p>Smart Inventory Management</p></div>
+            <div class="details">
+                <div><strong>Invoice:</strong> ${group.id}<br><strong>Date:</strong> ${group.date}<br><strong>Customer:</strong> ${group.customer}</div>
+                <div><strong>Status:</strong> ${group.status}</div>
+            </div>
+            <table>
+                <thead><tr><th>Product</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead>
+                <tbody>${productsRows}</tbody>
+                <tfoot><tr style="font-weight:bold;"><td colspan="3">Grand Total</td><td>${formatPrice(group.total)}</td></tr></tfoot>
+            </table>
+            <div class="total">Total Amount: ${formatPrice(group.total)}</div>
+            <div class="footer"><p>Thank you for shopping with RetailX!</p><p>support@retailx.com | Cairo, Egypt</p></div>
+        </div>
+        <div style="text-align:center;"><button onclick="window.print()">Print Invoice</button></div>
+        </body></html>
+    `);
+    win.document.close();
+}
+
+window.deleteInvoice = async function(baseId) {
+    if (appState.currentUser?.role !== 'administrator') return;
+    if (!confirm('Delete this invoice and restore stock?')) return;
+    try {
+        // استدعاء مسار الحذف الجديد
+        const res = await fetch(`${API_BASE}/sales/group/${baseId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${appState.token}` }
+        });
+        if (!res.ok) throw new Error((await res.json()).error || 'Delete failed');
+        await loadSalesPage(currentSalesPage);
+        updateDashboardStats();
+    } catch (err) { alert(err.message); }
+};

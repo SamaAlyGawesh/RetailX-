@@ -129,4 +129,27 @@ router.post('/multi', requireRole('administrator', 'cashier', 'sales'), (req, re
     }
 });
 
+
+// ========== حذف مجموعة فاتورة (جميع منتجاتها) ==========
+router.delete('/group/:baseId', requireRole('administrator'), (req, res) => {
+    const db = getDB();
+    const baseId = req.params.baseId;
+    // جلب جميع سجلات هذه الفاتورة
+    const items = db.prepare("SELECT * FROM sales WHERE id LIKE ?").all(baseId + '%');
+    if (items.length === 0) return res.status(404).json({ error: 'Invoice not found' });
+
+    const transaction = db.transaction(() => {
+        for (const item of items) {
+            // إرجاع المخزون
+            if (item.productId) {
+                db.prepare('UPDATE products SET quantity = quantity + ? WHERE id = ?').run(item.items, item.productId);
+            }
+            db.prepare('DELETE FROM sales WHERE id = ?').run(item.id);
+        }
+        db.prepare("INSERT INTO activity (type, message, time) VALUES (?,?,?)").run('alert', `Invoice ${baseId} deleted and stock restored`, new Date().toLocaleString());
+    });
+    transaction();
+    res.json({ success: true });
+});
+
 module.exports = router;
