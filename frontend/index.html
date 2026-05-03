@@ -221,22 +221,26 @@
 			<table class="inventory-table" id="salesTableMain">
 				<thead>
 					<tr>
-						<th>#</th>   <!-- عمود الترقيم -->
 						<th data-sort="date">Date & Time <span class="sort-arrow"></span></th>
 						<th data-sort="id">Transaction ID <span class="sort-arrow"></span></th>
 						<th data-sort="customer">Customer <span class="sort-arrow"></span></th>
 						<th data-sort="items">Items <span class="sort-arrow"></span></th>
 						<th data-sort="total">Total Amount <span class="sort-arrow"></span></th>
+						<th data-sort="category">Category <span class="sort-arrow"></span></th>
 						<th data-sort="status">Status <span class="sort-arrow"></span></th>
 						<th>Actions</th>
 					</tr>
 					<tr id="salesFilterRow">
-						<th></th>    <!-- فاضي للترقيم -->
 						<th><input type="text" id="filterSaleDate" placeholder="Date"></th>
 						<th><input type="text" id="filterTransID" placeholder="ID"></th>
 						<th><input type="text" id="filterCustomer" placeholder="Customer"></th>
 						<th><input type="text" id="filterItems" placeholder="Items"></th>
 						<th><input type="number" id="filterTotal" placeholder="Total" step="0.01"></th>
+						<th>
+							<select id="filterSaleCategory">
+								<option value="">All</option>
+							</select>
+						</th>
 						<th>
 							<select id="filterSaleStatus">
 								<option value="">All</option>
@@ -460,22 +464,15 @@
 				<button type="button" class="btn btn-sm btn-outline" id="fillTodayBtn">Today</button>
 			</div>
 
-			<!-- مرشح الفئة -->
-			<div class="form-group" style="display:flex; gap:10px; align-items:center;">
-				<label style="white-space:nowrap;">Filter by Category</label>
-				<select id="saleCategoryFilter" class="form-control" style="flex:1;">
-					<option value="">All Categories</option>
-				</select>
-			</div>
-
 			<!-- جدول المنتجات -->
 			<table class="sale-items-table" id="saleItemsTable">
 				<thead>
 					<tr>
-						<th>Product</th>
+						<th style="width:30%;">Product</th>
+						<th style="width:15%;">Category</th>
 						<th style="width:80px;">Qty</th>
-						<th>Unit Price</th>
-						<th>Total</th>
+						<th style="width:15%;">Unit Price</th>
+						<th style="width:15%;">Total</th>
 						<th></th>
 					</tr>
 				</thead>

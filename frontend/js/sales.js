@@ -24,15 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('saleNotes').value = '';
         document.getElementById('saleItemsBody').innerHTML = '';
 
-        // تعبئة مرشح الفئات
-        const catFilter = document.getElementById('saleCategoryFilter');
-        const categories = [...new Set(inventoryData.map(p => p.category).filter(Boolean))].sort();
-        catFilter.innerHTML = '<option value="">All Categories</option>';
-        categories.forEach(cat => {
-            catFilter.innerHTML += `<option value="${cat}">${cat}</option>`;
-        });
-        catFilter.value = '';
-
         // تاريخ اليوم
         const now = new Date();
         const localDatetime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
@@ -53,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const index = Array.from(row.parentNode.children).indexOf(row);
             saleItems.splice(index, 1);
             row.remove();
-            refreshProductOptions();
+            refreshAllRows();
             updateSaleTotal();
         }
     });
@@ -72,17 +63,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 category: opt.dataset.category,
                 quantity: saleItems[index].quantity || 1
             };
-            refreshProductOptions();
+            refreshAllRows();
         } else if (e.target.classList.contains('sale-qty-input')) {
             saleItems[index].quantity = parseInt(e.target.value) || 1;
         }
         updateRowTotal(row, index);
         updateSaleTotal();
-    });
-
-    // ========== مرشح الفئة ==========
-    document.getElementById('saleCategoryFilter').addEventListener('change', () => {
-        refreshProductOptions();
     });
 
     // ========== تنفيذ البيع ==========
@@ -180,47 +166,35 @@ document.addEventListener('DOMContentLoaded', () => {
         const local = new Date(n.getTime() - n.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
         document.getElementById('saleDate').value = local;
     };
+	
+	// ملء فلتر الفئة في جدول المبيعات
+	const populateSaleCategoryFilter = async () => {
+		await apiGetProducts(1, 9999);
+		const categories = [...new Set(inventoryData.map(p => p.category).filter(Boolean))].sort();
+		const select = document.getElementById('filterSaleCategory');
+		if (select) {
+			select.innerHTML = '<option value="">All</option>';
+			categories.forEach(c => {
+				select.innerHTML += `<option value="${c}">${c}</option>`;
+			});
+		}
+	};
+	populateSaleCategoryFilter();
+	document.getElementById('filterSaleCategory').addEventListener('change', () => {
+		currentSalesPage = 1;
+		loadSalesPage(1);
+	});
 });
-
-// ========== دوال السلة ==========
-function refreshProductOptions() {
-    const selects = document.querySelectorAll('.sale-product-select');
-    const selectedCategory = document.getElementById('saleCategoryFilter')?.value || '';
-
-    selects.forEach((select, idx) => {
-        const currentValue = select.value;
-        // المنتجات المختارة بالفعل (باستثناء الصف الحالي)
-        const selectedIds = new Set(
-            saleItems
-                .filter((item, index) => index !== idx && item.productId)
-                .map(item => item.productId)
-        );
-
-        let available = inventoryData;
-        // فلترة حسب الفئة المحددة
-        if (selectedCategory) {
-            available = available.filter(p => p.category === selectedCategory);
-        }
-
-        const optionsHtml = available
-            .map(p => {
-                // تعطيل الخيار إذا كان مختاراً في صف آخر
-                const disabledAttr = selectedIds.has(p.id) ? 'disabled' : '';
-                const selectedAttr = p.id == currentValue ? 'selected' : '';
-                return `<option value="${p.id}" data-price="${p.price}" data-category="${p.category}" ${selectedAttr} ${disabledAttr}>
-                    ${p.name} - ${formatPrice(p.price)} (${p.quantity} in stock)
-                </option>`;
-            })
-            .join('');
-
-        select.innerHTML = optionsHtml;
-    });
-}
 
 function addSaleItemRow() {
     const row = document.createElement('tr');
+    // بناء قائمة الفئات الفريدة من inventoryData
+    const categories = [...new Set(inventoryData.map(p => p.category).filter(Boolean))].sort();
+    const catOptions = ['<option value="">All</option>', ...categories.map(c => `<option value="${c}">${c}</option>`)].join('');
+
     row.innerHTML = `
         <td><select class="form-control sale-product-select" style="width:100%;"></select></td>
+        <td><select class="form-control sale-category-select" style="width:100%;">${catOptions}</select></td>
         <td><input type="number" class="form-control sale-qty-input" value="1" min="1"></td>
         <td class="unit-price">$0.00</td>
         <td class="row-total">$0.00</td>
@@ -228,10 +202,12 @@ function addSaleItemRow() {
     `;
     document.getElementById('saleItemsBody').appendChild(row);
 
+    // إضافة عنصر مبدئي إلى saleItems
     saleItems.push({ productId: null, name: '', price: 0, quantity: 1, category: '' });
-    refreshProductOptions();
 
-    // تحديد أول منتج متاح تلقائياً
+    // تحديث الخيارات بناءً على الفئة المختارة (الافتراضية "All")
+    refreshSingleRowCategory(row, saleItems.length - 1);
+    // تعيين أول منتج
     const select = row.querySelector('.sale-product-select');
     if (select.options.length > 0) {
         select.selectedIndex = 0;
@@ -247,6 +223,19 @@ function addSaleItemRow() {
         row.querySelector('.unit-price').innerText = formatPrice(saleItems[idx].price);
         row.querySelector('.row-total').innerText = formatPrice(saleItems[idx].price);
     }
+
+    // ربط تغيير الفئة بتحديث المنتجات
+    const catSelect = row.querySelector('.sale-category-select');
+    catSelect.addEventListener('change', () => {
+        const rowIndex = Array.from(row.parentNode.children).indexOf(row);
+        refreshSingleRowCategory(row, rowIndex);
+        // إعادة تعيين المنتج الأول
+        const prodSelect = row.querySelector('.sale-product-select');
+        if (prodSelect.options.length > 0) {
+            prodSelect.selectedIndex = 0;
+            prodSelect.dispatchEvent(new Event('input'));
+        }
+    });
 
     updateSaleTotal();
 }
@@ -282,7 +271,8 @@ function applySalesFilters() {
     const items = (document.getElementById('filterItems')?.value || '').toLowerCase();
     const total = document.getElementById('filterTotal')?.value;
     const status = document.getElementById('filterSaleStatus')?.value;
-
+	const filterCategory = document.getElementById('filterSaleCategory')?.value || '';
+	
     let filtered = currentSales.filter(s => {
         const matchDate = date ? (s.date || '').toLowerCase().includes(date) : true;
         const matchID = transID ? (s.id || '').toString().toLowerCase().includes(transID) : true;
@@ -290,7 +280,8 @@ function applySalesFilters() {
         const matchItems = items ? (s.items || '').toString().toLowerCase().includes(items) : true;
         const matchTotal = total ? Math.abs(s.total - total) < 0.001 : true;
         const matchStatus = status ? s.status === status : true;
-        return matchDate && matchID && matchCust && matchItems && matchTotal && matchStatus;
+        const matchCategory = filterCategory ? (s.category || '').toLowerCase() === filterCategory.toLowerCase() : true;
+		return matchDate && matchID && matchCust && matchItems && matchTotal && matchCategory && matchStatus;
     });
 
     filtered.sort((a, b) => {
@@ -316,15 +307,16 @@ function renderSalesTableHTML(sales) {
     tbody.innerHTML = sales.map((s, index) => {
         const deleteBtn = isAdmin ? `<button class="btn btn-sm btn-danger" onclick="deleteSale('${s.id}')"><i class="fas fa-trash"></i></button> ` : '';
         return `<tr>
-            <td>${startNumber + index}</td>
-            <td>${s.date}</td>
-            <td>${s.id}</td>
-            <td>${s.customer}</td>
-            <td>${s.items}</td>
-            <td>${formatPrice(s.total)}</td>
-            <td><span class="stock-status stock-in">${s.status}</span></td>
-            <td>${deleteBtn}<button class="btn btn-sm btn-primary" onclick="printInvoice('${s.id}')"><i class="fas fa-print"></i></button></td>
-        </tr>`;
+					<td>${startNumber + index}</td>
+					<td>${s.date}</td>
+					<td>${s.id}</td>
+					<td>${s.customer}</td>
+					<td>${s.items}</td>
+					<td>${formatPrice(s.total)}</td>
+					<td>${s.category || '-'}</td>
+					<td><span class="stock-status stock-in">${s.status}</span></td>
+					<td>${deleteBtn}<button class="btn btn-sm btn-primary" onclick="printInvoice('${s.id}')"><i class="fas fa-print"></i></button></td>
+				</tr>`;
     }).join('');
 }
 
@@ -358,19 +350,40 @@ window.printInvoice = function(id) {
     win.document.close();
 };
 
-function refreshProductOptions() {
-    const selects = document.querySelectorAll('.sale-product-select');
-    // جمع معرفات المنتجات المختارة في الصفوف الأخرى
-    const selectedIds = new Set(saleItems.map(item => item.productId).filter(Boolean));
-    
-    selects.forEach((select, idx) => {
-        const currentValue = select.value; // القيمة الحالية لهذا الصف
-        const currentProductId = saleItems[idx]?.productId;
-        // بناء الخيارات: نستبعد أي منتج موجود في SaleItems إلا إذا كان هو منتج هذا الصف الحالي
-        const optionsHtml = inventoryData
-            .filter(p => !selectedIds.has(p.id) || p.id === currentProductId)
-            .map(p => `<option value="${p.id}" data-price="${p.price}" ${p.id == currentValue ? 'selected' : ''}>${p.name} - ${formatPrice(p.price)} (${p.quantity} in stock)</option>`)
-            .join('');
-        select.innerHTML = optionsHtml;
+function refreshSingleRowCategory(row, index) {
+    const catSelect = row.querySelector('.sale-category-select');
+    const selectedCategory = catSelect.value;
+    const prodSelect = row.querySelector('.sale-product-select');
+    const currentValue = prodSelect.value;
+
+    // المنتجات المختارة في الصفوف الأخرى (لمنع التكرار)
+    const selectedIds = new Set(
+        saleItems
+            .filter((item, idx) => idx !== index && item.productId)
+            .map(item => item.productId)
+    );
+
+    let available = inventoryData;
+    if (selectedCategory) {
+        available = available.filter(p => p.category === selectedCategory);
+    }
+
+    const optionsHtml = available
+        .map(p => {
+            const disabledAttr = selectedIds.has(p.id) ? 'disabled' : '';
+            const selectedAttr = p.id == currentValue ? 'selected' : '';
+            return `<option value="${p.id}" data-price="${p.price}" data-category="${p.category}" ${selectedAttr} ${disabledAttr}>
+                ${p.name} - ${formatPrice(p.price)} (${p.quantity} in stock)
+            </option>`;
+        })
+        .join('');
+
+    prodSelect.innerHTML = optionsHtml;
+}
+
+function refreshAllRows() {
+    const rows = document.querySelectorAll('#saleItemsBody tr');
+    rows.forEach((row, index) => {
+        refreshSingleRowCategory(row, index);
     });
 }
