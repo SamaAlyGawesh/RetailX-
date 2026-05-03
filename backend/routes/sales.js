@@ -39,7 +39,7 @@ router.post('/', requireRole('administrator', 'cashier', 'sales'), (req, res) =>
     const date = new Date().toLocaleString();
 
     db.prepare('UPDATE products SET quantity = quantity - ? WHERE id = ?').run(quantity, productId);
-    //db.prepare('INSERT INTO sales (id, date, customer, items, total, status, cashier, productId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(id, date, customer || 'Walk-in Customer', quantity, total, 'Completed', cashier, productId);
+    db.prepare('INSERT INTO sales (id, date, customer, items, total, status, cashier, productId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(id, date, customer || 'Walk-in Customer', quantity, total, 'Completed', cashier, productId);
     db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run('sale', `New sale: ${quantity}x ${product.name} for ${total}`, date);
 
     res.status(201).json({ id, total });

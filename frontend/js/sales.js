@@ -83,7 +83,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadSalesPage(page) {
     currentSalesPage = page;
-    const data = await apiGetSales(page, salesLimit);
+    // استخدام fetch مباشر بدلاً من apiGetSales عشان ما نغيرش salesData العالمية
+    const data = await api('GET', `/sales?page=${page}&limit=${salesLimit}`);
     currentSales = data.sales;
     totalSalesPages = data.pages;
     applySalesFilters();
