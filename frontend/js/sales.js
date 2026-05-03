@@ -62,32 +62,68 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ========== تنفيذ البيع ==========
-    document.getElementById('processSale').onclick = async function(e) {
-        e.preventDefault();
-        if (!appState.isAuthenticated || !hasPermission('sales')) return;
-        if (saleItems.length === 0) return alert('Add at least one product.');
+	document.getElementById('processSale').onclick = async function(e) {
+		e.preventDefault();
+		if (!appState.isAuthenticated || !hasPermission('sales')) return;
 
-        const customer = document.getElementById('saleCustomer').value || 'Walk-in Customer';
-        const discount = parseFloat(document.getElementById('saleDiscount').value) || 0;
-        const paymentMethod = document.getElementById('salePaymentMethod').value;
-        const notes = document.getElementById('saleNotes').value;
+		// ---------- التحققات ----------
+		// 1. التأكد من وجود عنصر واحد على الأقل في السلة
+		if (saleItems.length === 0) {
+			alert('Add at least one product.');
+			return;
+		}
 
-        const items = saleItems.map(item => ({
-            productId: item.productId,
-            quantity: item.quantity
-        }));
+		// 2. التحقق من صحة كل عنصر
+		for (let i = 0; i < saleItems.length; i++) {
+			const item = saleItems[i];
+			if (!item.productId) {
+				alert(`Please select a product for row ${i + 1}.`);
+				return;
+			}
+			if (!item.quantity || item.quantity < 1) {
+				alert(`Quantity for row ${i + 1} must be at least 1.`);
+				return;
+			}
+			// التأكد من وجود مخزون كافٍ (اختياري)
+			const product = inventoryData.find(p => p.id === item.productId);
+			if (product && item.quantity > product.quantity) {
+				alert(`${product.name} has only ${product.quantity} in stock. Please reduce the quantity.`);
+				return;
+			}
+		}
 
-        try {
-            await apiCreateMultiSale(customer, items, discount, paymentMethod, notes, appState.currentUser.name);
-            await apiGetProducts(1, 9999); // تحديث المخزون
-            await loadSalesPage(currentSalesPage);
-            renderInventoryTable();
-            renderDashboardInventory();
-            updateDashboardStats();
-            document.getElementById('newSaleModal').classList.remove('active');
-            alert('Sale completed!');
-        } catch (err) { alert(err.message); }
-    };
+		// 3. تجهيز القيم مع التحقق منها
+		const customer = document.getElementById('saleCustomer').value.trim() || 'Walk-in Customer';
+		if (!customer) {
+			alert('Please enter a customer name.');
+			return;
+		}
+
+		const discount = parseFloat(document.getElementById('saleDiscount').value) || 0;
+		if (discount < 0 || discount > 100) {
+			alert('Discount must be between 0 and 100.');
+			return;
+		}
+
+		const paymentMethod = document.getElementById('salePaymentMethod').value;
+		const notes = document.getElementById('saleNotes').value;
+
+		const items = saleItems.map(item => ({
+			productId: item.productId,
+			quantity: item.quantity
+		}));
+
+		try {
+			await apiCreateMultiSale(customer, items, discount, paymentMethod, notes, appState.currentUser.name);
+			await apiGetProducts(1, 9999); // تحديث المخزون
+			await loadSalesPage(currentSalesPage);
+			renderInventoryTable();
+			renderDashboardInventory();
+			updateDashboardStats();
+			document.getElementById('newSaleModal').classList.remove('active');
+			alert('Sale completed!');
+		} catch (err) { alert(err.message); }
+	};
 
     // ========== أحداث الفلاتر ==========
     ['filterSaleDate','filterTransID','filterCustomer','filterItems','filterTotal','filterSaleStatus'].forEach(id => {

@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('.close-modal').forEach(btn => {
         if (btn) btn.onclick = function() { this.closest('.modal').classList.remove('active'); };
     });
-    window.onclick = (e) => { if (e.target.classList.contains('modal')) e.target.classList.remove('active'); };
+    //window.onclick = (e) => { if (e.target.classList.contains('modal')) e.target.classList.remove('active'); };
 
     // ---- تحميل بيانات الجلسة ----
     if (typeof appState === 'undefined') {
