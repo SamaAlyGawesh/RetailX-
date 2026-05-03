@@ -98,8 +98,7 @@ async function loadInventoryPage(page) {
 }
 
 function applyInventoryFilters() {
-	let filtered = [...currentInventory]; // نعمل نسخة من بيانات الصفحة
-    // الفلترة المحلية بعد جلب الصفحة (لأن السيرفر يدعم البحث فقط، لكن الفلاتر الأخرى نطبقها هنا)
+    // الفلترة المحلية بعد جلب الصفحة
     const name = (document.getElementById('filterProductName')?.value || '').toLowerCase();
     const sku = (document.getElementById('filterSKU')?.value || '').toLowerCase();
     const category = (document.getElementById('filterCategory')?.value || '').toLowerCase();
@@ -107,7 +106,7 @@ function applyInventoryFilters() {
     const reorder = document.getElementById('filterReorder')?.value;
     const price = document.getElementById('filterPrice')?.value;
     const status = document.getElementById('filterStatus')?.value;
-	/*
+
     let filtered = currentInventory.filter(p => {
         const matchName = name ? p.name.toLowerCase().includes(name) : true;
         const matchSKU = sku ? p.sku.toLowerCase().includes(sku) : true;
@@ -121,8 +120,8 @@ function applyInventoryFilters() {
         else if (status === 'out') matchStatus = p.quantity === 0;
         return matchName && matchSKU && matchCat && matchQty && matchReorder && matchPrice && matchStatus;
     });
-	*/
-    // ترتيب (لأن البيانات قد لا تكون مرتبة حسب حقل الفرز من الخادم)
+
+    // ترتيب
     filtered.sort((a, b) => {
         let valA = a[inventorySort.field];
         let valB = b[inventorySort.field];
