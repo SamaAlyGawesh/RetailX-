@@ -393,16 +393,20 @@
 				<table class="inventory-table" id="usersTableMain">
 					<thead>
 						<tr>
-							<th>#</th>   <!-- عمود الترقيم -->
+							<th>#</th>
 							<th data-sort="id">ID <span class="sort-arrow"></span></th>
 							<th data-sort="name">Name <span class="sort-arrow"></span></th>
 							<th data-sort="email">Email <span class="sort-arrow"></span></th>
 							<th data-sort="role">Role <span class="sort-arrow"></span></th>
+							<th data-sort="status">Status <span class="sort-arrow"></span></th>
 							<th>Change Role</th>
+							<th data-sort="created_at">Created At <span class="sort-arrow"></span></th>
+							<th data-sort="last_login">Last Login <span class="sort-arrow"></span></th>
+							<th data-sort="branch">Branch <span class="sort-arrow"></span></th>
 							<th>Actions</th>
 						</tr>
 						<tr id="filterRow">
-							<th></th>    <!-- فاضي للترقيم -->
+							<th></th>
 							<th><input type="text" id="filterId" placeholder="ID" style="width:80px;"></th>
 							<th><input type="text" id="filterName" placeholder="Name"></th>
 							<th><input type="text" id="filterEmail" placeholder="Email"></th>
@@ -417,6 +421,16 @@
 									<option value="administrator">administrator</option>
 								</select>
 							</th>
+							<th>
+								<select id="filterStatus">
+									<option value="">All</option>
+									<option value="active">Active</option>
+									<option value="disabled">Disabled</option>
+								</select>
+							</th>
+							<th></th>
+							<th></th>
+							<th></th>
 							<th></th>
 							<th></th>
 						</tr>

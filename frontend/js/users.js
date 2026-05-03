@@ -1,4 +1,4 @@
-// users.js - User management (admin only) with filtering, sorting & pagination
+// users.js - User management (admin only) with filtering, sorting & additional fields
 
 let currentUsers = [];
 let userSort = { field: 'id', order: 'asc' };
@@ -20,14 +20,13 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // Filter events
-    ['filterId', 'filterName', 'filterEmail', 'filterRole'].forEach(id => {
+    ['filterId', 'filterName', 'filterEmail', 'filterRole', 'filterStatus'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('input', () => { currentUserPage = 1; loadUserPage(1); });
     });
     document.getElementById('filterRole')?.addEventListener('change', () => { currentUserPage = 1; loadUserPage(1); });
+    document.getElementById('filterStatus')?.addEventListener('change', () => { currentUserPage = 1; loadUserPage(1); });
 
-    // Sorting
     document.querySelectorAll('#usersTableMain th[data-sort]').forEach(th => {
         th.style.cursor = 'pointer';
         th.addEventListener('click', () => {
@@ -43,14 +42,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.classList.contains('save-role-btn')) {
             const userId = e.target.dataset.userId;
             const select = document.getElementById(`roleSelect_${userId}`);
-            const newRole = select.value;
+            await apiUpdateUserRole(userId, select.value);
+            alert('Role updated');
+            loadUserPage(currentUserPage);
+        } else if (e.target.classList.contains('toggle-status-btn')) {
+            const userId = e.target.dataset.userId;
+            const currentStatus = e.target.dataset.status;
+            const newStatus = currentStatus === 'active' ? 'disabled' : 'active';
+            await apiToggleUserStatus(userId, newStatus);
+            loadUserPage(currentUserPage);
+        } else if (e.target.classList.contains('reset-password-btn')) {
+            const userId = e.target.dataset.userId;
+            if (!confirm('Reset password to temporary password?')) return;
             try {
-                await apiUpdateUserRole(userId, newRole);
-                alert('Role updated successfully');
-                loadUserPage(currentUserPage);
-            } catch (err) {
-                alert(err.message);
-            }
+                const result = await apiResetUserPassword(userId);
+                alert(`Password has been reset to: ${result.tempPassword}`);
+            } catch (err) { alert(err.message); }
         }
     });
 });
@@ -68,13 +75,14 @@ function applyUserFilters() {
     const nameFilter = document.getElementById('filterName')?.value.trim().toLowerCase() || '';
     const emailFilter = document.getElementById('filterEmail')?.value.trim().toLowerCase() || '';
     const roleFilter = document.getElementById('filterRole')?.value || '';
+    const statusFilter = document.getElementById('filterStatus')?.value || '';
 
     let filtered = currentUsers.filter(u => {
-        const matchId = idFilter ? u.id.toString().includes(idFilter) : true;
-        const matchName = nameFilter ? u.name.toLowerCase().includes(nameFilter) : true;
-        const matchEmail = emailFilter ? u.email.toLowerCase().includes(emailFilter) : true;
-        const matchRole = roleFilter ? u.role === roleFilter : true;
-        return matchId && matchName && matchEmail && matchRole;
+        return (idFilter ? u.id.toString().includes(idFilter) : true) &&
+               (nameFilter ? u.name.toLowerCase().includes(nameFilter) : true) &&
+               (emailFilter ? u.email.toLowerCase().includes(emailFilter) : true) &&
+               (roleFilter ? u.role === roleFilter : true) &&
+               (statusFilter ? u.status === statusFilter : true);
     });
 
     filtered.sort((a, b) => {
@@ -88,9 +96,7 @@ function applyUserFilters() {
     });
 
     renderUsersTableHTML(filtered);
-    renderPagination(currentUserPage, totalUserPages, 'userPagination', (page) => {
-        loadUserPage(page);
-    });
+    renderPagination(currentUserPage, totalUserPages, 'userPagination', (page) => loadUserPage(page));
 }
 
 function renderUsersTableHTML(users) {
@@ -103,14 +109,31 @@ function renderUsersTableHTML(users) {
     tbody.innerHTML = users.map((u, index) => {
         const roleOptions = roles.map(r => `<option value="${r}" ${u.role === r ? 'selected' : ''}>${r}</option>`).join('');
         const canChange = (currentUserEmail !== u.email);
+        const statusBtn = canChange ? 
+            `<button class="btn btn-sm btn-warning toggle-status-btn" data-user-id="${u.id}" data-status="${u.status || 'active'}">
+                ${u.status === 'disabled' ? 'Enable' : 'Disable'}
+            </button>` : '';
+        const resetBtn = canChange ? 
+            `<button class="btn btn-sm btn-info reset-password-btn" data-user-id="${u.id}">
+                <i class="fas fa-key"></i>
+            </button>` : '';
+
         return `<tr>
             <td>${startNumber + index}</td>
             <td>${u.id}</td>
             <td>${u.name}</td>
             <td>${u.email}</td>
             <td>${u.role}</td>
+            <td><span style="color:${u.status === 'disabled' ? 'var(--danger)' : 'var(--secondary)'};">${u.status || 'active'}</span></td>
             <td>${canChange ? `<select id="roleSelect_${u.id}" class="form-control" style="width:auto;">${roleOptions}</select>` : '<span>Current</span>'}</td>
-            <td>${canChange ? `<button class="btn btn-sm btn-primary save-role-btn" data-user-id="${u.id}">Save Role</button>` : ''}</td>
+            <td>${u.created_at || '-'}</td>
+            <td>${u.last_login || '-'}</td>
+            <td>${u.branch || '-'}</td>
+            <td>
+                ${canChange ? `<button class="btn btn-sm btn-primary save-role-btn" data-user-id="${u.id}">Save Role</button>` : ''}
+                ${statusBtn}
+                ${resetBtn}
+            </td>
         </tr>`;
     }).join('');
 }

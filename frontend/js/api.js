@@ -110,3 +110,11 @@ async function apiCreateMultiSale(customer, items, discount, paymentMethod, note
 async function apiDeleteInvoice(baseId) {
     return api('DELETE', `/sales/group/${baseId}`);
 }
+
+async function apiToggleUserStatus(userId, status) {
+    return api('PATCH', `/users/${userId}/status`, { status });
+}
+
+async function apiResetUserPassword(userId) {
+    return api('PATCH', `/users/${userId}/reset-password`);
+}
