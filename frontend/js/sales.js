@@ -298,10 +298,22 @@ function updateSaleTotal() {
 // ========== دوال الصفحة والجدول (باقية دون تغيير كبير) ==========
 async function loadSalesPage(page) {
     currentSalesPage = page;
-    const data = await api('GET', `/sales?page=${page}&limit=9999`); // نجلب الكل للتجميع
-    // salesData = data.sales; // لا نستخدم المتغير العالمي
+    const data = await api('GET', `/sales?page=${page}&limit=9999`);
     currentSales = data.sales;
     totalSalesPages = data.pages;
+
+    // ==== هنا الإضافة: ملء فلتر الفئة لو فاضي ====
+    const catSelect = document.getElementById('filterSaleCategory');
+    if (catSelect && catSelect.options.length <= 1) {
+        // نجيب كل الفئات من currentSales (اللي جات من API)
+        const cats = [...new Set(currentSales.map(s => s.category).filter(Boolean))].sort();
+        catSelect.innerHTML = '<option value="">All</option>';
+        cats.forEach(c => {
+            catSelect.innerHTML += `<option value="${c}">${c}</option>`;
+        });
+    }
+    // ============================================
+
     applySalesFilters();
 }
 
