@@ -111,7 +111,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const paymentMethod = document.getElementById('salePaymentMethod').value;
         const notes = document.getElementById('saleNotes').value;
-        const saleDate = document.getElementById('saleDate').value;   // <-- أضف هذا
+        const saleDate = document.getElementById('saleDate').value;
+		const selectedDate = new Date(saleDate);
+		const now = new Date();
+		// السماح بفارق دقيقة واحدة فقط (تسامح)
+		if (selectedDate > new Date(now.getTime() + 60000)) {
+			alert('Future date is not allowed for sales.');
+			return;
+		}
 
         const items = saleItems.map(item => ({
             productId: item.productId,

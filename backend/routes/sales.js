@@ -87,6 +87,9 @@ router.post('/multi', requireRole('administrator', 'cashier', 'sales'), (req, re
 		if (!isNaN(parsed.getTime())) {
 			saleDate = parsed.toLocaleString(); // تحويله لنفس الصيغة المستخدمة
 		}
+		if (parsed > new Date()) {
+			return res.status(400).json({ error: 'Future date is not allowed' });
+		}
 	}
     const saleId = 'TXN-' + Date.now();
 
