@@ -448,18 +448,26 @@
 
     <!-- New Sale Modal (Multi-Product) -->
 	<div class="modal" id="newSaleModal">
-		<div class="modal-content" style="max-width: 700px;">
-			<div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+		<div class="modal-content" style="max-width: 800px; max-height: 85vh; overflow-y: auto;">
+			<div style="display: flex; justify-content: space-between; margin-bottom: 20px; position: sticky; top: 0; background: var(--dark-card); z-index: 10;">
 				<h3 id="newSaleModalTitle">Create New Sale</h3>
 				<button class="close-modal" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button>
 			</div>
 			<div class="form-group"><label>Customer Name</label><input type="text" id="saleCustomer" class="form-control" value="Walk-in Customer"></div>
-			<!-- داخل مودال newSaleModal -->
 			<div class="form-group" style="display:flex; align-items:center; gap:10px;">
 				<label style="margin:0; white-space:nowrap;">Date</label>
 				<input type="datetime-local" id="saleDate" class="form-control" style="flex:1;">
 				<button type="button" class="btn btn-sm btn-outline" id="fillTodayBtn">Today</button>
 			</div>
+
+			<!-- مرشح الفئة -->
+			<div class="form-group" style="display:flex; gap:10px; align-items:center;">
+				<label style="white-space:nowrap;">Filter by Category</label>
+				<select id="saleCategoryFilter" class="form-control" style="flex:1;">
+					<option value="">All Categories</option>
+				</select>
+			</div>
+
 			<!-- جدول المنتجات -->
 			<table class="sale-items-table" id="saleItemsTable">
 				<thead>
@@ -471,9 +479,7 @@
 						<th></th>
 					</tr>
 				</thead>
-				<tbody id="saleItemsBody">
-					<!-- صفوف ديناميكية -->
-				</tbody>
+				<tbody id="saleItemsBody"></tbody>
 			</table>
 			<button class="btn btn-sm btn-outline" id="addSaleItemBtn" style="margin-bottom:15px;"><i class="fas fa-plus"></i> Add Product</button>
 
@@ -481,14 +487,11 @@
 				<div class="form-group"><label>Discount (%)</label><input type="number" id="saleDiscount" class="form-control" value="0" min="0" max="100" oninput="updateSaleTotal()"></div>
 				<div class="form-group"><label>Payment Method</label><select id="salePaymentMethod" class="form-control"><option>Cash</option><option>Card</option><option>Credit</option></select></div>
 			</div>
-			
 			<div class="form-group"><label>Notes</label><input type="text" id="saleNotes" class="form-control" placeholder="Any notes..."></div>
-
 			<div style="text-align:right; font-size:18px; margin-bottom:15px;">
 				Total: <strong id="saleGrandTotal">$0.00</strong>
 			</div>
-
-			<div style="display: flex; gap: 10px; justify-content: flex-end;">
+			<div style="display: flex; gap: 10px; justify-content: flex-end; position: sticky; bottom: 0; background: var(--dark-card); padding-top: 10px; z-index: 10;">
 				<button class="btn btn-outline close-modal">Cancel</button>
 				<button class="btn btn-success" id="processSale">Process Sale</button>
 			</div>

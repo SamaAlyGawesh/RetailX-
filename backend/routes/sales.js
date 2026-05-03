@@ -39,7 +39,8 @@ router.post('/', requireRole('administrator', 'cashier', 'sales'), (req, res) =>
     const date = new Date().toLocaleString();
 
     db.prepare('UPDATE products SET quantity = quantity - ? WHERE id = ?').run(quantity, productId);
-    db.prepare('INSERT INTO sales (id, date, customer, items, total, status, cashier, productId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(id, date, customer || 'Walk-in Customer', quantity, total, 'Completed', cashier, productId);
+    db.prepare('INSERT INTO sales (id, date, customer, items, total, status, cashier, productId) VALUES (?,?,?,?,?,?,?,?)')
+      .run(id, date, customer || 'Walk-in Customer', quantity, total, 'Completed', cashier, productId);
     db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run('sale', `New sale: ${quantity}x ${product.name} for ${total}`, date);
 
     res.status(201).json({ id, total });
@@ -112,8 +113,8 @@ router.post('/multi', requireRole('administrator', 'cashier', 'sales'), (req, re
             for (const item of items) {
                 const product = db.prepare('SELECT * FROM products WHERE id = ?').get(item.productId);
                 const itemTotal = product.price * item.quantity;
-                db.prepare('INSERT INTO sales (id, date, customer, items, total, status, cashier, productId) VALUES (?,?,?,?,?,?,?,?)')
-                  .run(saleId + '-' + item.productId, finalSaleDate, customer || 'Walk-in Customer', item.quantity, itemTotal, 'Completed', cashier, item.productId);
+                db.prepare('INSERT INTO sales (id, date, customer, items, total, status, cashier, productId, category) VALUES (?,?,?,?,?,?,?,?,?)')
+  .run(saleId + '-' + item.productId, finalSaleDate, customer || 'Walk-in Customer', item.quantity, itemTotal, 'Completed', cashier, item.productId, item.category || '');
                 db.prepare('UPDATE products SET quantity = quantity - ? WHERE id = ?').run(item.quantity, item.productId);
             }
             db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run('sale', `Multi-sale ${saleId}: ${totalItemsCount} items, total ${grandTotal}`, finalSaleDate);

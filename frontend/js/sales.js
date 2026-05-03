@@ -6,9 +6,8 @@ let currentSalesPage = 1;
 const salesLimit = 15;
 let totalSalesPages = 1;
 
-// سلة المنتجات المؤقتة للفاتورة الحالية
-let saleItems = []; // [{ productId, name, price, quantity }]
-let isProcessingSale = false; // مانع تكرار الضغط
+let saleItems = [];
+let isProcessingSale = false;
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -17,19 +16,28 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         if (!appState.isAuthenticated || !hasPermission('sales')) return;
 
-        await apiGetProducts(1, 9999);   // جميع المنتجات
-        saleItems = [];                  // تفريغ السلة القديمة
+        await apiGetProducts(1, 9999);
+        saleItems = [];
         document.getElementById('saleCustomer').value = 'Walk-in Customer';
         document.getElementById('saleDiscount').value = 0;
         document.getElementById('salePaymentMethod').value = 'Cash';
         document.getElementById('saleNotes').value = '';
-
-        // أفرغ الجدول وأضف أول صف
         document.getElementById('saleItemsBody').innerHTML = '';
-        // تعبئة التاريخ الحالي تلقائياً
+
+        // تعبئة مرشح الفئات
+        const catFilter = document.getElementById('saleCategoryFilter');
+        const categories = [...new Set(inventoryData.map(p => p.category).filter(Boolean))].sort();
+        catFilter.innerHTML = '<option value="">All Categories</option>';
+        categories.forEach(cat => {
+            catFilter.innerHTML += `<option value="${cat}">${cat}</option>`;
+        });
+        catFilter.value = '';
+
+        // تاريخ اليوم
         const now = new Date();
         const localDatetime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
         document.getElementById('saleDate').value = localDatetime;
+
         addSaleItemRow();
         updateSaleTotal();
         document.getElementById('newSaleModal').classList.add('active');
@@ -45,6 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const index = Array.from(row.parentNode.children).indexOf(row);
             saleItems.splice(index, 1);
             row.remove();
+            refreshProductOptions();
             updateSaleTotal();
         }
     });
@@ -56,10 +65,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const index = Array.from(row.parentNode.children).indexOf(row);
         if (e.target.classList.contains('sale-product-select')) {
             const opt = e.target.selectedOptions[0];
-            saleItems[index].productId = parseInt(e.target.value);
-            saleItems[index].name = opt.text;
-            saleItems[index].price = parseFloat(opt.dataset.price);
-			refreshProductOptions();
+            saleItems[index] = {
+                productId: parseInt(e.target.value),
+                name: opt.text,
+                price: parseFloat(opt.dataset.price),
+                category: opt.dataset.category,
+                quantity: saleItems[index].quantity || 1
+            };
+            refreshProductOptions();
         } else if (e.target.classList.contains('sale-qty-input')) {
             saleItems[index].quantity = parseInt(e.target.value) || 1;
         }
@@ -67,32 +80,23 @@ document.addEventListener('DOMContentLoaded', () => {
         updateSaleTotal();
     });
 
+    // ========== مرشح الفئة ==========
+    document.getElementById('saleCategoryFilter').addEventListener('change', () => {
+        refreshProductOptions();
+    });
+
     // ========== تنفيذ البيع ==========
     document.getElementById('processSale').onclick = async function(e) {
         e.preventDefault();
-		// منع الضغط المتكرر
-		if (isProcessingSale) return;
+        if (isProcessingSale) return;
         if (!appState.isAuthenticated || !hasPermission('sales')) return;
 
-        // ---------- التحققات ----------
-        // 1. التأكد من وجود عنصر واحد على الأقل في السلة
-        if (saleItems.length === 0) {
-            alert('Add at least one product.');
-            return;
-        }
+        if (saleItems.length === 0) { alert('Add at least one product.'); return; }
 
-        // 2. التحقق من صحة كل عنصر
         for (let i = 0; i < saleItems.length; i++) {
             const item = saleItems[i];
-            if (!item.productId) {
-                alert(`Please select a product for row ${i + 1}.`);
-                return;
-            }
-            if (!item.quantity || item.quantity < 1) {
-                alert(`Quantity for row ${i + 1} must be at least 1.`);
-                return;
-            }
-            // التأكد من وجود مخزون كافٍ
+            if (!item.productId) { alert(`Please select a product for row ${i + 1}.`); return; }
+            if (!item.quantity || item.quantity < 1) { alert(`Quantity for row ${i + 1} must be at least 1.`); return; }
             const product = inventoryData.find(p => p.id === item.productId);
             if (product && item.quantity > product.quantity) {
                 alert(`${product.name} has only ${product.quantity} in stock. Please reduce the quantity.`);
@@ -100,64 +104,52 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // 3. تجهيز القيم مع التحقق منها
         const customer = document.getElementById('saleCustomer').value.trim() || 'Walk-in Customer';
-        if (!customer) {
-            alert('Please enter a customer name.');
-            return;
-        }
+        if (!customer) { alert('Please enter a customer name.'); return; }
 
         const discount = parseFloat(document.getElementById('saleDiscount').value) || 0;
-        if (discount < 0 || discount > 100) {
-            alert('Discount must be between 0 and 100.');
-            return;
-        }
+        if (discount < 0 || discount > 100) { alert('Discount must be between 0 and 100.'); return; }
 
         const paymentMethod = document.getElementById('salePaymentMethod').value;
         const notes = document.getElementById('saleNotes').value;
-        // قراءة القيمة المحلية من الحقل
-		const localDateStr = document.getElementById('saleDate').value;
-		if (!localDateStr) {
-			alert('Please select a date.');
-			return;
-		}
+        const localDateStr = document.getElementById('saleDate').value;
+        if (!localDateStr) { alert('Please select a date.'); return; }
 
-		const selectedDate = new Date(localDateStr); // كائن تاريخ محلي
+        const selectedDate = new Date(localDateStr);
+        const utcDateStr = selectedDate.toISOString();
+        const now = new Date();
+        if (selectedDate.getTime() > now.getTime() + 60000) {
+            alert('Future date is not allowed for sales.');
+            return;
+        }
 
-		// تحويل إلى ISO UTC لإرساله إلى السيرفر
-		const utcDateStr = selectedDate.toISOString(); // مثال: "2026-05-03T13:30:00.000Z"
+        isProcessingSale = true;
+        const btn = document.getElementById('processSale');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
 
-		// فحص التاريخ المستقبلي (باستخدام الوقت المحلي، بتسامح دقيقة)
-		const now = new Date();
-		if (selectedDate.getTime() > now.getTime() + 60000) {
-			alert('Future date is not allowed for sales.');
-			return;
-		}
-		// تعطيل الزر وتغيير النص
-		isProcessingSale = true;
-		const btn = document.getElementById('processSale');
-		btn.disabled = true;
-		btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-		
-        const items = saleItems.map(item => ({ productId: item.productId, quantity: item.quantity }));
-    
-		try {
-			await apiCreateMultiSale(customer, items, discount, paymentMethod, notes, appState.currentUser.name, utcDateStr);
-			await apiGetProducts(1, 9999);
-			await loadSalesPage(currentSalesPage);
-			renderInventoryTable();
-			renderDashboardInventory();
-			updateDashboardStats();
-			document.getElementById('newSaleModal').classList.remove('active');
-			alert('Sale completed!');
-		} catch (err) {
-			alert(err.message);
-		} finally {
-			// إعادة الزر لحالته الأصلية مهما حدث
-			isProcessingSale = false;
-			btn.disabled = false;
-			btn.innerHTML = 'Process Sale';
-		}
+        const items = saleItems.map(item => ({
+            productId: item.productId,
+            quantity: item.quantity,
+            category: item.category || '' // إرسال الفئة مع كل منتج
+        }));
+
+        try {
+            await apiCreateMultiSale(customer, items, discount, paymentMethod, notes, appState.currentUser.name, utcDateStr);
+            await apiGetProducts(1, 9999);
+            await loadSalesPage(currentSalesPage);
+            renderInventoryTable();
+            renderDashboardInventory();
+            updateDashboardStats();
+            document.getElementById('newSaleModal').classList.remove('active');
+            alert('Sale completed!');
+        } catch (err) {
+            alert(err.message);
+        } finally {
+            isProcessingSale = false;
+            btn.disabled = false;
+            btn.innerHTML = 'Process Sale';
+        }
     };
 
     // ========== أحداث الفلاتر ==========
@@ -183,24 +175,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ========== زر Today ==========
     document.getElementById('fillTodayBtn').onclick = () => {
-		const n = new Date();
-		// طرح دقيقة واحدة لضمان أن التاريخ ليس مستقبليًا أبدًا
-		n.setMinutes(n.getMinutes() - 1);
-		const local = new Date(n.getTime() - n.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-		document.getElementById('saleDate').value = local;
-	};
+        const n = new Date();
+        n.setMinutes(n.getMinutes() - 1);
+        const local = new Date(n.getTime() - n.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        document.getElementById('saleDate').value = local;
+    };
 });
 
 // ========== دوال السلة ==========
-function addSaleItemRow() {
-    // الخيارات الأولية لكل المنتجات (سيتم تحديثها بعد استدعاء refreshProductOptions)
-    const productOptions = inventoryData
-        .map(p => `<option value="${p.id}" data-price="${p.price}">${p.name} - ${formatPrice(p.price)} (${p.quantity} in stock)</option>`)
-        .join('');
+function refreshProductOptions() {
+    const selects = document.querySelectorAll('.sale-product-select');
+    const selectedCategory = document.getElementById('saleCategoryFilter')?.value || '';
 
+    selects.forEach((select, idx) => {
+        const currentValue = select.value;
+        // المنتجات المختارة بالفعل (باستثناء الصف الحالي)
+        const selectedIds = new Set(
+            saleItems
+                .filter((item, index) => index !== idx && item.productId)
+                .map(item => item.productId)
+        );
+
+        let available = inventoryData;
+        // فلترة حسب الفئة المحددة
+        if (selectedCategory) {
+            available = available.filter(p => p.category === selectedCategory);
+        }
+
+        const optionsHtml = available
+            .map(p => {
+                // تعطيل الخيار إذا كان مختاراً في صف آخر
+                const disabledAttr = selectedIds.has(p.id) ? 'disabled' : '';
+                const selectedAttr = p.id == currentValue ? 'selected' : '';
+                return `<option value="${p.id}" data-price="${p.price}" data-category="${p.category}" ${selectedAttr} ${disabledAttr}>
+                    ${p.name} - ${formatPrice(p.price)} (${p.quantity} in stock)
+                </option>`;
+            })
+            .join('');
+
+        select.innerHTML = optionsHtml;
+    });
+}
+
+function addSaleItemRow() {
     const row = document.createElement('tr');
     row.innerHTML = `
-        <td><select class="form-control sale-product-select" style="width:100%;">${productOptions}</select></td>
+        <td><select class="form-control sale-product-select" style="width:100%;"></select></td>
         <td><input type="number" class="form-control sale-qty-input" value="1" min="1"></td>
         <td class="unit-price">$0.00</td>
         <td class="row-total">$0.00</td>
@@ -208,42 +228,39 @@ function addSaleItemRow() {
     `;
     document.getElementById('saleItemsBody').appendChild(row);
 
-	// إضافة عنصر جديد للسلة
-    saleItems.push({ productId: null, name: '', price: 0, quantity: 1 });
-	
-	// تحديث الخيارات لاستبعاد المنتجات المختارة
+    saleItems.push({ productId: null, name: '', price: 0, quantity: 1, category: '' });
     refreshProductOptions();
-	
-    // تعيين القيم الافتراضية للصف الجديد (بعد التحديث)
+
+    // تحديد أول منتج متاح تلقائياً
     const select = row.querySelector('.sale-product-select');
     if (select.options.length > 0) {
         select.selectedIndex = 0;
         const opt = select.options[0];
-        const price = parseFloat(opt.dataset.price) || 0;
-        const index = saleItems.length - 1;
-        saleItems[index] = {
+        const idx = saleItems.length - 1;
+        saleItems[idx] = {
             productId: parseInt(opt.value),
             name: opt.text,
-            price: price,
+            price: parseFloat(opt.dataset.price),
+            category: opt.dataset.category,
             quantity: 1
         };
-        row.querySelector('.unit-price').innerText = formatPrice(price);
-        row.querySelector('.row-total').innerText = formatPrice(price);
+        row.querySelector('.unit-price').innerText = formatPrice(saleItems[idx].price);
+        row.querySelector('.row-total').innerText = formatPrice(saleItems[idx].price);
     }
 
-    if (saleItems.length === 1) updateSaleTotal();
+    updateSaleTotal();
 }
 
 function updateRowTotal(row, index) {
     const item = saleItems[index];
-    if (!item) return;
+    if (!item || !item.price) return;
     const total = item.price * item.quantity;
     row.querySelector('.row-total').innerText = formatPrice(total);
     row.querySelector('.unit-price').innerText = formatPrice(item.price);
 }
 
 function updateSaleTotal() {
-    let subtotal = saleItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    let subtotal = saleItems.reduce((sum, item) => sum + (item.price * item.quantity || 0), 0);
     const discount = parseFloat(document.getElementById('saleDiscount')?.value) || 0;
     const grandTotal = subtotal - (subtotal * discount / 100);
     document.getElementById('saleGrandTotal').innerText = formatPrice(grandTotal > 0 ? grandTotal : 0);
