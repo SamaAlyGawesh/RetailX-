@@ -59,6 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
             saleItems[index].productId = parseInt(e.target.value);
             saleItems[index].name = opt.text;
             saleItems[index].price = parseFloat(opt.dataset.price);
+			refreshProductOptions();
         } else if (e.target.classList.contains('sale-qty-input')) {
             saleItems[index].quantity = parseInt(e.target.value) || 1;
         }
@@ -192,6 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ========== دوال السلة ==========
 function addSaleItemRow() {
+    // الخيارات الأولية لكل المنتجات (سيتم تحديثها بعد استدعاء refreshProductOptions)
     const productOptions = inventoryData
         .map(p => `<option value="${p.id}" data-price="${p.price}">${p.name} - ${formatPrice(p.price)} (${p.quantity} in stock)</option>`)
         .join('');
@@ -206,19 +208,29 @@ function addSaleItemRow() {
     `;
     document.getElementById('saleItemsBody').appendChild(row);
 
+	// إضافة عنصر جديد للسلة
+    saleItems.push({ productId: null, name: '', price: 0, quantity: 1 });
+	
+	// تحديث الخيارات لاستبعاد المنتجات المختارة
+    refreshProductOptions();
+	
+    // تعيين القيم الافتراضية للصف الجديد (بعد التحديث)
     const select = row.querySelector('.sale-product-select');
-    const opt = select.selectedOptions[0];
-    const price = parseFloat(opt?.dataset.price) || 0;
+    if (select.options.length > 0) {
+        select.selectedIndex = 0;
+        const opt = select.options[0];
+        const price = parseFloat(opt.dataset.price) || 0;
+        const index = saleItems.length - 1;
+        saleItems[index] = {
+            productId: parseInt(opt.value),
+            name: opt.text,
+            price: price,
+            quantity: 1
+        };
+        row.querySelector('.unit-price').innerText = formatPrice(price);
+        row.querySelector('.row-total').innerText = formatPrice(price);
+    }
 
-    saleItems.push({
-        productId: parseInt(select.value),
-        name: opt?.text || '',
-        price: price,
-        quantity: 1
-    });
-
-    row.querySelector('.unit-price').innerText = formatPrice(price);
-    row.querySelector('.row-total').innerText = formatPrice(price);
     if (saleItems.length === 1) updateSaleTotal();
 }
 
@@ -328,3 +340,20 @@ window.printInvoice = function(id) {
     win.document.write(`<h1>Invoice ${sale.id}</h1><pre>${JSON.stringify(sale, null, 2)}</pre><button onclick="window.print()">Print</button>`);
     win.document.close();
 };
+
+function refreshProductOptions() {
+    const selects = document.querySelectorAll('.sale-product-select');
+    // جمع معرفات المنتجات المختارة في الصفوف الأخرى
+    const selectedIds = new Set(saleItems.map(item => item.productId).filter(Boolean));
+    
+    selects.forEach((select, idx) => {
+        const currentValue = select.value; // القيمة الحالية لهذا الصف
+        const currentProductId = saleItems[idx]?.productId;
+        // بناء الخيارات: نستبعد أي منتج موجود في SaleItems إلا إذا كان هو منتج هذا الصف الحالي
+        const optionsHtml = inventoryData
+            .filter(p => !selectedIds.has(p.id) || p.id === currentProductId)
+            .map(p => `<option value="${p.id}" data-price="${p.price}" ${p.id == currentValue ? 'selected' : ''}>${p.name} - ${formatPrice(p.price)} (${p.quantity} in stock)</option>`)
+            .join('');
+        select.innerHTML = optionsHtml;
+    });
+}
