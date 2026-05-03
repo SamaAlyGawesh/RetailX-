@@ -160,10 +160,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ========== زر Today ==========
     document.getElementById('fillTodayBtn').onclick = () => {
-        const n = new Date();
-        const local = new Date(n.getTime() - n.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-        document.getElementById('saleDate').value = local;
-    };
+		const n = new Date();
+		// طرح دقيقة واحدة لضمان أن التاريخ ليس مستقبليًا أبدًا
+		n.setMinutes(n.getMinutes() - 1);
+		const local = new Date(n.getTime() - n.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+		document.getElementById('saleDate').value = local;
+	};
 });
 
 // ========== دوال السلة ==========
