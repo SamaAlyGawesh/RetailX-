@@ -72,28 +72,32 @@ router.delete('/:id', requireRole('administrator'), (req, res) => {
     res.json({ success: true });
 });
 
-
 // POST /api/sales/multi
 router.post('/multi', requireRole('administrator', 'cashier', 'sales'), (req, res) => {
-    const { customer, items, discount, paymentMethod, notes, cashier } = req.body;
+    const { customer, items, discount, paymentMethod, notes, cashier, saleDate } = req.body;
     if (!items || !Array.isArray(items) || items.length === 0)
         return res.status(400).json({ error: 'Items array required' });
 
     const db = getDB();
-    let saleDate = req.body.saleDate || new Date().toLocaleString();
-	if (req.body.saleDate) {
-		const parsed = new Date(req.body.saleDate);
-		if (!isNaN(parsed.getTime())) {
-			saleDate = parsed.toLocaleString();
-			// السماح بفارق دقيقة واحدة فقط
-			const now = new Date();
-			if (parsed.getTime() > now.getTime() + 60000) {
-				return res.status(400).json({ error: 'Future date is not allowed' });
-			}
-		}
-	}
-    const saleId = 'TXN-' + Date.now();
+    let finalSaleDate;
 
+    // معالجة التاريخ
+    if (saleDate) {
+        const parsed = new Date(saleDate);
+        if (isNaN(parsed.getTime())) {
+            return res.status(400).json({ error: 'Invalid date format' });
+        }
+        // السماح بفارق دقيقة واحدة (UTC)
+        const nowUtc = new Date();
+        if (parsed.getTime() > nowUtc.getTime() + 60000) {
+            return res.status(400).json({ error: 'Future date is not allowed' });
+        }
+        finalSaleDate = parsed.toLocaleString();
+    } else {
+        finalSaleDate = new Date().toLocaleString();
+    }
+
+    const saleId = 'TXN-' + Date.now();
     let subtotal = 0;
     let totalItemsCount = 0;
 
@@ -110,19 +114,18 @@ router.post('/multi', requireRole('administrator', 'cashier', 'sales'), (req, re
     const discountAmount = (subtotal * (discount || 0)) / 100;
     const grandTotal = subtotal - discountAmount;
 
-    // تسجيل كل منتج على حدة في جدول sales
     const insertSale = db.prepare('INSERT INTO sales (id, date, customer, items, total, status, cashier, productId) VALUES (?,?,?,?,?,?,?,?)');
     for (const item of items) {
         const product = db.prepare('SELECT * FROM products WHERE id = ?').get(item.productId);
         db.prepare('UPDATE products SET quantity = quantity - ? WHERE id = ?').run(item.quantity, item.productId);
-        insertSale.run(saleId + '-' + item.productId, saleDate, customer, item.quantity, product.price * item.quantity, 'Completed', cashier, item.productId);
+        // استخدام finalSaleDate بدلاً من saleDate
+        insertSale.run(saleId + '-' + item.productId, finalSaleDate, customer, item.quantity, product.price * item.quantity, 'Completed', cashier, item.productId);
     }
 
-    // نشاط
     db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run(
         'sale',
         `Multi-sale ${saleId}: ${totalItemsCount} items, total ${grandTotal}`,
-        saleDate
+        finalSaleDate
     );
 
     res.status(201).json({ id: saleId, total: grandTotal });

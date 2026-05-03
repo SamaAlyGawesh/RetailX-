@@ -111,22 +111,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const paymentMethod = document.getElementById('salePaymentMethod').value;
         const notes = document.getElementById('saleNotes').value;
-        const saleDate = document.getElementById('saleDate').value;
-		const selectedDate = new Date(saleDate);
-		const now = new Date();
-		// السماح بفارق دقيقة واحدة فقط (تسامح)
-		if (selectedDate > new Date(now.getTime() + 60000)) {
-			alert('Future date is not allowed for sales.');
+        // قراءة القيمة المحلية من الحقل
+		const localDateStr = document.getElementById('saleDate').value;
+		if (!localDateStr) {
+			alert('Please select a date.');
 			return;
 		}
 
+		const selectedDate = new Date(localDateStr); // كائن تاريخ محلي
+
+		// تحويل إلى ISO UTC لإرساله إلى السيرفر
+		const utcDateStr = selectedDate.toISOString(); // مثال: "2026-05-03T13:30:00.000Z"
+
+		// فحص التاريخ المستقبلي (باستخدام الوقت المحلي، بتسامح دقيقة)
+		const now = new Date();
+		if (selectedDate.getTime() > now.getTime() + 60000) {
+			alert('Future date is not allowed for sales.');
+			return;
+		}
         const items = saleItems.map(item => ({
             productId: item.productId,
             quantity: item.quantity
         }));
 
         try {
-            await apiCreateMultiSale(customer, items, discount, paymentMethod, notes, appState.currentUser.name, saleDate);
+            await apiCreateMultiSale(customer, items, discount, paymentMethod, notes, appState.currentUser.name, utcDateStr);
             await apiGetProducts(1, 9999); // تحديث المخزون
             await loadSalesPage(currentSalesPage);
             renderInventoryTable();
