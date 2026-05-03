@@ -50,27 +50,31 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ========== تغيير المنتج / الكمية ==========
-    document.getElementById('saleItemsBody').addEventListener('input', (e) => {
-        const row = e.target.closest('tr');
-        if (!row) return;
-        const index = Array.from(row.parentNode.children).indexOf(row);
-        if (e.target.classList.contains('sale-product-select')) {
-            const opt = e.target.selectedOptions[0];
-            saleItems[index] = {
-                productId: parseInt(e.target.value),
-                name: opt.text,
-                price: parseFloat(opt.dataset.price),
-                category: opt.dataset.category,
-                quantity: saleItems[index].quantity || 1
-            };
-            refreshAllRows();
+    // تغيير المنتج / الكمية
+	document.getElementById('saleItemsBody').addEventListener('input', (e) => {
+		const row = e.target.closest('tr');
+		if (!row) return;
+		const index = Array.from(row.parentNode.children).indexOf(row);
+		if (e.target.classList.contains('sale-product-select')) {
+			const opt = e.target.selectedOptions[0];
+			saleItems[index] = {
+				productId: parseInt(e.target.value),
+				name: opt.text,
+				price: parseFloat(opt.dataset.price),
+				category: opt.dataset.category,
+				quantity: saleItems[index].quantity || 1
+			};
+			// تحديث الصف الحالي فقط (لن نعيد بناء الكل، لأن التكرار سيتم التعامل معه لاحقاً)
+			refreshSingleRowCategory(row, index);
+			// لتحديث تعطيل المنتجات في الصفوف الأخرى، نستدعي refreshAllRows أيضاً (أفضل)
+			refreshAllRows(); // أبقها للموثوقية
 			updateStockCell(row, saleItems[index].productId);
-        } else if (e.target.classList.contains('sale-qty-input')) {
-            saleItems[index].quantity = parseInt(e.target.value) || 1;
-        }
-        updateRowTotal(row, index);
-        updateSaleTotal();
-    });
+		} else if (e.target.classList.contains('sale-qty-input')) {
+			saleItems[index].quantity = parseInt(e.target.value) || 1;
+		}
+		updateRowTotal(row, index);
+		updateSaleTotal();
+	});
 
     // ========== تنفيذ البيع ==========
     document.getElementById('processSale').onclick = async function(e) {
@@ -351,9 +355,9 @@ function refreshSingleRowCategory(row, index) {
     const catSelect = row.querySelector('.sale-category-select');
     const selectedCategory = catSelect.value;
     const prodSelect = row.querySelector('.sale-product-select');
-    const currentValue = prodSelect.value;
+    const currentValue = prodSelect.value; // القيمة الحالية (قبل التحديث)
 
-    // المنتجات المختارة في الصفوف الأخرى (لمنع التكرار)
+    // المنتجات المختارة في الصفوف الأخرى
     const selectedIds = new Set(
         saleItems
             .filter((item, idx) => idx !== index && item.productId)
@@ -376,7 +380,24 @@ function refreshSingleRowCategory(row, index) {
         .join('');
 
     prodSelect.innerHTML = optionsHtml;
-	updateStockCell(row, saleItems[index]?.productId);
+    
+    // إعادة تعيين القيمة المختارة يدوياً (تأكيد)
+    if (currentValue && prodSelect.querySelector(`option[value="${currentValue}"]`)) {
+        prodSelect.value = currentValue;
+    }
+
+    // تحديث خلية المخزون بناءً على المنتج المستقر
+    const finalProductId = prodSelect.value ? parseInt(prodSelect.value) : null;
+    updateStockCell(row, finalProductId);
+    
+    // تحديث بيانات السلة إذا كان المنتج قد تغير (اختياري لضمان التزامن)
+    if (finalProductId && saleItems[index]) {
+        const opt = prodSelect.selectedOptions[0];
+        saleItems[index].productId = finalProductId;
+        saleItems[index].price = parseFloat(opt.dataset.price) || 0;
+        saleItems[index].category = opt.dataset.category || '';
+        saleItems[index].name = opt.text;
+    }
 }
 
 function refreshAllRows() {
