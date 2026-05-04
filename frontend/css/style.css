@@ -386,9 +386,14 @@ body.rtl .stat-card { border-left: none; border-right: 4px solid var(--primary);
 
 /* الحد الأدنى لعرض الجداول عشان الأعمدة متفصلش */
 .inventory-table {
-    min-width: 1100px;
     width: 100%;
     table-layout: auto;
+}
+
+/* استثناء جداول الموردين والمستخدمين من الحد الأدنى */
+#suppliersTableMain.inventory-table,
+#usersTableMain.inventory-table {
+    min-width: auto;
 }
 
 /* تقليل حجم حقول الفلترة وجعلها مناسبة */
