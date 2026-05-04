@@ -15,7 +15,7 @@ router.get('/', (req, res) => {
     const totalRow = db.prepare('SELECT COUNT(*) as total FROM suppliers').get();
     const total = totalRow?.total || 0;
 
-    const suppliers = db.prepare('SELECT id, name, contact, email, phone, productsSuppliedList, leadTime, addedDate, address1, address2, website, payment_terms FROM suppliers ORDER BY id DESC LIMIT ? OFFSET ?').all(limit, offset);
+    const suppliers = db.prepare('SELECT id, name, contact, email, phone, productsSuppliedList, leadTime, addedDate, address1, address2, website, payment_terms, supplier_code FROM suppliers ORDER BY id DESC LIMIT ? OFFSET ?').all(limit, offset);
     const result = suppliers.map(s => ({
         ...s,
         productsSuppliedList: JSON.parse(s.productsSuppliedList || '[]')
@@ -33,17 +33,30 @@ router.post('/', requireRole('administrator'), (req, res) => {
     const { name, contact, email, phone, productsSuppliedList, leadTime, address1, address2, website, payment_terms } = req.body;
     if (!name || !email) return res.status(400).json({ error: 'Name and email required' });
     const db = getDB();
-    const result = db.prepare('INSERT INTO suppliers (name, contact, email, phone, productsSuppliedList, leadTime, addedDate, address1, address2, website, payment_terms) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(
+
+    // توليد كود المورد تلقائياً
+    const lastSupplier = db.prepare('SELECT supplier_code FROM suppliers ORDER BY id DESC LIMIT 1').get();
+    let nextNumber = 1;
+    if (lastSupplier && lastSupplier.supplier_code) {
+        const matches = lastSupplier.supplier_code.match(/sup(\d+)/);
+        if (matches) {
+            nextNumber = parseInt(matches[1], 10) + 1;
+        }
+    }
+    const code = 'sup' + String(nextNumber).padStart(6, '0');
+
+    const result = db.prepare('INSERT INTO suppliers (name, contact, email, phone, productsSuppliedList, leadTime, addedDate, address1, address2, website, payment_terms, supplier_code) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)').run(
         name, contact || '', email, phone || '', JSON.stringify(productsSuppliedList || []), leadTime || 5, new Date().toISOString(),
-        address1 || '', address2 || '', website || '', payment_terms || ''
+        address1 || '', address2 || '', website || '', payment_terms || '', code
     );
     db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run('product', `New supplier: ${name}`, new Date().toLocaleString());
-    res.status(201).json({ id: result.lastInsertRowid });
+    res.status(201).json({ id: result.lastInsertRowid, code });
 });
 
 router.put('/:id', requireRole('administrator'), (req, res) => {
     const { name, contact, email, phone, productsSuppliedList, leadTime, address1, address2, website, payment_terms } = req.body;
     const db = getDB();
+    // لا نغير supplier_code
     db.prepare('UPDATE suppliers SET name=?, contact=?, email=?, phone=?, productsSuppliedList=?, leadTime=?, address1=?, address2=?, website=?, payment_terms=? WHERE id=?').run(
         name, contact || '', email, phone || '', JSON.stringify(productsSuppliedList || []), leadTime || 5,
         address1 || '', address2 || '', website || '', payment_terms || '', req.params.id

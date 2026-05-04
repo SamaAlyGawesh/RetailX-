@@ -177,6 +177,7 @@ window.deleteCategoryFromList = function(category) {
 };
 
 function clearSupplierForm() {
+	document.getElementById('supplierCodeDisplay').value = '';
     document.getElementById('supplierNameInput').value = '';
     document.getElementById('supplierContactInput').value = '';
     document.getElementById('supplierEmailInput').value = '';
@@ -195,6 +196,7 @@ window.editSupplier = function(id) {
     if (!hasPermission('suppliers')) return;
     const s = suppliersData.find(s => s.id === id);
     if (!s) return;
+	document.getElementById('supplierCodeDisplay').value = s.supplier_code || '';
     document.getElementById('supplierNameInput').value = s.name;
     document.getElementById('supplierContactInput').value = s.contact || '';
     document.getElementById('supplierEmailInput').value = s.email;
@@ -275,6 +277,7 @@ function renderSuppliersTableHTML(suppliers) {
         const addressStr = [s.address1, s.address2].filter(Boolean).join(', ') || '-';
         return `<tr>
             <td>${startNumber + index}</td>
+			<td style="font-family:monospace;">${s.supplier_code || '-'}</td>
             <td>${s.name}</td>
             <td>${s.contact || '-'}</td>
             <td>${s.email}</td>
