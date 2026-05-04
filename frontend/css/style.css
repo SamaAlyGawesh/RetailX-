@@ -508,6 +508,44 @@ body.light-theme input[type="date"] {
     width: 100%;
 }
 
+/* Multi-select with checkboxes */
+.multi-select-container {
+    border: 1px solid var(--dark-border);
+    border-radius: 8px;
+    background: var(--dark-bg);
+}
+.multi-select-search {
+    border: none !important;
+    border-bottom: 1px solid var(--dark-border) !important;
+    border-radius: 0 !important;
+    padding: 10px;
+    background: transparent;
+    color: var(--dark-text);
+}
+.multi-select-options {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 5px;
+}
+.multi-select-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.2s;
+    font-size: 14px;
+}
+.multi-select-item:hover {
+    background: rgba(109, 40, 217, 0.1);
+}
+.multi-select-item input[type="checkbox"] {
+    accent-color: var(--primary);
+    width: 16px;
+    height: 16px;
+}
+
 @media (max-width: 480px) {
     .container { padding: 0 15px; }
     .stat-card .value { font-size: 1.5rem; }

@@ -5,13 +5,19 @@ let supplierSort = { field: 'name', order: 'asc' };
 let currentSupplierPage = 1;
 const supplierLimit = 15;
 let totalSupplierPages = 1;
-let supplierEditingId = null;   // <-- مهم يكون معرف
+let editingSupplierId = null;
+let allProducts = []; // لتغذية قائمة المنتجات
+let selectedProducts = []; // للمنتجات المختارة حالياً
+
 document.addEventListener('DOMContentLoaded', () => {
+    loadInitialProducts(); // تحميل كل المنتجات للقائمة
+
     document.getElementById('addNewSupplier').onclick = () => {
         if (!hasPermission('suppliers')) return;
         clearSupplierForm();
-        supplierEditingId = null;
+        editingSupplierId = null;
         document.getElementById('addSupplierModal').classList.add('active');
+        renderProductsCheckboxes();
     };
 
     document.getElementById('submitSupplier').onclick = async () => {
@@ -21,17 +27,17 @@ document.addEventListener('DOMContentLoaded', () => {
             contact: document.getElementById('supplierContactInput').value.trim(),
             email: document.getElementById('supplierEmailInput').value.trim(),
             phone: document.getElementById('supplierPhoneInput').value.trim(),
+            address1: document.getElementById('supplierAddress1').value.trim(),
+            address2: document.getElementById('supplierAddress2').value.trim(),
+            website: document.getElementById('supplierWebsite').value.trim(),
+            payment_terms: document.getElementById('supplierPaymentTerms').value.trim(),
             leadTime: parseInt(document.getElementById('supplierLeadTimeInput').value) || 5,
-            productsSuppliedList: []
+            productsSuppliedList: selectedProducts // مصفوفة نصية
         };
-        const select = document.getElementById('supplierProductsSelect');
-        for (let i = 0; i < select.options.length; i++) {
-            if (select.options[i].selected) supplier.productsSuppliedList.push(select.options[i].value);
-        }
         if (!supplier.name || !supplier.email) return alert('Name and email required');
         try {
-            if (supplierEditingId) {
-                await apiUpdateSupplier(supplierEditingId, supplier);
+            if (editingSupplierId) {
+                await apiUpdateSupplier(editingSupplierId, supplier);
             } else {
                 await apiCreateSupplier(supplier);
             }
@@ -41,13 +47,13 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) { alert(err.message); }
     };
 
-    // Filter events
-    ['filterSupplierName','filterContact','filterSupplierEmail','filterSupplierPhone','filterProductsSupplied','filterLeadTime'].forEach(id => {
+    // أحداث الفلترة
+    ['filterSupplierName','filterContact','filterSupplierEmail','filterSupplierPhone','filterSupplierAddress','filterProductsSupplied','filterLeadTime'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('input', () => { currentSupplierPage = 1; loadSupplierPage(1); });
     });
 
-    // Sorting
+    // الفرز
     document.querySelectorAll('#suppliersTableMain th[data-sort]').forEach(th => {
         th.style.cursor = 'pointer';
         th.addEventListener('click', () => {
@@ -59,11 +65,84 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    if (appState.isAuthenticated) {
-    loadSupplierPage(1);
-	}
+    // بحث في قائمة المنتجات
+    document.querySelector('.multi-select-search').addEventListener('input', function(e) {
+        renderProductsCheckboxes(e.target.value);
+    });
+
+    if (appState.isAuthenticated) loadSupplierPage(1);
 });
 
+async function loadInitialProducts() {
+    const data = await apiGetProducts(1, 9999);
+    allProducts = data.products;
+}
+
+function renderProductsCheckboxes(filter = '') {
+    const container = document.getElementById('productsSuppliedOptions');
+    if (!container) return;
+    const filterLower = filter.toLowerCase();
+    const filtered = allProducts.filter(p => p.name.toLowerCase().includes(filterLower));
+    container.innerHTML = filtered.map(p => `
+        <label class="multi-select-item">
+            <input type="checkbox" value="${p.id}" ${selectedProducts.includes(p.id) ? 'checked' : ''} onchange="toggleProductSelect(${p.id}, this.checked)">
+            <span>${p.name} (${p.sku})</span>
+        </label>
+    `).join('');
+}
+
+window.toggleProductSelect = function(productId, isChecked) {
+    if (isChecked) {
+        if (!selectedProducts.includes(productId)) selectedProducts.push(productId);
+    } else {
+        selectedProducts = selectedProducts.filter(id => id !== productId);
+    }
+};
+
+function clearSupplierForm() {
+    document.getElementById('supplierNameInput').value = '';
+    document.getElementById('supplierContactInput').value = '';
+    document.getElementById('supplierEmailInput').value = '';
+    document.getElementById('supplierPhoneInput').value = '';
+    document.getElementById('supplierAddress1').value = '';
+    document.getElementById('supplierAddress2').value = '';
+    document.getElementById('supplierWebsite').value = '';
+    document.getElementById('supplierPaymentTerms').value = '';
+    document.getElementById('supplierLeadTimeInput').value = '5';
+    selectedProducts = [];
+    renderProductsCheckboxes();
+    editingSupplierId = null;
+}
+
+window.editSupplier = function(id) {
+    if (!hasPermission('suppliers')) return;
+    const s = suppliersData.find(s => s.id === id);
+    if (!s) return;
+    document.getElementById('supplierNameInput').value = s.name;
+    document.getElementById('supplierContactInput').value = s.contact || '';
+    document.getElementById('supplierEmailInput').value = s.email;
+    document.getElementById('supplierPhoneInput').value = s.phone || '';
+    document.getElementById('supplierAddress1').value = s.address1 || '';
+    document.getElementById('supplierAddress2').value = s.address2 || '';
+    document.getElementById('supplierWebsite').value = s.website || '';
+    document.getElementById('supplierPaymentTerms').value = s.payment_terms || '';
+    document.getElementById('supplierLeadTimeInput').value = s.leadTime;
+    selectedProducts = s.productsSuppliedList || [];
+    renderProductsCheckboxes();
+    editingSupplierId = id;
+    document.getElementById('addSupplierModal').classList.add('active');
+};
+
+window.deleteSupplier = async function(id) {
+    if (!hasPermission('suppliers')) return;
+    if (!confirm('Delete this supplier?')) return;
+    try {
+        await apiDeleteSupplier(id);
+        await loadSupplierPage(currentSupplierPage);
+    } catch (err) { alert(err.message); }
+};
+
+// ========== دوال تحميل وعرض الجدول ==========
 async function loadSupplierPage(page) {
     currentSupplierPage = page;
     const data = await apiGetSuppliers(page, supplierLimit);
@@ -77,6 +156,7 @@ function applySupplierFilters() {
     const contact = (document.getElementById('filterContact')?.value || '').toLowerCase();
     const email = (document.getElementById('filterSupplierEmail')?.value || '').toLowerCase();
     const phone = (document.getElementById('filterSupplierPhone')?.value || '').toLowerCase();
+    const address = (document.getElementById('filterSupplierAddress')?.value || '').toLowerCase();
     const product = (document.getElementById('filterProductsSupplied')?.value || '').toLowerCase();
     const leadTime = document.getElementById('filterLeadTime')?.value;
 
@@ -85,9 +165,10 @@ function applySupplierFilters() {
         const matchContact = contact ? (s.contact || '').toLowerCase().includes(contact) : true;
         const matchEmail = email ? s.email.toLowerCase().includes(email) : true;
         const matchPhone = phone ? (s.phone || '').toLowerCase().includes(phone) : true;
+        const matchAddress = address ? `${s.address1||''} ${s.address2||''}`.toLowerCase().includes(address) : true;
         const matchProduct = product ? (s.productsSuppliedList || []).some(p => p.toLowerCase().includes(product)) : true;
         const matchLeadTime = leadTime ? s.leadTime == leadTime : true;
-        return matchName && matchContact && matchEmail && matchPhone && matchProduct && matchLeadTime;
+        return matchName && matchContact && matchEmail && matchPhone && matchAddress && matchProduct && matchLeadTime;
     });
 
     filtered.sort((a, b) => {
@@ -101,30 +182,35 @@ function applySupplierFilters() {
     });
 
     renderSuppliersTableHTML(filtered);
-    renderPagination(currentSupplierPage, totalSupplierPages, 'supplierPagination', (page) => {
-        loadSupplierPage(page);
-    });
-}
-
-async function renderSuppliersTable() {
-    await loadSupplierPage(currentSupplierPage);
+    renderPagination(currentSupplierPage, totalSupplierPages, 'supplierPagination', (page) => loadSupplierPage(page));
 }
 
 function renderSuppliersTableHTML(suppliers) {
     const tbody = document.getElementById('suppliersTable');
     if (!tbody) return;
     if (suppliers.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No suppliers found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;">No suppliers found.</td></tr>';
         return;
     }
     const startNumber = (currentSupplierPage - 1) * supplierLimit + 1;
     tbody.innerHTML = suppliers.map((s, index) => {
         const productsHtml = (s.productsSuppliedList || []).map(p => `<span class="supplier-product-badge">${p}</span>`).join('') || '<span class="supplier-product-badge">No products</span>';
+        const addressStr = [s.address1, s.address2].filter(Boolean).join(', ') || '-';
         return `<tr>
             <td>${startNumber + index}</td>
-            <td>${s.name}</td><td>${s.contact || '-'}</td><td>${s.email}</td><td>${s.phone || '-'}</td>
-            <td><div class="supplier-products-list">${productsHtml}</div></td><td>${s.leadTime} days</td>
-            <td><button class="btn btn-sm btn-primary" onclick="editSupplier(${s.id})"><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-danger" onclick="deleteSupplier(${s.id})"><i class="fas fa-trash"></i></button></td>
+            <td>${s.name}</td>
+            <td>${s.contact || '-'}</td>
+            <td>${s.email}</td>
+            <td>${s.phone || '-'}</td>
+            <td>${addressStr}</td>
+            <td>${s.website ? `<a href="${s.website}" target="_blank">Link</a>` : '-'}</td>
+            <td>${s.payment_terms || '-'}</td>
+            <td><div class="supplier-products-list">${productsHtml}</div></td>
+            <td>${s.leadTime} days</td>
+            <td>
+                <button class="btn btn-sm btn-primary" onclick="editSupplier(${s.id})"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-sm btn-danger" onclick="deleteSupplier(${s.id})"><i class="fas fa-trash"></i></button>
+            </td>
         </tr>`;
     }).join('');
 }
@@ -133,42 +219,4 @@ function updateSupplierSortArrows() {
     document.querySelectorAll('#suppliersTableMain th[data-sort] .sort-arrow').forEach(arrow => arrow.textContent = '');
     const active = document.querySelector(`#suppliersTableMain th[data-sort="${supplierSort.field}"] .sort-arrow`);
     if (active) active.textContent = supplierSort.order === 'asc' ? ' ▲' : ' ▼';
-}
-
-// ========== دوال المودال ==========
-window.editSupplier = function(id) {
-    if (!hasPermission('suppliers')) return;
-    const s = suppliersData.find(s => s.id === id);
-    if (!s) return;
-    document.getElementById('supplierNameInput').value = s.name;
-    document.getElementById('supplierContactInput').value = s.contact || '';
-    document.getElementById('supplierEmailInput').value = s.email;
-    document.getElementById('supplierPhoneInput').value = s.phone || '';
-    document.getElementById('supplierLeadTimeInput').value = s.leadTime;
-    const select = document.getElementById('supplierProductsSelect');
-    for (let i = 0; i < select.options.length; i++) {
-        select.options[i].selected = s.productsSuppliedList?.includes(select.options[i].value) || false;
-    }
-    supplierEditingId = id;
-    document.getElementById('addSupplierModal').classList.add('active');
-};
-
-window.deleteSupplier = async function(id) {
-    if (!hasPermission('suppliers')) return;
-    if (!confirm('Delete this supplier?')) return;
-    try {
-        await apiDeleteSupplier(id);
-        await loadSupplierPage(currentSupplierPage);
-    } catch (err) { alert(err.message); }
-};
-
-function clearSupplierForm() {
-    document.getElementById('supplierNameInput').value = '';
-    document.getElementById('supplierContactInput').value = '';
-    document.getElementById('supplierEmailInput').value = '';
-    document.getElementById('supplierPhoneInput').value = '';
-    document.getElementById('supplierLeadTimeInput').value = '5';
-    const select = document.getElementById('supplierProductsSelect');
-    for (let i = 0; i < select.options.length; i++) select.options[i].selected = false;
-    supplierEditingId = null;
 }
