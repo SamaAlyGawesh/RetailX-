@@ -192,12 +192,16 @@ function clearSupplierForm() {
     supplierEditingId = null;
 }
 
-window.editSupplier = function(id) {
+window.editSupplier = async function(id) {   // اجعلها async
     if (!hasPermission('suppliers')) return;
     const s = suppliersData.find(s => s.id === id);
     if (!s) return;
-	document.getElementById('supplierCodeDisplay').value = s.supplier_code || '';
+    
+    // تأكد من أن الفئات محملة
+    if (!allCategories.length) await loadInitialProducts();
+    
     document.getElementById('supplierNameInput').value = s.name;
+    document.getElementById('supplierCodeDisplay').value = s.supplier_code || '';
     document.getElementById('supplierContactInput').value = s.contact || '';
     document.getElementById('supplierEmailInput').value = s.email;
     document.getElementById('supplierPhoneInput').value = s.phone || '';
