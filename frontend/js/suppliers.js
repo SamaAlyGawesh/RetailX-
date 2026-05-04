@@ -122,9 +122,10 @@ function renderCategoriesCheckboxes(filter = '') {
     }
     container.innerHTML = filtered.map(cat => `
         <label class="multi-select-item">
-            <input type="checkbox" value="${cat}" ${selectedCategories.includes(cat) ? 'checked' : ''} onchange="toggleCategorySelect('${cat}', this.checked)">
-            <span>${cat}</span>
-        </label>
+			<input type="checkbox" value="${cat}" ${selectedCategories.includes(cat) ? 'checked' : ''} onchange="toggleCategorySelect('${cat}', this.checked)">
+			<span>${cat}</span>
+			<span style="margin-left:auto; color:var(--danger); cursor:pointer; font-size:14px;" onclick="event.preventDefault(); deleteCategoryFromList('${cat}');"> <i class="fas fa-trash-alt"></i> </span>
+		</label>
     `).join('');
 }
 
@@ -134,6 +135,14 @@ window.toggleCategorySelect = function(category, isChecked) {
     } else {
         selectedCategories = selectedCategories.filter(c => c !== category);
     }
+};
+
+window.deleteCategoryFromList = function(category) {
+    // إزالتها من المحددات
+    selectedCategories = selectedCategories.filter(c => c !== category);
+    // إعادة عرض القائمة (مع الاحتفاظ بأي نص بحث)
+    const searchInput = document.querySelector('.multi-select-search');
+    renderCategoriesCheckboxes(searchInput?.value || '');
 };
 
 function clearSupplierForm() {

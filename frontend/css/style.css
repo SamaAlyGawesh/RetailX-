@@ -554,6 +554,11 @@ body.light-theme input[type="date"] {
     border-radius: 6px;
 }
 
+.multi-select-item span:last-child:hover {
+    color: var(--danger);
+    transform: scale(1.2);
+}
+
 @media (max-width: 480px) {
     .container { padding: 0 15px; }
     .stat-card .value { font-size: 1.5rem; }
