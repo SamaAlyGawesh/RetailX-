@@ -75,6 +75,28 @@ document.addEventListener('DOMContentLoaded', () => {
 	});
 
     if (appState.isAuthenticated) loadSupplierPage(1);
+	
+	// إضافة فئة جديدة
+	document.getElementById('addNewCategoryBtn').addEventListener('click', () => {
+		const input = document.getElementById('newCategoryInput');
+		const newCat = input.value.trim();
+		if (!newCat) return;
+		if (allCategories.includes(newCat)) {
+			alert('Category already exists.');
+			return;
+		}
+		// أضف الفئة إلى القائمة
+		allCategories.push(newCat);
+		allCategories.sort();
+		// أضفها إلى المحددات واجعلها محددة
+		if (!selectedCategories.includes(newCat)) {
+			selectedCategories.push(newCat);
+		}
+		// أعد بناء واجهة الفئات
+		renderCategoriesCheckboxes(document.querySelector('.multi-select-search')?.value || '');
+		// أفرغ الحقل
+		input.value = '';
+	});
 });
 
 async function loadInitialProducts() { // احتفظنا بالاسم لتجنب تغيير الاستدعاءات

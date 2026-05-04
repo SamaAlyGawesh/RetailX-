@@ -546,6 +546,14 @@ body.light-theme input[type="date"] {
     height: 16px;
 }
 
+#newCategoryInput {
+    background: var(--dark-bg);
+    color: var(--dark-text);
+    border: 1px solid var(--dark-border);
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+
 @media (max-width: 480px) {
     .container { padding: 0 15px; }
     .stat-card .value { font-size: 1.5rem; }
