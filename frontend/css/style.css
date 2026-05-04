@@ -559,6 +559,19 @@ body.light-theme input[type="date"] {
     transform: scale(1.2);
 }
 
+.sticky-header thead th {
+    position: sticky;
+    top: 0;
+    background: var(--dark-card);
+    z-index: 2;
+}
+.sticky-header thead tr:first-child th {
+    top: 0;
+}
+.sticky-header thead tr:last-child th {
+    top: 40px; /* تقريباً ارتفاع صف الرأس الأول */
+}
+
 @media (max-width: 480px) {
     .container { padding: 0 15px; }
     .stat-card .value { font-size: 1.5rem; }

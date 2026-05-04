@@ -268,25 +268,20 @@ function renderSuppliersTableHTML(suppliers) {
     const tbody = document.getElementById('suppliersTable');
     if (!tbody) return;
     if (suppliers.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;">No suppliers found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No suppliers found.</td></tr>';
         return;
     }
     const startNumber = (currentSupplierPage - 1) * supplierLimit + 1;
     tbody.innerHTML = suppliers.map((s, index) => {
         const categoriesHtml = (s.productsSuppliedList || []).map(c => `<span class="supplier-product-badge">${c}</span>`).join('') || '<span class="supplier-product-badge">No Categories</span>';
-        const addressStr = [s.address1, s.address2].filter(Boolean).join(', ') || '-';
         return `<tr>
             <td>${startNumber + index}</td>
-			<td style="font-family:monospace;">${s.supplier_code || '-'}</td>
+            <td style="font-family:monospace;">${s.supplier_code || '-'}</td>
             <td>${s.name}</td>
             <td>${s.contact || '-'}</td>
             <td>${s.email}</td>
             <td>${s.phone || '-'}</td>
-            <td>${addressStr}</td>
-            <td>${s.website ? `<a href="${s.website}" target="_blank">Link</a>` : '-'}</td>
-            <td>${s.payment_terms || '-'}</td>
             <td><div class="supplier-products-list">${categoriesHtml}</div></td>
-            <td>${s.leadTime} days</td>
             <td>
                 <button class="btn btn-sm btn-primary" onclick="editSupplier(${s.id})"><i class="fas fa-edit"></i></button>
                 <button class="btn btn-sm btn-danger" onclick="deleteSupplier(${s.id})"><i class="fas fa-trash"></i></button>

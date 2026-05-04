@@ -352,40 +352,36 @@
     <section id="suppliersPage" class="page">
 		<div class="container">
 			<div class="dashboard-header"><h2 id="suppliersTitle">Supplier Management</h2><button class="btn btn-primary" id="addNewSupplier"><i class="fas fa-plus"></i> <span id="addSupplierText">Add Supplier</span></button></div>
-			<div class="card"><h3 id="supplierListTitle">Supplier List</h3>
-				<table class="inventory-table" id="suppliersTableMain">
-					<thead>
-						<tr>
-							<th>#</th>
-							<th>Code</th>
-							<th data-sort="name">Supplier Name <span class="sort-arrow"></span></th>
-							<th data-sort="contact">Contact Person <span class="sort-arrow"></span></th>
-							<th data-sort="email">Email <span class="sort-arrow"></span></th>
-							<th data-sort="phone">Phone <span class="sort-arrow"></span></th>
-							<th>Address</th>
-							<th>Website</th>
-							<th>Payment Terms</th>
-							<th>Categories Supplied</th>
-							<th data-sort="leadTime">Lead Time <span class="sort-arrow"></span></th>
-							<th>Actions</th>
-						</tr>
-						<tr id="supplierFilterRow">
-							<th></th>
-							<th><input type="text" id="filterSupplierName" placeholder="Supplier name"></th>
-							<th><input type="text" id="filterContact" placeholder="Contact"></th>
-							<th><input type="text" id="filterSupplierEmail" placeholder="Email"></th>
-							<th><input type="text" id="filterSupplierPhone" placeholder="Phone"></th>
-							<th><input type="text" id="filterSupplierAddress" placeholder="Address"></th>
-							<th></th>
-							<th></th>
-							<th><input type="text" id="filterProductsSupplied" placeholder="Product"></th>
-							<th><input type="number" id="filterLeadTime" placeholder="Days" style="width:80px;"></th>
-							<th></th>
-						</tr>
-					</thead>
-					<tbody id="suppliersTable"></tbody>
-				</table>
-				<div id="supplierPagination" class="pagination-container"></div>
+			<div class="card">
+				<h3 id="supplierListTitle">Supplier List</h3>
+				<div style="overflow-x: auto; max-height: 70vh; overflow-y: auto;">
+					<table class="inventory-table sticky-header" id="suppliersTableMain">
+						<thead>
+							<tr>
+								<th>#</th>
+								<th>Code</th>
+								<th data-sort="name">Supplier Name <span class="sort-arrow"></span></th>
+								<th data-sort="contact">Contact Person <span class="sort-arrow"></span></th>
+								<th data-sort="email">Email <span class="sort-arrow"></span></th>
+								<th data-sort="phone">Phone <span class="sort-arrow"></span></th>
+								<th>Categories Supplied</th>
+								<th>Actions</th>
+							</tr>
+							<tr id="supplierFilterRow">
+								<th></th>
+								<th></th>
+								<th><input type="text" id="filterSupplierName" placeholder="Supplier name"></th>
+								<th><input type="text" id="filterContact" placeholder="Contact"></th>
+								<th><input type="text" id="filterSupplierEmail" placeholder="Email"></th>
+								<th><input type="text" id="filterSupplierPhone" placeholder="Phone"></th>
+								<th><input type="text" id="filterProductsSupplied" placeholder="Category"></th>
+								<th></th>
+							</tr>
+						</thead>
+						<tbody id="suppliersTable"></tbody>
+					</table>
+					<div id="supplierPagination" class="pagination-container"></div>
+				</div>
 			</div>
 		</div>
 	</section>
