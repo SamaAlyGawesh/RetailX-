@@ -118,3 +118,23 @@ async function apiToggleUserStatus(userId, status) {
 async function apiResetUserPassword(userId) {
     return api('PATCH', `/users/${userId}/reset-password`);
 }
+
+// ========== SUPPLIER DOCUMENTS ==========
+async function apiGetSupplierDocuments(supplierId) {
+    return api('GET', `/supplier-documents/${supplierId}`);
+}
+
+async function apiUploadSupplierDocument(supplierId, formData) {
+    const res = await fetch(`${API_BASE}/supplier-documents/${supplierId}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${appState.token}` },
+        body: formData
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Upload failed');
+    return data;
+}
+
+async function apiDeleteSupplierDocument(docId) {
+    return api('DELETE', `/supplier-documents/${docId}`);
+}

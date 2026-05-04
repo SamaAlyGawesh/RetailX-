@@ -1,11 +1,11 @@
-// suppliers.js - Supplier management with filtering, sorting & pagination
+// suppliers.js - Supplier management with filtering, sorting, pagination, categories & documents
 
 let currentSuppliers = [];
 let supplierSort = { field: 'name', order: 'asc' };
 let currentSupplierPage = 1;
 const supplierLimit = 15;
 let totalSupplierPages = 1;
-let supplierEditingId = null;          // <-- تم تغيير الاسم لتجنب التعارض
+let supplierEditingId = null;
 let allCategories = [];
 let selectedCategories = [];
 
@@ -14,15 +14,15 @@ document.addEventListener('DOMContentLoaded', () => {
         loadInitialProducts();
         loadSupplierPage(1);
     }
-	
+
     document.getElementById('addNewSupplier').onclick = async () => {
-		if (!hasPermission('suppliers')) return;
-		if (!allCategories.length) await loadInitialProducts();
-		clearSupplierForm();
-		supplierEditingId = null;
-		document.getElementById('addSupplierModal').classList.add('active');
-		renderCategoriesCheckboxes(); // الآن مضمون أن allCategories ليست فارغة
-	};
+        if (!hasPermission('suppliers')) return;
+        if (!allCategories.length) await loadInitialProducts();
+        clearSupplierForm();
+        supplierEditingId = null;
+        document.getElementById('addSupplierModal').classList.add('active');
+        renderCategoriesCheckboxes();
+    };
 
     document.getElementById('submitSupplier').onclick = async () => {
         if (!hasPermission('suppliers')) return;
@@ -45,6 +45,32 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 await apiCreateSupplier(supplier);
             }
+            
+            // --- رفع المستندات الجديدة (الصفوف التي تحتوي على ملفات) ---
+            const docRows = document.querySelectorAll('#supplierDocsBody tr');
+            for (const row of docRows) {
+                const fileInput = row.querySelector('.doc-file-input');
+                if (fileInput && fileInput.files.length > 0) {
+                    const type = row.querySelector('.doc-type-input').value.trim();
+                    const number = row.querySelector('.doc-number-input').value.trim();
+                    const issue = row.querySelector('.doc-issue-input').value;
+                    const expiry = row.querySelector('.doc-expiry-input').value;
+                    if (!type) continue;
+                    const formData = new FormData();
+                    formData.append('file', fileInput.files[0]);
+                    formData.append('document_type', type);
+                    formData.append('document_number', number);
+                    formData.append('issue_date', issue);
+                    formData.append('expiry_date', expiry);
+                    try {
+                        await apiUploadSupplierDocument(supplierEditingId || /* إذا كان جديدًا، نعرف id من الرد */ supplier.id, formData);
+                    } catch (err) {
+                        console.error('Failed to upload doc', err);
+                    }
+                }
+            }
+            // --------------------------------------------
+
             await loadSupplierPage(currentSupplierPage);
             document.getElementById('addSupplierModal').classList.remove('active');
             clearSupplierForm();
@@ -69,48 +95,63 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Search products
+    // Search categories
     document.querySelector('.multi-select-search')?.addEventListener('input', function(e) {
-		renderCategoriesCheckboxes(e.target.value);
-	});
+        renderCategoriesCheckboxes(e.target.value);
+    });
+
+    // إضافة فئة جديدة
+    document.getElementById('addNewCategoryBtn')?.addEventListener('click', async () => {
+        const input = document.getElementById('newCategoryInput');
+        const newCat = input.value.trim();
+        if (!newCat) return;
+        if (allCategories.includes(newCat)) {
+            alert('Category already exists.');
+            return;
+        }
+        try {
+            await apiCreateProduct({
+                name: '__category_placeholder__',
+                sku: 'CAT-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+                category: newCat,
+                quantity: 0,
+                reorderLevel: 0,
+                price: 0,
+                supplier: 'System'
+            });
+            allCategories.push(newCat);
+            allCategories.sort();
+            if (!selectedCategories.includes(newCat)) selectedCategories.push(newCat);
+            renderCategoriesCheckboxes(document.querySelector('.multi-select-search')?.value || '');
+            input.value = '';
+        } catch (err) {
+            alert('Failed to save category: ' + err.message);
+        }
+    });
+
+    // زر إضافة صف مستند جديد
+    document.getElementById('addDocRowBtn')?.addEventListener('click', () => addDocRow());
+
+    // حذف مستند موجود
+    document.getElementById('supplierDocsBody')?.addEventListener('click', async (e) => {
+        if (e.target.closest('.delete-existing-doc-btn')) {
+            const btn = e.target.closest('.delete-existing-doc-btn');
+            const docId = btn.dataset.docId;
+            if (!confirm('Delete this document?')) return;
+            try {
+                await apiDeleteSupplierDocument(docId);
+                btn.closest('tr').remove();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+    });
 
     if (appState.isAuthenticated) loadSupplierPage(1);
-	
-	// إضافة فئة جديدة
-	document.getElementById('addNewCategoryBtn')?.addEventListener('click', async () => {
-		const input = document.getElementById('newCategoryInput');
-		const newCat = input.value.trim();
-		if (!newCat) return;
-		if (allCategories.includes(newCat)) {
-			alert('Category already exists.');
-			return;
-		}
-		try {
-			// إنشاء منتج وهمي (placeholder) لحفظ الفئة
-			await apiCreateProduct({
-				name: '__category_placeholder__',
-				sku: 'CAT-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
-				category: newCat,
-				quantity: 0,
-				reorderLevel: 0,
-				price: 0,
-				supplier: 'System'
-			});
-			// أضف الفئة محلياً
-			allCategories.push(newCat);
-			allCategories.sort();
-			if (!selectedCategories.includes(newCat)) {
-				selectedCategories.push(newCat);
-			}
-			renderCategoriesCheckboxes(document.querySelector('.multi-select-search')?.value || '');
-			input.value = '';
-		} catch (err) {
-			alert('Failed to save category: ' + err.message);
-		}
-	});
 });
 
-async function loadInitialProducts() { // احتفظنا بالاسم لتجنب تغيير الاستدعاءات
+// ========== دوال الفئات ==========
+async function loadInitialProducts() {
     if (allCategories.length) return;
     try {
         const data = await apiGetProducts(1, 9999);
@@ -133,10 +174,10 @@ function renderCategoriesCheckboxes(filter = '') {
     }
     container.innerHTML = filtered.map(cat => `
         <label class="multi-select-item">
-			<input type="checkbox" value="${cat}" ${selectedCategories.includes(cat) ? 'checked' : ''} onchange="toggleCategorySelect('${cat}', this.checked)">
-			<span>${cat}</span>
-			<span style="margin-left:auto; color:var(--danger); cursor:pointer; font-size:14px;" onclick="event.preventDefault(); deleteCategoryFromList('${cat}');"> <i class="fas fa-trash-alt"></i> </span>
-		</label>
+            <input type="checkbox" value="${cat}" ${selectedCategories.includes(cat) ? 'checked' : ''} onchange="toggleCategorySelect('${cat}', this.checked)">
+            <span>${cat}</span>
+            <span style="margin-left:auto; color:var(--danger); cursor:pointer; font-size:14px;" onclick="event.preventDefault(); deleteCategoryFromList('${cat}');"> <i class="fas fa-trash-alt"></i> </span>
+        </label>
     `).join('');
 }
 
@@ -149,36 +190,69 @@ window.toggleCategorySelect = function(category, isChecked) {
 };
 
 window.deleteCategoryFromList = function(category) {
-    // تحقق من وجود منتجات حقيقية بهذه الفئة (غير العناصر الوهمية)
     const realProducts = inventoryData.filter(p => p.category === category && p.name !== '__category_placeholder__');
     if (realProducts.length > 0) {
         alert(`Cannot delete category "${category}". It is used by ${realProducts.length} real product(s).`);
         return;
     }
     if (confirm(`Are you sure you want to delete the category "${category}"?`)) {
-        // ابحث عن المنتج الوهمي لهذه الفئة واحذفه
         const placeholder = inventoryData.find(p => p.category === category && p.name === '__category_placeholder__');
         if (placeholder) {
             apiDeleteProduct(placeholder.id).then(() => {
-                // إزالة الفئة من القوائم
                 allCategories = allCategories.filter(c => c !== category);
                 selectedCategories = selectedCategories.filter(c => c !== category);
-                const searchInput = document.querySelector('.multi-select-search');
-                renderCategoriesCheckboxes(searchInput?.value || '');
+                renderCategoriesCheckboxes(document.querySelector('.multi-select-search')?.value || '');
             }).catch(err => alert('Failed to delete category: ' + err.message));
         } else {
-            // إذا لم يوجد منتج وهمي (حالة نادرة)، فقط أزل من الواجهة
             allCategories = allCategories.filter(c => c !== category);
             selectedCategories = selectedCategories.filter(c => c !== category);
-            const searchInput = document.querySelector('.multi-select-search');
-            renderCategoriesCheckboxes(searchInput?.value || '');
+            renderCategoriesCheckboxes(document.querySelector('.multi-select-search')?.value || '');
         }
     }
 };
 
+// ========== دوال المستندات ==========
+function addDocRow(doc = null) {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td><input type="text" class="form-control doc-type-input" value="${doc?.document_type || ''}" placeholder="e.g. Tax Card" list="docTypesList"></td>
+        <td><input type="text" class="form-control doc-number-input" value="${doc?.document_number || ''}" placeholder="Registration number"></td>
+        <td><input type="date" class="form-control doc-issue-input" value="${doc?.issue_date || ''}"></td>
+        <td><input type="date" class="form-control doc-expiry-input" value="${doc?.expiry_date || ''}"></td>
+        <td><input type="file" class="form-control doc-file-input" accept="image/*,.pdf"></td>
+        <td><button class="btn btn-sm btn-danger remove-doc-row"><i class="fas fa-times"></i></button></td>
+    `;
+    document.getElementById('supplierDocsBody').appendChild(row);
+
+    if (doc) {
+        const fileCell = row.querySelector('.doc-file-input').parentElement;
+        if (doc.file_path) {
+            fileCell.innerHTML = `<a href="/uploads/supplier_docs/${doc.file_path}" target="_blank">View</a> <input type="hidden" class="doc-existing-file" value="${doc.file_path}">`;
+        }
+        if (doc.id) {
+            const actionsCell = row.querySelector('td:last-child');
+            actionsCell.innerHTML += `<button class="btn btn-sm btn-danger delete-existing-doc-btn" data-doc-id="${doc.id}"><i class="fas fa-trash"></i></button>`;
+        }
+    }
+
+    row.querySelector('.remove-doc-row').onclick = () => row.remove();
+}
+
+async function loadAndRenderSupplierDocs(supplierId) {
+    try {
+        const docs = await apiGetSupplierDocuments(supplierId);
+        const body = document.getElementById('supplierDocsBody');
+        body.innerHTML = '';
+        docs.forEach(doc => addDocRow(doc));
+    } catch (err) {
+        console.error('Failed to load documents', err);
+    }
+}
+
+// ========== دوال النموذج ==========
 function clearSupplierForm() {
-	document.getElementById('supplierCodeDisplay').value = '';
     document.getElementById('supplierNameInput').value = '';
+    document.getElementById('supplierCodeDisplay').value = '';
     document.getElementById('supplierContactInput').value = '';
     document.getElementById('supplierEmailInput').value = '';
     document.getElementById('supplierPhoneInput').value = '';
@@ -189,15 +263,14 @@ function clearSupplierForm() {
     document.getElementById('supplierLeadTimeInput').value = '5';
     selectedCategories = [];
     renderCategoriesCheckboxes();
+    document.getElementById('supplierDocsBody').innerHTML = '';
     supplierEditingId = null;
 }
 
-window.editSupplier = async function(id) {   // اجعلها async
+window.editSupplier = async function(id) {
     if (!hasPermission('suppliers')) return;
     const s = suppliersData.find(s => s.id === id);
     if (!s) return;
-    
-    // تأكد من أن الفئات محملة
     if (!allCategories.length) await loadInitialProducts();
     
     document.getElementById('supplierNameInput').value = s.name;
@@ -214,6 +287,7 @@ window.editSupplier = async function(id) {   // اجعلها async
     renderCategoriesCheckboxes();
     supplierEditingId = id;
     document.getElementById('addSupplierModal').classList.add('active');
+    loadAndRenderSupplierDocs(id);
 };
 
 window.deleteSupplier = async function(id) {
@@ -300,7 +374,6 @@ function updateSupplierSortArrows() {
     if (active) active.textContent = supplierSort.order === 'asc' ? ' ▲' : ' ▼';
 }
 
-// دالة متوافقة مع الملفات القديمة التي تنادي renderSuppliersTable
 function renderSuppliersTable() {
     loadSupplierPage(currentSupplierPage);
 }

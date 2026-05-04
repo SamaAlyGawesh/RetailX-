@@ -573,6 +573,24 @@
 				</div>
 				<small style="color:#94a3b8;">Click to select/deselect</small>
 			</div>
+			<div class="form-group">
+				<label>Supplier Documents</label>
+				<table class="sale-items-table" id="supplierDocsTable">
+					<thead>
+						<tr>
+							<th>Document Type</th>
+							<th>Document Number</th>
+							<th>Issue Date</th>
+							<th>Expiry Date</th>
+							<th>File</th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody id="supplierDocsBody"></tbody>
+				</table>
+				<button class="btn btn-sm btn-outline" id="addDocRowBtn" style="margin-top:6px;"><i class="fas fa-plus"></i> Add Document</button>
+				<small style="color:#94a3b8;">Accepted: images, PDF. Max 5MB.</small>
+			</div>
 			<div class="form-group"><label>Lead Time (days)</label><input type="number" id="supplierLeadTimeInput" class="form-control" value="5" min="1"></div>
 			<div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
 				<button class="btn btn-outline close-modal">Cancel</button>
@@ -628,5 +646,13 @@
 	<script src="js/responsive.js"></script>
 	<script src="js/users.js"></script>
 	<script src="js/pagination.js"></script>
+	<datalist id="docTypesList">
+		<option value="Commercial Register">
+		<option value="Tax Card">
+		<option value="VAT Certificate">
+		<option value="Contract">
+		<option value="Insurance">
+		<option value="Other">
+	</datalist>
 </body>
 </html>

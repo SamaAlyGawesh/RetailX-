@@ -23,6 +23,11 @@ app.use('/api/reports', require('./routes/reports'));
 app.use('/api/activity', require('./routes/activity'));
 app.use('/api/backup', require('./routes/backup'));
 app.use('/api/users', require('./routes/users'));
+// تقديم الملفات المرفوعة
+app.use('/uploads', express.static('uploads'));
+
+// راوتر المستندات
+app.use('/api/supplier-documents', require('./routes/supplierDocuments'));
 
 // Serve frontend in production
 app.use(express.static('../frontend'));
