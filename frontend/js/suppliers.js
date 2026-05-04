@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (appState.isAuthenticated) loadSupplierPage(1);
 	
 	// إضافة فئة جديدة
-	document.getElementById('addNewCategoryBtn').addEventListener('click', () => {
+	document.getElementById('addNewCategoryBtn')?.addEventListener('click', async () => {
 		const input = document.getElementById('newCategoryInput');
 		const newCat = input.value.trim();
 		if (!newCat) return;
@@ -85,17 +85,28 @@ document.addEventListener('DOMContentLoaded', () => {
 			alert('Category already exists.');
 			return;
 		}
-		// أضف الفئة إلى القائمة
-		allCategories.push(newCat);
-		allCategories.sort();
-		// أضفها إلى المحددات واجعلها محددة
-		if (!selectedCategories.includes(newCat)) {
-			selectedCategories.push(newCat);
+		try {
+			// إنشاء منتج وهمي (placeholder) لحفظ الفئة
+			await apiCreateProduct({
+				name: '__category_placeholder__',
+				sku: 'CAT-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+				category: newCat,
+				quantity: 0,
+				reorderLevel: 0,
+				price: 0,
+				supplier: 'System'
+			});
+			// أضف الفئة محلياً
+			allCategories.push(newCat);
+			allCategories.sort();
+			if (!selectedCategories.includes(newCat)) {
+				selectedCategories.push(newCat);
+			}
+			renderCategoriesCheckboxes(document.querySelector('.multi-select-search')?.value || '');
+			input.value = '';
+		} catch (err) {
+			alert('Failed to save category: ' + err.message);
 		}
-		// أعد بناء واجهة الفئات
-		renderCategoriesCheckboxes(document.querySelector('.multi-select-search')?.value || '');
-		// أفرغ الحقل
-		input.value = '';
 	});
 });
 
@@ -138,11 +149,31 @@ window.toggleCategorySelect = function(category, isChecked) {
 };
 
 window.deleteCategoryFromList = function(category) {
-    // إزالتها من المحددات
-    selectedCategories = selectedCategories.filter(c => c !== category);
-    // إعادة عرض القائمة (مع الاحتفاظ بأي نص بحث)
-    const searchInput = document.querySelector('.multi-select-search');
-    renderCategoriesCheckboxes(searchInput?.value || '');
+    // تحقق من وجود منتجات حقيقية بهذه الفئة (غير العناصر الوهمية)
+    const realProducts = inventoryData.filter(p => p.category === category && p.name !== '__category_placeholder__');
+    if (realProducts.length > 0) {
+        alert(`Cannot delete category "${category}". It is used by ${realProducts.length} real product(s).`);
+        return;
+    }
+    if (confirm(`Are you sure you want to delete the category "${category}"?`)) {
+        // ابحث عن المنتج الوهمي لهذه الفئة واحذفه
+        const placeholder = inventoryData.find(p => p.category === category && p.name === '__category_placeholder__');
+        if (placeholder) {
+            apiDeleteProduct(placeholder.id).then(() => {
+                // إزالة الفئة من القوائم
+                allCategories = allCategories.filter(c => c !== category);
+                selectedCategories = selectedCategories.filter(c => c !== category);
+                const searchInput = document.querySelector('.multi-select-search');
+                renderCategoriesCheckboxes(searchInput?.value || '');
+            }).catch(err => alert('Failed to delete category: ' + err.message));
+        } else {
+            // إذا لم يوجد منتج وهمي (حالة نادرة)، فقط أزل من الواجهة
+            allCategories = allCategories.filter(c => c !== category);
+            selectedCategories = selectedCategories.filter(c => c !== category);
+            const searchInput = document.querySelector('.multi-select-search');
+            renderCategoriesCheckboxes(searchInput?.value || '');
+        }
+    }
 };
 
 function clearSupplierForm() {
