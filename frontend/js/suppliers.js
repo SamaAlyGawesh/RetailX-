@@ -5,17 +5,17 @@ let supplierSort = { field: 'name', order: 'asc' };
 let currentSupplierPage = 1;
 const supplierLimit = 15;
 let totalSupplierPages = 1;
-let editingSupplierId = null;
-let allProducts = []; // لتغذية قائمة المنتجات
-let selectedProducts = []; // للمنتجات المختارة حالياً
+let supplierEditingId = null;          // <-- تم تغيير الاسم لتجنب التعارض
+let allProducts = [];
+let selectedProducts = [];
 
 document.addEventListener('DOMContentLoaded', () => {
-    loadInitialProducts(); // تحميل كل المنتجات للقائمة
+    loadInitialProducts();
 
     document.getElementById('addNewSupplier').onclick = () => {
         if (!hasPermission('suppliers')) return;
         clearSupplierForm();
-        editingSupplierId = null;
+        supplierEditingId = null;
         document.getElementById('addSupplierModal').classList.add('active');
         renderProductsCheckboxes();
     };
@@ -32,12 +32,12 @@ document.addEventListener('DOMContentLoaded', () => {
             website: document.getElementById('supplierWebsite').value.trim(),
             payment_terms: document.getElementById('supplierPaymentTerms').value.trim(),
             leadTime: parseInt(document.getElementById('supplierLeadTimeInput').value) || 5,
-            productsSuppliedList: selectedProducts // مصفوفة نصية
+            productsSuppliedList: selectedProducts
         };
         if (!supplier.name || !supplier.email) return alert('Name and email required');
         try {
-            if (editingSupplierId) {
-                await apiUpdateSupplier(editingSupplierId, supplier);
+            if (supplierEditingId) {
+                await apiUpdateSupplier(supplierEditingId, supplier);
             } else {
                 await apiCreateSupplier(supplier);
             }
@@ -47,13 +47,13 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) { alert(err.message); }
     };
 
-    // أحداث الفلترة
+    // Filter events
     ['filterSupplierName','filterContact','filterSupplierEmail','filterSupplierPhone','filterSupplierAddress','filterProductsSupplied','filterLeadTime'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('input', () => { currentSupplierPage = 1; loadSupplierPage(1); });
     });
 
-    // الفرز
+    // Sorting
     document.querySelectorAll('#suppliersTableMain th[data-sort]').forEach(th => {
         th.style.cursor = 'pointer';
         th.addEventListener('click', () => {
@@ -65,8 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // بحث في قائمة المنتجات
-    document.querySelector('.multi-select-search').addEventListener('input', function(e) {
+    // Search products
+    document.querySelector('.multi-select-search')?.addEventListener('input', function(e) {
         renderProductsCheckboxes(e.target.value);
     });
 
@@ -111,7 +111,7 @@ function clearSupplierForm() {
     document.getElementById('supplierLeadTimeInput').value = '5';
     selectedProducts = [];
     renderProductsCheckboxes();
-    editingSupplierId = null;
+    supplierEditingId = null;
 }
 
 window.editSupplier = function(id) {
@@ -129,7 +129,7 @@ window.editSupplier = function(id) {
     document.getElementById('supplierLeadTimeInput').value = s.leadTime;
     selectedProducts = s.productsSuppliedList || [];
     renderProductsCheckboxes();
-    editingSupplierId = id;
+    supplierEditingId = id;
     document.getElementById('addSupplierModal').classList.add('active');
 };
 
@@ -142,7 +142,7 @@ window.deleteSupplier = async function(id) {
     } catch (err) { alert(err.message); }
 };
 
-// ========== دوال تحميل وعرض الجدول ==========
+// ========== جدول الموردين ==========
 async function loadSupplierPage(page) {
     currentSupplierPage = page;
     const data = await apiGetSuppliers(page, supplierLimit);
@@ -219,4 +219,9 @@ function updateSupplierSortArrows() {
     document.querySelectorAll('#suppliersTableMain th[data-sort] .sort-arrow').forEach(arrow => arrow.textContent = '');
     const active = document.querySelector(`#suppliersTableMain th[data-sort="${supplierSort.field}"] .sort-arrow`);
     if (active) active.textContent = supplierSort.order === 'asc' ? ' ▲' : ' ▼';
+}
+
+// دالة متوافقة مع الملفات القديمة التي تنادي renderSuppliersTable
+function renderSuppliersTable() {
+    loadSupplierPage(currentSupplierPage);
 }
