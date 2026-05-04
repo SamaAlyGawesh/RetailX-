@@ -248,9 +248,6 @@ body.rtl .stat-card { border-left: none; border-right: 4px solid var(--primary);
 /* SUPPLIER BADGES */
 .supplier-products-list { display: flex; flex-wrap: wrap; gap: 6px; }
 .supplier-product-badge { background: rgba(16, 185, 129, 0.2); color: #10b981; padding: 4px 10px; border-radius: 20px; font-size: 12px; display: inline-block; }
-.supplier-products-multi { width: 100%; padding: 10px; border-radius: 8px; background: #0f172a; color: white; border: 1px solid var(--dark-border); min-height: 130px; }
-.supplier-products-multi option { padding: 8px; margin: 2px 0; border-radius: 6px; }
-.supplier-products-multi option:checked { background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white; }
 
 /* ANIMATIONS */
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -293,296 +290,120 @@ body.rtl .stat-card { border-left: none; border-right: 4px solid var(--primary);
     border-radius: 5px;
     transition: all 0.3s ease;
 }
-.hamburger.active span:nth-child(1) {
-    transform: rotate(45deg) translate(5px, 5px);
-}
-.hamburger.active span:nth-child(2) {
-    opacity: 0;
-}
-.hamburger.active span:nth-child(3) {
-    transform: rotate(-45deg) translate(5px, -5px);
-}
-
-/* Responsive Tables */
-.table-responsive {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-}
+.hamburger.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+.hamburger.active span:nth-child(2) { opacity: 0; }
+.hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
 
 @media (max-width: 768px) {
-    /* Show hamburger, hide nav */
     .hamburger { display: flex; }
     .nav-links {
         display: flex;
         flex-direction: column;
         position: fixed;
-        top: 70px;
-        left: 0;
-        width: 100%;
-        height: 0;
+        top: 70px; left: 0; width: 100%; height: 0;
         background: var(--dark-card);
         overflow-y: auto;
         transition: height 0.4s ease;
-        padding: 0;
-        gap: 0;
+        padding: 0; gap: 0;
         z-index: 999;
         box-shadow: 0 10px 15px rgba(0,0,0,0.3);
     }
-    .nav-links.active {
-        height: calc(100vh - 70px);
-        padding: 20px;
-    }
-    .nav-links a {
-        padding: 15px;
-        border-bottom: 1px solid var(--dark-border);
-        width: 100%;
-    }
-
-    /* Typography */
+    .nav-links.active { height: calc(100vh - 70px); padding: 20px; }
+    .nav-links a { padding: 15px; border-bottom: 1px solid var(--dark-border); width: 100%; }
     .hero h1 { font-size: 2rem; }
     .hero p { font-size: 1rem; }
     .dashboard-header h2 { font-size: 1.5rem; }
     .section-title h2 { font-size: 1.8rem; }
-
-    /* Grids */
     .stats-grid { grid-template-columns: 1fr; }
     .features-grid, .quick-links-grid { grid-template-columns: 1fr; }
     .dashboard-content { grid-template-columns: 1fr !important; }
     .report-grid { grid-template-columns: 1fr !important; }
-
-    /* Settings */
     .settings-container { grid-template-columns: 1fr; }
-
-    /* Modals */
     .modal-content { width: 95%; margin: 10px; padding: 20px; }
-
-    /* Chatbot */
     .chatbot-box { width: 280px; height: 400px; right: 10px; }
     .chatbot-toggle { width: 50px; height: 50px; font-size: 20px; }
-
-    /* Hero */
     .hero { padding: 120px 0 40px; }
     .hero-btns { flex-direction: column; align-items: center; }
-
-    /* Footer */
     footer .container > div:first-child { grid-template-columns: 1fr; text-align: center; }
     .social-icons { justify-content: center; }
-
-    /* Inventory/sales/suppliers tables */
-    .inventory-table { min-width: 600px; }
-    .card:has(.inventory-table) { overflow-x: auto; }
-
-    /* Light theme adjustments */
+    .inventory-table { min-width: auto; }
+    .card:has(.inventory-table) { overflow-x: visible; }
     body.light-theme .nav-links { background: white; }
     body.light-theme .nav-links a { border-color: var(--light-border); }
 }
+
 /* ===== Fix Tables Overflow & Filter Styling ===== */
+.card:has(table) { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.inventory-table { width: 100%; table-layout: auto; }
+#suppliersTableMain.inventory-table, #usersTableMain.inventory-table { min-width: auto; }
 
-/* أي كارد فيه جدول يبقى القابل للتمرير الأفقي */
-.card:has(table) {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+#inventoryFilterRow input, #salesFilterRow input, #supplierFilterRow input,
+#dashboardFilterRow input, #filterRow input {
+    width: 100%; max-width: 100%; padding: 6px 8px; font-size: 12px;
+    background: var(--dark-bg); color: var(--dark-text);
+    border: 1px solid var(--dark-border); border-radius: 4px;
+}
+#inventoryFilterRow select, #salesFilterRow select, #supplierFilterRow select,
+#dashboardFilterRow select, #filterRow select {
+    width: 100%; padding: 6px 8px; font-size: 12px;
+    background: var(--dark-bg); color: var(--dark-text);
+    border: 1px solid var(--dark-border); border-radius: 4px;
 }
 
-/* الحد الأدنى لعرض الجداول عشان الأعمدة متفصلش */
-.inventory-table {
-    width: 100%;
-    table-layout: auto;
-}
-
-/* استثناء جداول الموردين والمستخدمين من الحد الأدنى */
-#suppliersTableMain.inventory-table,
-#usersTableMain.inventory-table {
-    min-width: auto;
-}
-
-/* تقليل حجم حقول الفلترة وجعلها مناسبة */
-#inventoryFilterRow input,
-#salesFilterRow input,
-#supplierFilterRow input,
-#dashboardFilterRow input,
-#filterRow input {
-    width: 100%;
-    max-width: 100%;
-    padding: 6px 8px;
-    font-size: 12px;
-    background: var(--dark-bg);
-    color: var(--dark-text);
-    border: 1px solid var(--dark-border);
-    border-radius: 4px;
-}
-
-#inventoryFilterRow select,
-#salesFilterRow select,
-#supplierFilterRow select,
-#dashboardFilterRow select,
-#filterRow select {
-    width: 100%;
-    padding: 6px 8px;
-    font-size: 12px;
-    background: var(--dark-bg);
-    color: var(--dark-text);
-    border: 1px solid var(--dark-border);
-    border-radius: 4px;
-}
-
-/* توسيع نافذة تقارير المخزون */
-#reportViewModal .modal-content {
-    max-width: 850px;
-}
-/* تنسيق عناصر التقرير */
-.report-option h4 {
-    margin-bottom: 8px;
-}
-
+/* Report Modal */
+#reportViewModal .modal-content { max-width: 850px; max-height: 80vh; overflow-y: auto; }
+.report-option h4 { margin-bottom: 8px; }
 .report-filter-select {
-    width: 100%;
-    padding: 8px 12px;
-    margin-bottom: 10px;
-    border-radius: 6px;
-    background: var(--dark-bg);
-    color: var(--dark-text);
-    border: 1px solid var(--dark-border);
-    font-size: 13px;
+    width: 100%; padding: 8px 12px; margin-bottom: 10px; border-radius: 6px;
+    background: var(--dark-bg); color: var(--dark-text);
+    border: 1px solid var(--dark-border); font-size: 13px;
 }
-
-.report-date-fields {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 10px;
-}
-
+.report-date-fields { display: flex; gap: 8px; margin-bottom: 10px; }
 .report-date-fields input[type="date"] {
-    flex: 1;
-    padding: 7px 10px;
-    background: var(--dark-bg);
-    color: var(--dark-text);
-    border: 1px solid var(--dark-border);
-    border-radius: 6px;
-    font-size: 13px;
+    flex: 1; padding: 7px 10px;
+    background: var(--dark-bg); color: var(--dark-text);
+    border: 1px solid var(--dark-border); border-radius: 6px; font-size: 13px;
 }
-
-.report-actions {
-    display: flex;
-    gap: 8px;
-}
-
-/* تحسين مظهر حقول التاريخ */
+.report-actions { display: flex; gap: 8px; }
 input[type="date"] {
-    color-scheme: dark; /* يجعل أيقونة التقويم فاتحة على خلفية داكنة */
-    background-color: var(--dark-bg);
-    color: var(--dark-text);
-    border: 1px solid var(--dark-border);
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    width: 100%;
-    box-sizing: border-box;
-    transition: border-color 0.3s;
+    color-scheme: dark;
+    background-color: var(--dark-bg); color: var(--dark-text);
+    border: 1px solid var(--dark-border); padding: 8px 12px; border-radius: 6px;
+    font-family: 'Inter', sans-serif; font-size: 14px; width: 100%;
+    box-sizing: border-box; transition: border-color 0.3s;
 }
-
-input[type="date"]:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 2px rgba(109, 40, 217, 0.2);
-}
-
-/* لتنسيق أفضل في الوضع الفاتح (يعمل مع light-theme) */
+input[type="date"]:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(109, 40, 217, 0.2); }
 body.light-theme input[type="date"] {
-    color-scheme: light; /* يجعل التقويم واضحًا على خلفية فاتحة */
-    background-color: #ffffff;
-    color: var(--light-text);
+    color-scheme: light;
+    background-color: #ffffff; color: var(--light-text);
     border: 1px solid var(--light-border);
 }
-/* تمكين التمرير في نافذة التقارير الطويلة */
-#reportViewModal .modal-content {
-    max-height: 80vh;
-    overflow-y: auto;
-    max-width: 850px;
-}
 
-.stock-info {
-    font-weight: 600;
-    text-align: center;
-    transition: color 0.2s;
-}
-
-#invoiceDetailModal .inventory-table {
-    min-width: auto;
-    width: 100%;
-}
+.stock-info { font-weight: 600; text-align: center; transition: color 0.2s; }
+#invoiceDetailModal .inventory-table { min-width: auto; width: 100%; }
 
 /* Multi-select with checkboxes */
-.multi-select-container {
-    border: 1px solid var(--dark-border);
-    border-radius: 8px;
-    background: var(--dark-bg);
-}
+.multi-select-container { border: 1px solid var(--dark-border); border-radius: 8px; background: var(--dark-bg); }
 .multi-select-search {
-    border: none !important;
-    border-bottom: 1px solid var(--dark-border) !important;
-    border-radius: 0 !important;
-    padding: 10px;
-    background: transparent;
-    color: var(--dark-text);
+    border: none !important; border-bottom: 1px solid var(--dark-border) !important;
+    border-radius: 0 !important; padding: 10px; background: transparent; color: var(--dark-text);
 }
-.multi-select-options {
-    max-height: 200px;
-    overflow-y: auto;
-    padding: 5px;
-}
+.multi-select-options { max-height: 200px; overflow-y: auto; padding: 5px; }
 .multi-select-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 10px;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: background 0.2s;
-    font-size: 14px;
+    display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+    cursor: pointer; border-radius: 4px; transition: background 0.2s; font-size: 14px;
 }
-.multi-select-item:hover {
-    background: rgba(109, 40, 217, 0.1);
-}
-.multi-select-item input[type="checkbox"] {
-    accent-color: var(--primary);
-    width: 16px;
-    height: 16px;
-}
+.multi-select-item:hover { background: rgba(109, 40, 217, 0.1); }
+.multi-select-item input[type="checkbox"] { accent-color: var(--primary); width: 16px; height: 16px; }
+.multi-select-item span:last-child:hover { color: var(--danger); transform: scale(1.2); }
 
-#newCategoryInput {
-    background: var(--dark-bg);
-    color: var(--dark-text);
-    border: 1px solid var(--dark-border);
-    padding: 6px 10px;
-    border-radius: 6px;
-}
+#newCategoryInput { background: var(--dark-bg); color: var(--dark-text); border: 1px solid var(--dark-border); padding: 6px 10px; border-radius: 6px; }
 
-.multi-select-item span:last-child:hover {
-    color: var(--danger);
-    transform: scale(1.2);
-}
+/* Sticky header for supplier table */
+.sticky-header thead th { position: sticky; top: 0; background: var(--dark-card); z-index: 2; }
+.sticky-header thead tr:first-child th { top: 0; }
+.sticky-header thead tr:last-child th { top: 40px; }
 
-.sticky-header thead th {
-    position: sticky;
-    top: 0;
-    background: var(--dark-card);
-    z-index: 2;
-}
-.sticky-header thead tr:first-child th {
-    top: 0;
-}
-.sticky-header thead tr:last-child th {
-    top: 40px; /* تقريباً ارتفاع صف الرأس الأول */
-}
-/*
-#suppliersTableMain.inventory-table {
-    min-width: auto;
-    width: 100%;
-    table-layout: auto;
-}
-*/
 @media (max-width: 480px) {
     .container { padding: 0 15px; }
     .stat-card .value { font-size: 1.5rem; }
