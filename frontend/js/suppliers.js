@@ -10,8 +10,11 @@ let allProducts = [];
 let selectedProducts = [];
 
 document.addEventListener('DOMContentLoaded', () => {
-    loadInitialProducts();
-
+    if (appState.isAuthenticated) {
+        loadInitialProducts();
+        loadSupplierPage(1);
+    }
+	
     document.getElementById('addNewSupplier').onclick = () => {
         if (!hasPermission('suppliers')) return;
         clearSupplierForm();
