@@ -15,13 +15,14 @@ document.addEventListener('DOMContentLoaded', () => {
         loadSupplierPage(1);
     }
 	
-    document.getElementById('addNewSupplier').onclick = () => {
-        if (!hasPermission('suppliers')) return;
-        clearSupplierForm();
-        supplierEditingId = null;
-        document.getElementById('addSupplierModal').classList.add('active');
-        renderProductsCheckboxes();
-    };
+    document.getElementById('addNewSupplier').onclick = async () => {
+		if (!hasPermission('suppliers')) return;
+		if (!allProducts.length) await loadInitialProducts();
+		clearSupplierForm();
+		supplierEditingId = null;
+		document.getElementById('addSupplierModal').classList.add('active');
+		renderProductsCheckboxes(); // الآن مضمون أن allProducts ليست فارغة
+	};
 
     document.getElementById('submitSupplier').onclick = async () => {
         if (!hasPermission('suppliers')) return;
@@ -77,8 +78,14 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function loadInitialProducts() {
-    const data = await apiGetProducts(1, 9999);
-    allProducts = data.products;
+    if (allProducts.length) return; // لا تعيد التحميل إذا كانت موجودة
+    try {
+        const data = await apiGetProducts(1, 9999);
+        allProducts = data.products;
+    } catch (err) {
+        console.error('Failed to load products for supplier', err);
+        allProducts = []; // تبقى فارغة لتجنب الأخطاء
+    }
 }
 
 function renderProductsCheckboxes(filter = '') {
@@ -86,6 +93,10 @@ function renderProductsCheckboxes(filter = '') {
     if (!container) return;
     const filterLower = filter.toLowerCase();
     const filtered = allProducts.filter(p => p.name.toLowerCase().includes(filterLower));
+    if (filtered.length === 0) {
+        container.innerHTML = '<div style="padding:10px; color:var(--dark-text-lighter);">No products found</div>';
+        return;
+    }
     container.innerHTML = filtered.map(p => `
         <label class="multi-select-item">
             <input type="checkbox" value="${p.id}" ${selectedProducts.includes(p.id) ? 'checked' : ''} onchange="toggleProductSelect(${p.id}, this.checked)">
