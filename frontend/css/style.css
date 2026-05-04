@@ -572,6 +572,12 @@ body.light-theme input[type="date"] {
     top: 40px; /* تقريباً ارتفاع صف الرأس الأول */
 }
 
+#suppliersTableMain.inventory-table {
+    min-width: auto;
+    width: 100%;
+    table-layout: auto;
+}
+
 @media (max-width: 480px) {
     .container { padding: 0 15px; }
     .stat-card .value { font-size: 1.5rem; }
