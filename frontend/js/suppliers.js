@@ -6,8 +6,8 @@ let currentSupplierPage = 1;
 const supplierLimit = 15;
 let totalSupplierPages = 1;
 let supplierEditingId = null;          // <-- تم تغيير الاسم لتجنب التعارض
-let allProducts = [];
-let selectedProducts = [];
+let allCategories = [];
+let selectedCategories = [];
 
 document.addEventListener('DOMContentLoaded', () => {
     if (appState.isAuthenticated) {
@@ -17,11 +17,11 @@ document.addEventListener('DOMContentLoaded', () => {
 	
     document.getElementById('addNewSupplier').onclick = async () => {
 		if (!hasPermission('suppliers')) return;
-		if (!allProducts.length) await loadInitialProducts();
+		if (!allCategories.length) await loadInitialProducts();
 		clearSupplierForm();
 		supplierEditingId = null;
 		document.getElementById('addSupplierModal').classList.add('active');
-		renderProductsCheckboxes(); // الآن مضمون أن allProducts ليست فارغة
+		renderCategoriesCheckboxes(); // الآن مضمون أن allCategories ليست فارغة
 	};
 
     document.getElementById('submitSupplier').onclick = async () => {
@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
             website: document.getElementById('supplierWebsite').value.trim(),
             payment_terms: document.getElementById('supplierPaymentTerms').value.trim(),
             leadTime: parseInt(document.getElementById('supplierLeadTimeInput').value) || 5,
-            productsSuppliedList: selectedProducts
+            productsSuppliedList: selectedCategories
         };
         if (!supplier.name || !supplier.email) return alert('Name and email required');
         try {
@@ -71,45 +71,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Search products
     document.querySelector('.multi-select-search')?.addEventListener('input', function(e) {
-        renderProductsCheckboxes(e.target.value);
-    });
+		renderCategoriesCheckboxes(e.target.value);
+	});
 
     if (appState.isAuthenticated) loadSupplierPage(1);
 });
 
-async function loadInitialProducts() {
-    if (allProducts.length) return; // لا تعيد التحميل إذا كانت موجودة
+async function loadInitialProducts() { // احتفظنا بالاسم لتجنب تغيير الاستدعاءات
+    if (allCategories.length) return;
     try {
         const data = await apiGetProducts(1, 9999);
-        allProducts = data.products;
+        const products = data.products;
+        allCategories = [...new Set(products.map(p => p.category).filter(Boolean))].sort();
     } catch (err) {
-        console.error('Failed to load products for supplier', err);
-        allProducts = []; // تبقى فارغة لتجنب الأخطاء
+        console.error('Failed to load categories', err);
+        allCategories = [];
     }
 }
 
-function renderProductsCheckboxes(filter = '') {
-    const container = document.getElementById('productsSuppliedOptions');
+function renderCategoriesCheckboxes(filter = '') {
+    const container = document.getElementById('categoriesSuppliedOptions');
     if (!container) return;
     const filterLower = filter.toLowerCase();
-    const filtered = allProducts.filter(p => p.name.toLowerCase().includes(filterLower));
+    const filtered = allCategories.filter(cat => cat.toLowerCase().includes(filterLower));
     if (filtered.length === 0) {
-        container.innerHTML = '<div style="padding:10px; color:var(--dark-text-lighter);">No products found</div>';
+        container.innerHTML = '<div style="padding:10px; color:var(--dark-text-lighter);">No categories found</div>';
         return;
     }
-    container.innerHTML = filtered.map(p => `
+    container.innerHTML = filtered.map(cat => `
         <label class="multi-select-item">
-            <input type="checkbox" value="${p.id}" ${selectedProducts.includes(p.id) ? 'checked' : ''} onchange="toggleProductSelect(${p.id}, this.checked)">
-            <span>${p.name} (${p.sku})</span>
+            <input type="checkbox" value="${cat}" ${selectedCategories.includes(cat) ? 'checked' : ''} onchange="toggleCategorySelect('${cat}', this.checked)">
+            <span>${cat}</span>
         </label>
     `).join('');
 }
 
-window.toggleProductSelect = function(productId, isChecked) {
+window.toggleCategorySelect = function(category, isChecked) {
     if (isChecked) {
-        if (!selectedProducts.includes(productId)) selectedProducts.push(productId);
+        if (!selectedCategories.includes(category)) selectedCategories.push(category);
     } else {
-        selectedProducts = selectedProducts.filter(id => id !== productId);
+        selectedCategories = selectedCategories.filter(c => c !== category);
     }
 };
 
@@ -123,8 +124,8 @@ function clearSupplierForm() {
     document.getElementById('supplierWebsite').value = '';
     document.getElementById('supplierPaymentTerms').value = '';
     document.getElementById('supplierLeadTimeInput').value = '5';
-    selectedProducts = [];
-    renderProductsCheckboxes();
+    selectedCategories = [];
+    renderCategoriesCheckboxes();
     supplierEditingId = null;
 }
 
@@ -141,8 +142,8 @@ window.editSupplier = function(id) {
     document.getElementById('supplierWebsite').value = s.website || '';
     document.getElementById('supplierPaymentTerms').value = s.payment_terms || '';
     document.getElementById('supplierLeadTimeInput').value = s.leadTime;
-    selectedProducts = s.productsSuppliedList || [];
-    renderProductsCheckboxes();
+    selectedCategories = s.productsSuppliedList || [];
+    renderCategoriesCheckboxes();
     supplierEditingId = id;
     document.getElementById('addSupplierModal').classList.add('active');
 };
@@ -208,7 +209,7 @@ function renderSuppliersTableHTML(suppliers) {
     }
     const startNumber = (currentSupplierPage - 1) * supplierLimit + 1;
     tbody.innerHTML = suppliers.map((s, index) => {
-        const productsHtml = (s.productsSuppliedList || []).map(p => `<span class="supplier-product-badge">${p}</span>`).join('') || '<span class="supplier-product-badge">No products</span>';
+        const categoriesHtml = (s.productsSuppliedList || []).map(c => `<span class="supplier-product-badge">${c}</span>`).join('') || '<span class="supplier-product-badge">No Categories</span>';
         const addressStr = [s.address1, s.address2].filter(Boolean).join(', ') || '-';
         return `<tr>
             <td>${startNumber + index}</td>
@@ -219,7 +220,7 @@ function renderSuppliersTableHTML(suppliers) {
             <td>${addressStr}</td>
             <td>${s.website ? `<a href="${s.website}" target="_blank">Link</a>` : '-'}</td>
             <td>${s.payment_terms || '-'}</td>
-            <td><div class="supplier-products-list">${productsHtml}</div></td>
+            <td><div class="supplier-products-list">${categoriesHtml}</div></td>
             <td>${s.leadTime} days</td>
             <td>
                 <button class="btn btn-sm btn-primary" onclick="editSupplier(${s.id})"><i class="fas fa-edit"></i></button>
