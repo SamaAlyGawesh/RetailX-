@@ -243,11 +243,12 @@ async function loadSuppliersAndCategories() {
 
     const catSelect = document.getElementById('productCategory');
     if (catSelect) {
-        const cats = [...new Set(inventoryData.map(p => p.category).filter(Boolean))].sort();
-        catSelect.innerHTML = '<option value="">Select category</option>';
-        cats.forEach(c => {
-            catSelect.innerHTML += `<option value="${c}">${c}</option>`;
-        });
+        const cats = [...new Set(
+			inventoryData
+				.filter(p => p.name !== '__category_placeholder__')
+				.map(p => p.category)
+				.filter(Boolean)
+		)].sort();
     }
     if (supplierSelect.options.length > 0) supplierSelect.selectedIndex = 0;
     if (catSelect.options.length > 0) catSelect.selectedIndex = 0;

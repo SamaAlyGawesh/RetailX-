@@ -65,13 +65,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (stockCatFilter && appState.isAuthenticated) {
         const populateCategories = async () => {
             await apiGetProducts(1, 9999);
-            const cats = [...new Set(inventoryData.map(p => p.category).filter(Boolean))].sort();
-            cats.forEach(cat => {
-                const opt = document.createElement('option');
-                opt.value = cat;
-                opt.textContent = cat;
-                stockCatFilter.appendChild(opt);
-            });
+            const cats = [...new Set(
+				inventoryData
+					.filter(p => p.name !== '__category_placeholder__')
+					.map(p => p.category)
+					.filter(Boolean)
+			)].sort();
         };
         populateCategories();
     }
