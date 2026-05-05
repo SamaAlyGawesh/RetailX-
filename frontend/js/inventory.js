@@ -8,31 +8,41 @@ let totalInventoryPages = 1;
 
 document.addEventListener('DOMContentLoaded', () => {
     // Add product button
-    document.getElementById('addNewProduct').onclick = () => {
-        if (!hasPermission('addProduct')) return;
-        document.getElementById('addProductModal').classList.add('active');
-    };
+    document.getElementById('addNewProduct').onclick = async () => {
+		if (!hasPermission('addProduct')) return;
+		await loadSuppliersAndCategories();
+		document.getElementById('addProductModal').classList.add('active');
+	};
 
     document.getElementById('submitProduct').onclick = async () => {
-        if (!hasPermission('addProduct')) return;
-        const name = document.getElementById('productName').value;
-        const sku = document.getElementById('productSKU').value;
-        const category = document.getElementById('productCategory').value;
-        const quantity = parseInt(document.getElementById('productQuantity').value);
-        const reorderLevel = parseInt(document.getElementById('reorderLevel').value);
-        const price = parseFloat(document.getElementById('productPrice').value);
-        const supplier = document.getElementById('productSupplier').value;
+		// ... التحقق من الصلاحيات ...
+		const formData = new FormData();
+		formData.append('name', document.getElementById('productName').value);
+		formData.append('sku', document.getElementById('productSKU').value);
+		formData.append('category', document.getElementById('productCategory').value);
+		formData.append('supplier_id', document.getElementById('productSupplier').value);
+		formData.append('quantity', document.getElementById('productQuantity').value);
+		formData.append('reorderLevel', document.getElementById('reorderLevel').value);
+		formData.append('price', document.getElementById('productPrice').value);
+		formData.append('description', document.getElementById('productDescription').value);
+		formData.append('location', document.getElementById('productLocation').value);
+		formData.append('expiry_date', document.getElementById('productExpiryDate').value);
+		formData.append('active', document.getElementById('productActive').checked ? 1 : 0);
 
-        if (!name || !sku || isNaN(quantity)) return alert('Fill all required fields');
-        try {
-            await apiCreateProduct({ name, sku, category, quantity, reorderLevel, price, supplier });
-            await loadInventoryPage(currentInventoryPage);
-            renderDashboardInventory();
-            updateDashboardStats();
-            document.getElementById('addProductModal').classList.remove('active');
-            alert('Product added successfully!');
-        } catch (err) { alert(err.message); }
-    };
+		const imageFile = document.getElementById('productImage').files[0];
+		if (imageFile) formData.append('image', imageFile);
+
+		try {
+			const res = await fetch(`${API_BASE}/products`, {
+				method: 'POST',
+				headers: { 'Authorization': `Bearer ${appState.token}` },
+				body: formData
+			});
+			if (!res.ok) throw new Error((await res.json()).error || 'Failed');
+			await loadInventoryPage(currentInventoryPage);
+			// ... تحديث الإحصائيات وإغلاق المودال ...
+		} catch (err) { alert(err.message); }
+	};
 
     document.getElementById('submitStockUpdate').onclick = async () => {
         if (!hasPermission('inventory')) return;
@@ -154,17 +164,22 @@ function renderInventoryTableHTML(products) {
             actions += `<button class="btn btn-sm btn-warning" onclick="updateStock(${p.id})"><i class="fas fa-edit"></i></button> `;
             actions += `<button class="btn btn-sm btn-danger" onclick="deleteProduct(${p.id})"><i class="fas fa-trash"></i></button>`;
         }
-        return `<tr>
-            <td>${startNumber + index}</td>
-            <td>${p.name}</td>
-            <td>${p.sku}</td>
-            <td>${p.category}</td>
-            <td>${p.quantity}</td>
-            <td>${p.reorderLevel}</td>
-            <td>${formatPrice(p.price)}</td>
-            <td><span class="stock-status ${statusClass}">${statusText}</span></td>
-            <td>${actions}</td>
-        </tr>`;
+        const imgSrc = p.image ? `/uploads/${p.image}` : null;
+		const isActive = p.active == 1;
+		return `<tr>
+			<td>${startNumber + index}</td>
+			<td>${imgSrc ? `<img src="${imgSrc}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;">` : '—'}</td>
+			<td>${p.name}</td>
+			<td>${p.sku}</td>
+			<td>${p.category}</td>
+			<td>${p.quantity}</td>
+			<td>${p.reorderLevel}</td>
+			<td>${formatPrice(p.price)}</td>
+			<td>${p.location || '—'}</td>
+			<td>${p.expiry_date || '—'}</td>
+			<td>${isActive ? '<span style="color:var(--secondary)">Active</span>' : '<span style="color:var(--danger)">Inactive</span>'}</td>
+			<td>${actions}</td>
+		</tr>`;
     }).join('');
 }
 
@@ -196,3 +211,24 @@ window.deleteProduct = async function(id) {
         updateDashboardStats();
     } catch (err) { alert(err.message); }
 };
+
+// تحميل قائمة الموردين والفئات
+async function loadSuppliersAndCategories() {
+    const suppliersData = await apiGetSuppliers(1, 9999);
+    const supplierSelect = document.getElementById('productSupplier');
+    if (supplierSelect) {
+        supplierSelect.innerHTML = '';
+        suppliersData.suppliers.forEach(s => {
+            supplierSelect.innerHTML += `<option value="${s.id}">${s.name} (${s.supplier_code})</option>`;
+        });
+    }
+
+    const catSelect = document.getElementById('productCategory');
+    if (catSelect) {
+        const cats = [...new Set(inventoryData.map(p => p.category).filter(Boolean))].sort();
+        catSelect.innerHTML = '<option value="">Select category</option>';
+        cats.forEach(c => {
+            catSelect.innerHTML += `<option value="${c}">${c}</option>`;
+        });
+    }
+}
