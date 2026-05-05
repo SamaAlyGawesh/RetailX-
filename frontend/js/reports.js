@@ -60,9 +60,9 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTopProductsChart();
     }
 
-    // Populate category filter on page load
+        // Populate category filter on page load (فقط إذا كان المستخدم مسجلاً)
     const stockCatFilter = document.getElementById('stockCategoryFilter');
-    if (stockCatFilter) {
+    if (stockCatFilter && appState.isAuthenticated) {
         const populateCategories = async () => {
             await apiGetProducts(1, 9999);
             const cats = [...new Set(inventoryData.map(p => p.category).filter(Boolean))].sort();
