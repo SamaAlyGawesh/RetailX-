@@ -50,12 +50,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const docRows = document.querySelectorAll('#supplierDocsBody tr');
             for (const row of docRows) {
                 const fileInput = row.querySelector('.doc-file-input');
-                if (fileInput && fileInput.files.length > 0) {
+				if (fileInput && fileInput.files.length > 0) {
                     const type = row.querySelector('.doc-type-input').value.trim();
                     const number = row.querySelector('.doc-number-input').value.trim();
                     const issue = row.querySelector('.doc-issue-input').value;
                     const expiry = row.querySelector('.doc-expiry-input').value;
-                    if (!type) continue;
+
+                    // التحقق من أن جميع الحقول الأساسية مملوءة
+                    if (!type || !issue || !expiry) {
+                        alert(`Please fill all fields (type, dates) for the document "${type || 'unknown'}".`);
+                        return; // إيقاف الحفظ بالكامل للفت الانتباه للخطأ
+                    }
+                    if (!fileInput.files[0]) {
+                        alert(`Please select a file for the document "${type}".`);
+                        return;
+                    }
+
                     const formData = new FormData();
                     formData.append('file', fileInput.files[0]);
                     formData.append('document_type', type);
@@ -63,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     formData.append('issue_date', issue);
                     formData.append('expiry_date', expiry);
                     try {
-                        await apiUploadSupplierDocument(supplierEditingId || /* إذا كان جديدًا، نعرف id من الرد */ supplier.id, formData);
+                        await apiUploadSupplierDocument(supplierEditingId || supplier.id, formData);
                     } catch (err) {
                         console.error('Failed to upload doc', err);
                     }
@@ -227,7 +237,7 @@ function addDocRow(doc = null) {
     if (doc) {
         const fileCell = row.querySelector('.doc-file-input').parentElement;
         if (doc.file_path) {
-            fileCell.innerHTML = `<a href="/uploads/supplier_docs/${doc.file_path}" target="_blank">View</a> <input type="hidden" class="doc-existing-file" value="${doc.file_path}">`;
+            fileCell.innerHTML = `<a href="/files/${doc.file_path}" target="_blank">View</a> <input type="hidden" class="doc-existing-file" value="${doc.file_path}">`;
         }
         if (doc.id) {
             const actionsCell = row.querySelector('td:last-child');
