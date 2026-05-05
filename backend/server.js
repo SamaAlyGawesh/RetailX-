@@ -32,4 +32,6 @@ app.use('/api/supplier-documents', require('./routes/supplierDocuments'));
 // Serve frontend in production
 app.use(express.static('../frontend'));
 
+app.use('/files', require('./routes/fileView'));
+
 app.listen(PORT, () => console.log(`RetailX API running on port ${PORT}`));
