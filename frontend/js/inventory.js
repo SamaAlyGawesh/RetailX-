@@ -10,18 +10,29 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add product button
     document.getElementById('addNewProduct').onclick = async () => {
 		if (!hasPermission('addProduct')) return;
+		resetProductForm(); // <-- ينظف كل الحقول
 		await loadSuppliersAndCategories();
 		document.getElementById('addProductModal').classList.add('active');
 	};
 
     document.getElementById('submitProduct').onclick = async () => {
-		// ... التحقق من الصلاحيات ...
+		if (!hasPermission('addProduct')) return;
+
 		const formData = new FormData();
-		formData.append('name', document.getElementById('productName').value);
-		formData.append('sku', document.getElementById('productSKU').value);
+		// التحقّقات
+		const name = document.getElementById('productName').value.trim();
+		const sku = document.getElementById('productSKU').value.trim();
+		const qty = parseInt(document.getElementById('productQuantity').value);
+		if (!name || !sku || isNaN(qty)) {
+			alert('Please fill in Product Name, SKU, and a valid Quantity.');
+			return;
+		}
+
+		formData.append('name', name);
+		formData.append('sku', sku);
 		formData.append('category', document.getElementById('productCategory').value);
 		formData.append('supplier_id', document.getElementById('productSupplier').value);
-		formData.append('quantity', document.getElementById('productQuantity').value);
+		formData.append('quantity', qty);
 		formData.append('reorderLevel', document.getElementById('reorderLevel').value);
 		formData.append('price', document.getElementById('productPrice').value);
 		formData.append('description', document.getElementById('productDescription').value);
@@ -40,8 +51,13 @@ document.addEventListener('DOMContentLoaded', () => {
 				body: formData
 			});
 			if (!res.ok) throw new Error((await res.json()).error || 'Failed');
+
 			await loadInventoryPage(currentInventoryPage);
-			// ... تحديث الإحصائيات وإغلاق المودال ...
+			renderDashboardInventory();
+			updateDashboardStats();
+			document.getElementById('addProductModal').classList.remove('active');
+			resetProductForm(); // يمسح الحقول بعد الإغلاق
+			alert('Product added successfully!');
 		} catch (err) { alert(err.message); }
 	};
 
@@ -233,4 +249,23 @@ async function loadSuppliersAndCategories() {
             catSelect.innerHTML += `<option value="${c}">${c}</option>`;
         });
     }
+    if (supplierSelect.options.length > 0) supplierSelect.selectedIndex = 0;
+    if (catSelect.options.length > 0) catSelect.selectedIndex = 0;
+}
+
+function resetProductForm() {
+    document.getElementById('productName').value = '';
+    document.getElementById('productSKU').value = '';
+    document.getElementById('productCategory').value = '';
+    const supSel = document.getElementById('productSupplier');
+	if (supSel && supSel.options.length > 0) supSel.selectedIndex = 0;
+    document.getElementById('productQuantity').value = 10;
+    document.getElementById('reorderLevel').value = 5;
+    document.getElementById('productPrice').value = 15.00;
+    document.getElementById('productDescription').value = '';
+    document.getElementById('productLocation').value = '';
+    document.getElementById('productReceivedDate').value = '';
+    document.getElementById('productExpiryDate').value = '';
+    document.getElementById('productActive').checked = true;
+    document.getElementById('productImage').value = ''; // يمسح الملف المختار
 }

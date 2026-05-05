@@ -176,24 +176,32 @@
                 <table class="inventory-table" id="inventoryTableMain">
 					<thead>
 						<tr>
-							<th>#</th>   <!-- عمود الترقيم -->
+							<th>#</th>
+							<th>Image</th>
 							<th data-sort="name">Product Name <span class="sort-arrow"></span></th>
 							<th data-sort="sku">SKU <span class="sort-arrow"></span></th>
 							<th data-sort="category">Category <span class="sort-arrow"></span></th>
 							<th data-sort="quantity">Quantity <span class="sort-arrow"></span></th>
 							<th data-sort="reorderLevel">Reorder Level <span class="sort-arrow"></span></th>
 							<th data-sort="price">Price <span class="sort-arrow"></span></th>
-							<th data-sort="status">Status <span class="sort-arrow"></span></th>
+							<th>Location</th>
+							<th>Received</th>
+							<th>Expiry</th>
+							<th data-sort="active">Status <span class="sort-arrow"></span></th>
 							<th>Actions</th>
 						</tr>
 						<tr id="inventoryFilterRow">
-							<th></th>    <!-- فاضي للترقيم -->
+							<th></th>
+							<th></th>
 							<th><input type="text" id="filterProductName" placeholder="Name"></th>
 							<th><input type="text" id="filterSKU" placeholder="SKU"></th>
 							<th><input type="text" id="filterCategory" placeholder="Category"></th>
 							<th><input type="number" id="filterQuantity" placeholder="Qty"></th>
 							<th><input type="number" id="filterReorder" placeholder="Min"></th>
 							<th><input type="number" id="filterPrice" placeholder="Price" step="0.01"></th>
+							<th></th>
+							<th></th>
+							<th></th>
 							<th>
 								<select id="filterStatus">
 									<option value="">All</option>
