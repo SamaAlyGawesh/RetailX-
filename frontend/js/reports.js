@@ -63,14 +63,21 @@ document.addEventListener('DOMContentLoaded', () => {
         // Populate category filter on page load (فقط إذا كان المستخدم مسجلاً)
     const stockCatFilter = document.getElementById('stockCategoryFilter');
     if (stockCatFilter && appState.isAuthenticated) {
-        const populateCategories = async () => {
+		const populateCategories = async () => {
             await apiGetProducts(1, 9999);
             const cats = [...new Set(
-				inventoryData
-					.filter(p => p.name !== '__category_placeholder__')
-					.map(p => p.category)
-					.filter(Boolean)
-			)].sort();
+                inventoryData
+                    .filter(p => p.name !== '__category_placeholder__')
+                    .map(p => p.category)
+                    .filter(Boolean)
+            )].sort();
+            const stockCatFilter = document.getElementById('stockCategoryFilter');
+            if (stockCatFilter) {
+                stockCatFilter.innerHTML = '<option value="">All Categories</option>';
+                cats.forEach(cat => {
+                    stockCatFilter.innerHTML += `<option value="${cat}">${cat}</option>`;
+                });
+            }
         };
         populateCategories();
     }

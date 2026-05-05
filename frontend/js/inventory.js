@@ -126,6 +126,8 @@ async function loadInventoryPage(page) {
 
 function applyInventoryFilters() {
     // الفلترة المحلية بعد جلب الصفحة
+	// استبعاد المنتجات الوهمية من العرض
+	currentInventory = currentInventory.filter(p => p.name !== '__category_placeholder__');
     const name = (document.getElementById('filterProductName')?.value || '').toLowerCase();
     const sku = (document.getElementById('filterSKU')?.value || '').toLowerCase();
     const category = (document.getElementById('filterCategory')?.value || '').toLowerCase();
@@ -241,17 +243,21 @@ async function loadSuppliersAndCategories() {
         });
     }
 
-    const catSelect = document.getElementById('productCategory');
+        const catSelect = document.getElementById('productCategory');
     if (catSelect) {
         const cats = [...new Set(
-			inventoryData
-				.filter(p => p.name !== '__category_placeholder__')
-				.map(p => p.category)
-				.filter(Boolean)
-		)].sort();
+            inventoryData
+                .filter(p => p.name !== '__category_placeholder__')
+                .map(p => p.category)
+                .filter(Boolean)
+        )].sort();
+        catSelect.innerHTML = '<option value="">Select category</option>';
+        cats.forEach(c => {
+            catSelect.innerHTML += `<option value="${c}">${c}</option>`;
+        });
     }
     if (supplierSelect.options.length > 0) supplierSelect.selectedIndex = 0;
-    if (catSelect.options.length > 0) catSelect.selectedIndex = 0;
+    if (catSelect && catSelect.options.length > 0) catSelect.selectedIndex = 0;
 }
 
 function resetProductForm() {
