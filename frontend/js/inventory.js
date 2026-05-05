@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		formData.append('price', document.getElementById('productPrice').value);
 		formData.append('description', document.getElementById('productDescription').value);
 		formData.append('location', document.getElementById('productLocation').value);
+		formData.append('received_date', document.getElementById('productReceivedDate').value);
 		formData.append('expiry_date', document.getElementById('productExpiryDate').value);
 		formData.append('active', document.getElementById('productActive').checked ? 1 : 0);
 
@@ -176,6 +177,7 @@ function renderInventoryTableHTML(products) {
 			<td>${p.reorderLevel}</td>
 			<td>${formatPrice(p.price)}</td>
 			<td>${p.location || '—'}</td>
+			<td>${p.received_date || '—'}</td>
 			<td>${p.expiry_date || '—'}</td>
 			<td>${isActive ? '<span style="color:var(--secondary)">Active</span>' : '<span style="color:var(--danger)">Inactive</span>'}</td>
 			<td>${actions}</td>

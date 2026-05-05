@@ -1,12 +1,24 @@
 // backend/routes/products.js
 const express = require('express');
+const router = express.Router();
 const { getDB } = require('../db');
 const { authenticate, requireRole } = require('../authMiddleware');
+const multer = require('multer');
+const path = require('path');
 
-const router = express.Router();
+// إعداد multer لرفع الصور
+const storage = multer.diskStorage({
+    destination: 'uploads/',
+    filename: (req, file, cb) => {
+        const unique = Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname);
+        cb(null, unique);
+    }
+});
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+
 router.use(authenticate);
 
-// GET /api/products?page=1&limit=15&search=
+// GET /api/products?page=&limit=&search=
 router.get('/', (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 15;
@@ -22,12 +34,17 @@ router.get('/', (req, res) => {
         params = [`%${search}%`, `%${search}%`, `%${search}%`];
     }
 
-    // جلب العدد الإجمالي
     const totalRow = db.prepare(`SELECT COUNT(*) as total FROM products ${where}`).get(...params);
     const total = totalRow?.total || 0;
 
-    // جلب المنتجات
-    const products = db.prepare(`SELECT * FROM products ${where} ORDER BY id DESC LIMIT ? OFFSET ?`).all(...params, limit, offset);
+    // جلب المنتجات مع معلومات المورد (supplier_code)
+    const products = db.prepare(`
+        SELECT p.*, s.supplier_code
+        FROM products p
+        LEFT JOIN suppliers s ON p.supplier_id = s.id
+        ${where}
+        ORDER BY p.id DESC LIMIT ? OFFSET ?
+    `).all(...params, limit, offset);
 
     res.json({
         products,
@@ -37,32 +54,54 @@ router.get('/', (req, res) => {
     });
 });
 
-// POST /api/products (يبقى كما هو ...)
-// PATCH /api/products/:id/stock ...
-// DELETE /api/products/:id ...
+// POST /api/products (مع رفع صورة)
+router.post('/', requireRole('administrator'), upload.single('image'), (req, res) => {
+    const {
+        name, sku, category, quantity, reorderLevel, price,
+        supplier_id, description, location, expiry_date, active
+    } = req.body;
 
-// باقي المسارات بدون تغيير
-router.post('/', requireRole('administrator'), (req, res) => {
-    const { name, sku, category, quantity, reorderLevel, price, supplier } = req.body;
     if (!name || !sku) return res.status(400).json({ error: 'Name and SKU required' });
+
     const db = getDB();
-    const result = db.prepare('INSERT INTO products (name, sku, category, quantity, reorderLevel, price, supplier) VALUES (?,?,?,?,?,?,?)').run(name, sku, category || '', quantity || 0, reorderLevel || 5, price || 0, supplier || '');
+
+    // توليد product_code: supplier_code + "-" + sku (أو رقم تسلسلي)
+    let productCode = sku; // افتراضي
+    if (supplier_id) {
+        const supplier = db.prepare('SELECT supplier_code FROM suppliers WHERE id = ?').get(supplier_id);
+        if (supplier && supplier.supplier_code) {
+            productCode = supplier.supplier_code + '-' + sku;
+        }
+    }
+
+    const image = req.file ? req.file.filename : null;
+
+    const result = db.prepare(`
+		INSERT INTO products (name, sku, category, quantity, reorderLevel, price, supplier_id, product_code, description, image, location, expiry_date, received_date, active)
+		VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+	`).run(
+		name, sku, category || '', quantity || 0, reorderLevel || 5, price || 0,
+		supplier_id || null, productCode, description || '', image, location || '', expiry_date || null,
+		req.body.received_date || null,   // <-- أضف هذا
+		active ?? 1
+	);
+
     db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run('product', `New product: ${name}`, new Date().toLocaleString());
-    res.status(201).json({ id: result.lastInsertRowid });
+    res.status(201).json({ id: result.lastInsertRowid, product_code: productCode });
 });
 
+// PATCH /api/products/:id/stock
 router.patch('/:id/stock', requireRole('administrator', 'clerk'), (req, res) => {
     const { quantity } = req.body;
     const db = getDB();
     db.prepare('UPDATE products SET quantity = ? WHERE id = ?').run(quantity, req.params.id);
-    db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run('product', `Stock updated for product ${req.params.id}`, new Date().toLocaleString());
     res.json({ success: true });
 });
 
+// DELETE /api/products/:id
 router.delete('/:id', requireRole('administrator'), (req, res) => {
     const db = getDB();
     db.prepare('DELETE FROM products WHERE id = ?').run(req.params.id);
-    db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run('alert', `Product ${req.params.id} deleted`, new Date().toLocaleString());
     res.json({ success: true });
 });
 
