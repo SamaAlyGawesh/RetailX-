@@ -27,18 +27,30 @@ document.addEventListener('DOMContentLoaded', () => {
         const email = document.getElementById('authEmail').value;
         const password = document.getElementById('authPassword').value;
         try {
-            await apiLogin(email, password);
+			await apiLogin(email, password);
+            
+            // --- تحميل البيانات العالمية فوراً ---
+            try {
+                const allProds = await apiGetProducts(1, 9999);
+                inventoryData = allProds.products;
+                const allSales = await apiGetSales(1, 9999);
+                salesData = allSales.sales;
+                suppliersData = (await apiGetSuppliers(1, 9999)).suppliers;
+                await apiGetActivity();
+            } catch (e) {
+                console.log('Initial data load after login failed', e);
+            }
+            // ---------------------------------
+
             document.getElementById('userNameDisplay').innerText = appState.currentUser.name;
             applyRoleBasedAccess();
             navigateToPage('homePage');
             updateDashboardStats();
-            renderInventoryTable();
-            renderSalesTable();
-            renderSuppliersTable();
+            renderDashboardInventory();
             renderRecentActivity();
             alert(`Welcome ${appState.currentUser.name}!`);
-			saveAuthState();
-			updateAuthUI();
+            saveAuthState();
+            updateAuthUI();
         } catch (err) {
             alert(err.message || 'Invalid credentials');
         }
