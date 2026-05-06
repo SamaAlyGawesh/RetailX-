@@ -110,12 +110,22 @@ router.post('/multi', requireRole('administrator', 'cashier', 'sales'), (req, re
 
         // تنفيذ العملية داخل معاملة واحدة
         const transaction = db.transaction(() => {
-            for (const item of items) {
-                const product = db.prepare('SELECT * FROM products WHERE id = ?').get(item.productId);
+			for (const item of items) {
+                // جلب بيانات المنتج المطلوبة
+                const product = db.prepare('SELECT price, quantity, total_cost, name FROM products WHERE id = ?').get(item.productId);
                 const itemTotal = product.price * item.quantity;
+                
+                // إدراج صف البيع
                 db.prepare('INSERT INTO sales (id, date, customer, items, total, status, cashier, productId, category) VALUES (?,?,?,?,?,?,?,?,?)')
-  .run(saleId + '-' + item.productId, finalSaleDate, customer || 'Walk-in Customer', item.quantity, itemTotal, 'Completed', cashier, item.productId, item.category || '');
-                db.prepare('UPDATE products SET quantity = quantity - ? WHERE id = ?').run(item.quantity, item.productId);
+                    .run(saleId + '-' + item.productId, finalSaleDate, customer || 'Walk-in Customer', item.quantity, itemTotal, 'Completed', cashier, item.productId, item.category || '');
+                
+                // حساب المتوسط المرجح وخصم المخزون
+                const currentQty = product.quantity;
+                const currentTotalCost = product.total_cost || 0;
+                const avgCost = currentQty > 0 ? currentTotalCost / currentQty : 0;
+                const newQty = currentQty - item.quantity;
+                const newTotalCost = currentTotalCost - (avgCost * item.quantity);
+                db.prepare('UPDATE products SET quantity = ?, total_cost = ? WHERE id = ?').run(newQty, newTotalCost, item.productId);
             }
             db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run('sale', `Multi-sale ${saleId}: ${totalItemsCount} items, total ${grandTotal}`, finalSaleDate);
         });

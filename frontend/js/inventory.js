@@ -185,6 +185,8 @@ function renderInventoryTableHTML(products) {
         }
         const imgSrc = p.image ? `/uploads/${p.image}` : null;
 		const isActive = p.active == 1;
+		const avgCost = p.quantity > 0 ? (p.total_cost / p.quantity).toFixed(2) : '0.00';
+		const totalValue = (p.total_cost || 0).toFixed(2);
 		return `<tr>
 			<td>${startNumber + index}</td>
 			<td>${imgSrc ? `<img src="${imgSrc}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;">` : '—'}</td>
@@ -194,6 +196,8 @@ function renderInventoryTableHTML(products) {
 			<td>${p.quantity}</td>
 			<td>${p.reorderLevel}</td>
 			<td>${formatPrice(p.price)}</td>
+			<td>${formatPrice(avgCost)}</td>
+			<td>${formatPrice(totalValue)}</td>
 			<td>${p.location || '—'}</td>
 			<td>${p.received_date || '—'}</td>
 			<td>${p.expiry_date || '—'}</td>

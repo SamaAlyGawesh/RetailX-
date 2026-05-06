@@ -66,24 +66,18 @@ router.post('/', requireRole('administrator'), upload.single('image'), (req, res
     const db = getDB();
 
     // توليد product_code: supplier_code + "-" + sku (أو رقم تسلسلي)
-    let productCode = sku; // افتراضي
-    if (supplier_id) {
-        const supplier = db.prepare('SELECT supplier_code FROM suppliers WHERE id = ?').get(supplier_id);
-        if (supplier && supplier.supplier_code) {
-            productCode = supplier.supplier_code + '-' + sku;
-        }
-    }
+    productCode = sku; // الكود الثابت هو SKU فقط
 
     const image = req.file ? req.file.filename : null;
 
     const result = db.prepare(`
-		INSERT INTO products (name, sku, category, quantity, reorderLevel, price, supplier_id, product_code, description, image, location, expiry_date, received_date, active)
-		VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+		INSERT INTO products (name, sku, category, quantity, reorderLevel, price, supplier_id, product_code, description, image, location, expiry_date, received_date, active, total_cost)
+		VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
 	`).run(
 		name, sku, category || '', quantity || 0, reorderLevel || 5, price || 0,
 		supplier_id || null, productCode, description || '', image, location || '', expiry_date || null,
-		req.body.received_date || null,   // <-- أضف هذا
-		active ?? 1
+		req.body.received_date || null, active ?? 1,
+		(price || 0) * (quantity || 0)   // total_cost = price * quantity
 	);
 
     db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run('product', `New product: ${name}`, new Date().toLocaleString());

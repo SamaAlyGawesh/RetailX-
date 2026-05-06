@@ -1,15 +1,18 @@
-// db.js - SQLite setup
+// db.js - SQLite setup & seeding
 const Database = require('better-sqlite3');
-const bcrypt = require('bcryptjs');
 const path = require('path');
 
-const DB_PATH = path.join(__dirname, 'retailx.db');
-let db;
+let db = null;
+
+function getDB() {
+    if (db) return db;
+    db = new Database(path.join(__dirname, 'retailx.db'));
+    db.pragma('journal_mode = WAL');
+    return db;
+}
 
 function initDB() {
-    db = new Database(DB_PATH);
-    db.pragma('journal_mode = WAL');
-    db.pragma('foreign_keys = ON');
+    const db = getDB();
 
     db.exec(`
         CREATE TABLE IF NOT EXISTS users (
@@ -17,8 +20,11 @@ function initDB() {
             name TEXT NOT NULL,
             email TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
-            role TEXT NOT NULL DEFAULT 'clerk',
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            role TEXT NOT NULL DEFAULT 'user',
+            status TEXT DEFAULT 'active',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            last_login TEXT,
+            branch TEXT
         );
 
         CREATE TABLE IF NOT EXISTS products (
@@ -29,7 +35,16 @@ function initDB() {
             quantity INTEGER DEFAULT 0,
             reorderLevel INTEGER DEFAULT 5,
             price REAL DEFAULT 0,
+			total_cost REAL DEFAULT 0,
             supplier TEXT,
+            supplier_id INTEGER REFERENCES suppliers(id),
+            product_code TEXT,
+            description TEXT,
+            image TEXT,
+            location TEXT,
+            expiry_date TEXT,
+            received_date TEXT,
+            active INTEGER DEFAULT 1,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
 
@@ -41,18 +56,36 @@ function initDB() {
             total REAL,
             status TEXT DEFAULT 'Completed',
             cashier TEXT,
+            productId INTEGER REFERENCES products(id),
+            category TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
 
         CREATE TABLE IF NOT EXISTS suppliers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            supplier_code TEXT,
             name TEXT NOT NULL,
             contact TEXT,
             email TEXT,
             phone TEXT,
             productsSuppliedList TEXT,
             leadTime INTEGER DEFAULT 5,
-            addedDate TEXT
+            addedDate TEXT,
+            address1 TEXT,
+            address2 TEXT,
+            website TEXT,
+            payment_terms TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS supplier_documents (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            supplier_id INTEGER REFERENCES suppliers(id),
+            document_type TEXT,
+            document_number TEXT,
+            file_path TEXT,
+            issue_date TEXT,
+            expiry_date TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
 
         CREATE TABLE IF NOT EXISTS activity (
@@ -64,36 +97,16 @@ function initDB() {
         );
     `);
 
-    // Seed admin user if none exist
-    const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get();
-    if (userCount.count === 0) {
+    // إنشاء حساب الأدمن الافتراضي إن لم يكن موجوداً
+    const admin = db.prepare('SELECT id FROM users WHERE email = ?').get('admin@retailx.com');
+    if (!admin) {
+        const bcrypt = require('bcryptjs');
         const hash = bcrypt.hashSync('admin123', 10);
-        db.prepare('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)').run('Admin', 'admin@retailx.com', hash, 'administrator');
-
-        // Seed sample products
-        const insertProduct = db.prepare('INSERT INTO products (sku, name, category, quantity, reorderLevel, price, supplier) VALUES (?, ?, ?, ?, ?, ?, ?)');
-        const products = [
-            ['WIRE123', 'Wireless Mouse', 'Electronics', 5, 5, 15.00, 'ABC Electronics'],
-            ['LAP456', 'Laptop Bag', 'Accessories', 3, 5, 30.00, 'Global Accessories'],
-            ['SMART789', 'Smartphone', 'Electronics', 12, 8, 399.00, 'Tech Gadgets Inc.'],
-            ['HDMI101', 'HDMI Cable', 'Electronics', 24, 10, 10.00, 'ABC Electronics'],
-            ['BLU222', 'Bluetooth Speaker', 'Electronics', 0, 5, 30.00, 'Tech Gadgets Inc.'],
-            ['WATER345', 'Stainless Water Bottle', 'Accessories', 15, 5, 25.00, 'Global Accessories']
-        ];
-        products.forEach(p => insertProduct.run(...p));
-
-        // Seed sample suppliers
-        const insertSupplier = db.prepare('INSERT INTO suppliers (name, contact, email, phone, productsSuppliedList, leadTime, addedDate) VALUES (?, ?, ?, ?, ?, ?, ?)');
-        insertSupplier.run('ABC Electronics', 'John Davis', 'john@abcelectronics.com', '(555) 123-4567', JSON.stringify(['Wireless Mouse', 'HDMI Cable']), 5, new Date().toISOString());
-        insertSupplier.run('Global Accessories', 'Sarah Miller', 'sarah@globalacc.com', '(555) 987-6543', JSON.stringify(['Laptop Bag', 'Stainless Water Bottle']), 5, new Date().toISOString());
+        db.prepare('INSERT INTO users (name, email, password, role, status) VALUES (?,?,?,?,?)')
+          .run('Administrator', 'admin@retailx.com', hash, 'administrator', 'active');
     }
 
-    return db;
+    console.log('Database initialized');
 }
 
-function getDB() {
-    if (!db) return initDB();
-    return db;
-}
-
-module.exports = { initDB, getDB };
+module.exports = { getDB, initDB };
