@@ -34,18 +34,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }*/
 	if(appState.isAuthenticated){
-    try {
-        //loadAuthState();
-        const allProds = await apiGetProducts(1, 9999);
-        inventoryData = allProds.products;
-        const allSales = await apiGetSales(1, 9999);
-        salesData = allSales.sales;
-        await apiGetSuppliers();
-        await apiGetActivity();
-    } catch (err) {
-        console.log('Backend not available – using empty data');
-    }
-}
+		try {
+			const allProds = await apiGetProducts(1, 9999);
+			inventoryData = allProds.products;
+			const allSales = await apiGetSales(1, 9999);
+			salesData = allSales.sales;
+			await apiGetSuppliers();
+			await apiGetActivity();
+		} catch (err) {
+			console.log('Backend not available – clearing auth');
+			// فشل التحميل يعني أن التوكن غير صالح؛ نمسح حالة الجلسة
+			appState.isAuthenticated = false;
+			appState.token = null;
+			appState.currentUser = null;
+			clearAuthState();
+			// تحديث واجهة المستخدم مباشرة
+			updateAuthUI();
+			applyRoleBasedAccess();
+		}
+	}
 
     // ========== NAVIGATION BAR (آمنة بالكامل) ==========
     safeBind('homeLink', (e) => { e.preventDefault(); navigateToPage('homePage'); });
