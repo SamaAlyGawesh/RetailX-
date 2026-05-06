@@ -1,5 +1,4 @@
-cat > ~/retailx/backend/seed_v3.js << 'ENDOFSCRIPT'
-// backend/seed_v3.js - Guaranteed working version
+// backend/seed_v3.js - Final working version
 const db = require('./db').getDB();
 
 // Clear old data first
@@ -77,9 +76,8 @@ for (let i = 1; i <= 5000; i++) {
     const product = pick(productIds);
     const qty = rand(1, 5);
     
-    // Get current product details
     const prod = db.prepare('SELECT price, quantity, total_cost FROM products WHERE id = ?').get(product.id);
-    if (!prod) continue; // safety check
+    if (!prod) continue;
     
     const currentQty = prod.quantity;
     const currentTotalCost = prod.total_cost || 0;
@@ -92,7 +90,6 @@ for (let i = 1; i <= 5000; i++) {
     const date = new Date(now - rand(0, 365) * 24 * 60 * 60 * 1000).toLocaleString();
     const customer = pick(firstNames) + ' ' + pick(lastNames);
     
-    // Update stock
     db.prepare('UPDATE products SET quantity = ?, total_cost = ? WHERE id = ?').run(newQty > 0 ? newQty : 0, newTotalCost > 0 ? newTotalCost : 0, product.id);
     insertSale.run(saleId, date, customer, qty, saleTotal, 'Completed', pick(cashiers), product.id, product.category);
 }
@@ -104,4 +101,3 @@ for (let i = 0; i < 20; i++) {
 }
 
 console.log('✅ Seed V3 completed! 25 suppliers, 200 products, 5000 sales.');
-ENDOFSCRIPT
