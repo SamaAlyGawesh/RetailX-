@@ -63,6 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Populate category filter on page load (فقط إذا كان المستخدم مسجلاً)
     const stockCatFilter = document.getElementById('stockCategoryFilter');
     if (stockCatFilter && appState.isAuthenticated) {
+		if (!appState.isAuthenticated) return;
 		const populateCategories = async () => {
             await apiGetProducts(1, 9999);
             const cats = [...new Set(

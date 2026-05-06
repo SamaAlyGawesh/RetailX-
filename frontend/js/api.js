@@ -2,6 +2,12 @@
 
 async function api(method, path, body = null) {
     const headers = { 'Content-Type': 'application/json' };
+    
+    // لا ترسل أي طلب API إذا لم يكن هناك توكن
+    if (!appState.token && !path.startsWith('/auth/')) {
+        throw new Error('Authentication required');
+    }
+    
     if (appState.token) headers['Authorization'] = `Bearer ${appState.token}`;
 
     const res = await fetch(`${API_BASE}${path}`, {
