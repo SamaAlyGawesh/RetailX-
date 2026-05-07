@@ -5,6 +5,7 @@ let userSort = { field: 'id', order: 'asc' };
 let currentUserPage = 1;
 const userLimit = 15;
 let totalUserPages = 1;
+let allUsersForFilter = []; // للتخزين المؤقت عند الفلترة
 
 document.addEventListener('DOMContentLoaded', () => {
     const navUsers = document.getElementById('navUsers');
@@ -16,16 +17,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             navigateToPage('usersPage');
+            allUsersForFilter = [];
             loadUserPage(1);
         };
     }
 
     ['filterId', 'filterName', 'filterEmail', 'filterRole', 'filterStatus'].forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.addEventListener('input', () => { currentUserPage = 1; loadUserPage(1); });
+        if (el) el.addEventListener('input', () => {
+            allUsersForFilter = [];
+            currentUserPage = 1;
+            loadUserPage(1);
+        });
     });
-    document.getElementById('filterRole')?.addEventListener('change', () => { currentUserPage = 1; loadUserPage(1); });
-    document.getElementById('filterStatus')?.addEventListener('change', () => { currentUserPage = 1; loadUserPage(1); });
+    document.getElementById('filterRole')?.addEventListener('change', () => {
+        allUsersForFilter = [];
+        currentUserPage = 1;
+        loadUserPage(1);
+    });
+    document.getElementById('filterStatus')?.addEventListener('change', () => {
+        allUsersForFilter = [];
+        currentUserPage = 1;
+        loadUserPage(1);
+    });
 
     document.querySelectorAll('#usersTableMain th[data-sort]').forEach(th => {
         th.style.cursor = 'pointer';
@@ -62,12 +76,31 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+function isAnyUserFilterActive() {
+    const fields = ['filterId', 'filterName', 'filterEmail', 'filterRole', 'filterStatus'];
+    return fields.some(id => {
+        const el = document.getElementById(id);
+        if (!el) return false;
+        if (el.tagName === 'SELECT') return el.value !== '';
+        return el.value.trim() !== '';
+    });
+}
+
 async function loadUserPage(page) {
     currentUserPage = page;
-    const data = await apiGetUsers(page, userLimit);
-    currentUsers = data.users;
-    totalUserPages = data.pages;
-    applyUserFilters();
+    if (isAnyUserFilterActive()) {
+        if (allUsersForFilter.length === 0) {
+            const data = await apiGetUsers(1, 9999);
+            allUsersForFilter = data.users;
+        }
+        currentUsers = allUsersForFilter;
+        applyUserFilters();
+    } else {
+        const data = await apiGetUsers(page, userLimit);
+        currentUsers = data.users;
+        totalUserPages = data.pages;
+        applyUserFilters();
+    }
 }
 
 function applyUserFilters() {
@@ -95,8 +128,20 @@ function applyUserFilters() {
         return 0;
     });
 
-    renderUsersTableHTML(filtered);
-    renderPagination(currentUserPage, totalUserPages, 'userPagination', (page) => loadUserPage(page));
+    const filterActive = isAnyUserFilterActive();
+    if (filterActive) {
+        totalUserPages = Math.ceil(filtered.length / userLimit);
+        if (currentUserPage > totalUserPages) currentUserPage = 1;
+        const start = (currentUserPage - 1) * userLimit;
+        const pageItems = filtered.slice(start, start + userLimit);
+        renderUsersTableHTML(pageItems);
+    } else {
+        renderUsersTableHTML(filtered);
+    }
+
+    renderPagination(currentUserPage, totalUserPages, 'userPagination', (page) => {
+        loadUserPage(page);
+    });
 }
 
 function renderUsersTableHTML(users) {

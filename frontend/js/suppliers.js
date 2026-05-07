@@ -5,6 +5,7 @@ let supplierSort = { field: 'name', order: 'asc' };
 let currentSupplierPage = 1;
 const supplierLimit = 15;
 let totalSupplierPages = 1;
+let allSuppliersForFilter = []; // للتخزين المؤقت عند الفلترة
 let supplierEditingId = null;
 let allCategories = [];
 let selectedCategories = [];
@@ -90,7 +91,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Filter events
     ['filterSupplierName','filterContact','filterSupplierEmail','filterSupplierPhone','filterSupplierAddress','filterProductsSupplied','filterLeadTime'].forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.addEventListener('input', () => { currentSupplierPage = 1; loadSupplierPage(1); });
+        if (el) el.addEventListener('input', () => {
+            allSuppliersForFilter = [];
+            currentSupplierPage = 1;
+            loadSupplierPage(1);
+        });
     });
 
     // Sorting
@@ -109,6 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('.multi-select-search')?.addEventListener('input', function(e) {
         renderCategoriesCheckboxes(e.target.value);
     });
+
 
     // إضافة فئة جديدة
     document.getElementById('addNewCategoryBtn')?.addEventListener('click', async () => {
@@ -160,16 +166,31 @@ document.addEventListener('DOMContentLoaded', () => {
     if (appState.isAuthenticated) loadSupplierPage(1);
 });
 
-// ========== دوال الفئات ==========
-async function loadInitialProducts() {
-    if (allCategories.length) return;
-    try {
-        const data = await apiGetProducts(1, 9999);
-        const products = data.products;
-        allCategories = [...new Set(products.map(p => p.category).filter(Boolean))].sort();
-    } catch (err) {
-        console.error('Failed to load categories', err);
-        allCategories = [];
+function isAnySupplierFilterActive() {
+    const fields = ['filterSupplierName','filterContact','filterSupplierEmail','filterSupplierPhone','filterSupplierAddress','filterProductsSupplied','filterLeadTime'];
+    return fields.some(id => {
+        const el = document.getElementById(id);
+        if (!el) return false;
+        if (el.tagName === 'SELECT') return el.value !== '';
+        return el.value.trim() !== '';
+    });
+}
+
+// ========== دوال تحميل وعرض الجدول ==========
+async function loadSupplierPage(page) {
+    currentSupplierPage = page;
+    if (isAnySupplierFilterActive()) {
+        if (allSuppliersForFilter.length === 0) {
+            const data = await apiGetSuppliers(1, 9999);
+            allSuppliersForFilter = data.suppliers;
+        }
+        currentSuppliers = allSuppliersForFilter;
+        applySupplierFilters();
+    } else {
+        const data = await apiGetSuppliers(page, supplierLimit);
+        currentSuppliers = data.suppliers;
+        totalSupplierPages = data.pages;
+        applySupplierFilters();
     }
 }
 
@@ -309,15 +330,6 @@ window.deleteSupplier = async function(id) {
     } catch (err) { alert(err.message); }
 };
 
-// ========== جدول الموردين ==========
-async function loadSupplierPage(page) {
-    currentSupplierPage = page;
-    const data = await apiGetSuppliers(page, supplierLimit);
-    currentSuppliers = data.suppliers;
-    totalSupplierPages = data.pages;
-    applySupplierFilters();
-}
-
 function applySupplierFilters() {
     const name = (document.getElementById('filterSupplierName')?.value || '').toLowerCase();
     const contact = (document.getElementById('filterContact')?.value || '').toLowerCase();
@@ -348,8 +360,20 @@ function applySupplierFilters() {
         return 0;
     });
 
-    renderSuppliersTableHTML(filtered);
-    renderPagination(currentSupplierPage, totalSupplierPages, 'supplierPagination', (page) => loadSupplierPage(page));
+    const filterActive = isAnySupplierFilterActive();
+    if (filterActive) {
+        totalSupplierPages = Math.ceil(filtered.length / supplierLimit);
+        if (currentSupplierPage > totalSupplierPages) currentSupplierPage = 1;
+        const start = (currentSupplierPage - 1) * supplierLimit;
+        const pageItems = filtered.slice(start, start + supplierLimit);
+        renderSuppliersTableHTML(pageItems);
+    } else {
+        renderSuppliersTableHTML(filtered);
+    }
+
+    renderPagination(currentSupplierPage, totalSupplierPages, 'supplierPagination', (page) => {
+        loadSupplierPage(page);
+    });
 }
 
 function renderSuppliersTableHTML(suppliers) {

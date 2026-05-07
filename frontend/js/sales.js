@@ -8,6 +8,7 @@ let totalSalesPages = 1;
 
 let saleItems = [];
 let isProcessingSale = false;
+let allSalesForFilter = [];
 
 // ========== دوال تجميع الفواتير ==========
 function groupSales(salesArray) {
@@ -183,11 +184,19 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ========== أحداث الفلاتر ==========
-    ['filterSaleDate','filterTransID','filterCustomer','filterItems','filterTotal','filterSaleStatus'].forEach(id => {
+        ['filterSaleDate','filterTransID','filterCustomer','filterItems','filterTotal','filterSaleStatus'].forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.addEventListener('input', () => { currentSalesPage = 1; loadSalesPage(1); });
+        if (el) el.addEventListener('input', () => {
+            allSalesForFilter = [];
+            currentSalesPage = 1;
+            loadSalesPage(1);
+        });
     });
-    document.getElementById('filterSaleStatus')?.addEventListener('change', () => { currentSalesPage = 1; loadSalesPage(1); });
+    document.getElementById('filterSaleStatus')?.addEventListener('change', () => {
+        allSalesForFilter = [];
+        currentSalesPage = 1;
+        loadSalesPage(1);
+    });
 
     // ========== الفرز ==========
     document.querySelectorAll('#salesTableMain th[data-sort]').forEach(th => {
@@ -231,6 +240,16 @@ document.addEventListener('DOMContentLoaded', () => {
 		loadSalesPage(1);
 	});
 });
+
+function isAnySalesFilterActive() {
+    const fields = ['filterSaleDate','filterTransID','filterCustomer','filterItems','filterTotal','filterSaleStatus'];
+    return fields.some(id => {
+        const el = document.getElementById(id);
+        if (!el) return false;
+        if (el.tagName === 'SELECT') return el.value !== '';
+        return el.value.trim() !== '';
+    });
+}
 
 function addSaleItemRow() {
     const row = document.createElement('tr');
@@ -300,23 +319,19 @@ function updateSaleTotal() {
 // ========== دوال الصفحة والجدول (باقية دون تغيير كبير) ==========
 async function loadSalesPage(page) {
     currentSalesPage = page;
-    const data = await api('GET', `/sales?page=${page}&limit=9999`);
-    currentSales = data.sales;
-    totalSalesPages = data.pages;
-
-    // ==== هنا الإضافة: ملء فلتر الفئة لو فاضي ====
-    const catSelect = document.getElementById('filterSaleCategory');
-    if (catSelect && catSelect.options.length <= 1) {
-        // نجيب كل الفئات من currentSales (اللي جات من API)
-        const cats = [...new Set(currentSales.map(s => s.category).filter(Boolean))].sort();
-        catSelect.innerHTML = '<option value="">All</option>';
-        cats.forEach(c => {
-            catSelect.innerHTML += `<option value="${c}">${c}</option>`;
-        });
+    if (isAnySalesFilterActive()) {
+        if (allSalesForFilter.length === 0) {
+            const data = await api('GET', `/sales?page=1&limit=9999`);
+            allSalesForFilter = data.sales;
+        }
+        currentSales = allSalesForFilter;
+        applySalesFilters();
+    } else {
+        const data = await api('GET', `/sales?page=${page}&limit=${salesLimit}`);
+        currentSales = data.sales;
+        totalSalesPages = data.pages;
+        applySalesFilters();
     }
-    // ============================================
-
-    applySalesFilters();
 }
 
 function applySalesFilters() {
@@ -354,8 +369,20 @@ function applySalesFilters() {
         return 0;
     });
 
-    renderSalesTableHTML(filtered);
-    renderPagination(currentSalesPage, totalSalesPages, 'salesPagination', (page) => loadSalesPage(page));
+	const filterActive = isAnySalesFilterActive();
+    if (filterActive) {
+        totalSalesPages = Math.ceil(filtered.length / salesLimit);
+        if (currentSalesPage > totalSalesPages) currentSalesPage = 1;
+        const start = (currentSalesPage - 1) * salesLimit;
+        const pageItems = filtered.slice(start, start + salesLimit);
+        renderSalesTableHTML(pageItems);
+    } else {
+        renderSalesTableHTML(filtered);
+    }
+
+    renderPagination(currentSalesPage, totalSalesPages, 'salesPagination', (page) => {
+        loadSalesPage(page);
+    });
 }
 
 function renderSalesTableHTML(groups) {
