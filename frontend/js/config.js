@@ -124,3 +124,14 @@ function debounce(fn, delay = 400) {
         timer = setTimeout(() => fn.apply(this, args), delay);
     };
 }
+
+// Global Loader functions
+function showLoader() {
+    const loader = document.getElementById('globalLoader');
+    if (loader) loader.style.display = 'flex';
+}
+
+function hideLoader() {
+    const loader = document.getElementById('globalLoader');
+    if (loader) loader.style.display = 'none';
+}

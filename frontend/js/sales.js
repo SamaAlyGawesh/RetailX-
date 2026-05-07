@@ -320,11 +320,13 @@ function updateSaleTotal() {
 
 // ========== دوال الصفحة والجدول (باقية دون تغيير كبير) ==========
 async function loadSalesPage(page) {
+	showLoader();
     currentSalesPage = page;
     const data = await api('GET', `/sales?page=1&limit=9999`);
     currentSales = data.sales;
     populateSaleCategoryFilter(); // بناء الفلتر والحفاظ على الاختيار
     applySalesFilters();
+	hideLoader();
 }
 
 function applySalesFilters() {

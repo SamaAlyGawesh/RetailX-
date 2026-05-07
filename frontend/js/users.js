@@ -89,6 +89,7 @@ function isAnyUserFilterActive() {
 }
 
 async function loadUserPage(page) {
+	showLoader();
     currentUserPage = page;
     if (isAnyUserFilterActive()) {
         if (allUsersForFilter.length === 0) {
@@ -103,6 +104,7 @@ async function loadUserPage(page) {
         totalUserPages = data.pages;
         applyUserFilters();
     }
+	hideLoader();
 }
 
 function applyUserFilters() {

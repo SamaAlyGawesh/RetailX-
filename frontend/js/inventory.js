@@ -145,6 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function loadInventoryPage(page) {
+	showLoader();
     currentInventoryPage = page;
     const search = document.getElementById('inventorySearch')?.value || '';
 
@@ -163,6 +164,7 @@ async function loadInventoryPage(page) {
         totalInventoryPages = data.pages;
         applyInventoryFilters(); // بدون فلترة، تعرض الصفحة وتُحدّث الـ Pagination
     }
+	hideLoader();
 }
 
 function isAnyFilterActive() {

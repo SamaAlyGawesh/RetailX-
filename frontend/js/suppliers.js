@@ -185,6 +185,7 @@ function isAnySupplierFilterActive() {
 
 // ========== دوال تحميل وعرض الجدول ==========
 async function loadSupplierPage(page) {
+	showLoader();
     currentSupplierPage = page;
     if (isAnySupplierFilterActive()) {
         if (allSuppliersForFilter.length === 0) {
@@ -199,6 +200,7 @@ async function loadSupplierPage(page) {
         totalSupplierPages = data.pages;
         applySupplierFilters();
     }
+	hideLoader();
 }
 
 function renderCategoriesCheckboxes(filter = '') {
