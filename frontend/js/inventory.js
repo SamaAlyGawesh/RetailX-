@@ -141,11 +141,30 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadInventoryPage(page) {
     currentInventoryPage = page;
     const search = document.getElementById('inventorySearch')?.value || '';
-    // نستخدم fetch مباشرة عشان ما نغيرش inventoryData العالمية
-    const data = await api('GET', `/products?page=${page}&limit=${inventoryLimit}&search=${encodeURIComponent(search)}`);
-    currentInventory = data.products;
-    totalInventoryPages = data.pages;
-    applyInventoryFilters();
+    
+    // جلب كل المنتجات (بدون تحديد صفحة) إذا كان هناك فلتر نشط
+    const limitToUse = isAnyFilterActive() ? 9999 : inventoryLimit;
+    const data = await api('GET', `/products?page=${page}&limit=${limitToUse}&search=${encodeURIComponent(search)}`);
+    
+    if (isAnyFilterActive()) {
+        // خزّن الكل مؤقتاً عشان نفلتر محلياً
+        currentInventory = data.products;
+        applyInventoryFilters(); // الفلترة هتحسب totalPages بناءً على النتائج المفلترة
+    } else {
+        currentInventory = data.products;
+        totalInventoryPages = data.pages;
+        applyInventoryFilters(); // بدون فلترة، مجرد ترتيب وعرض Pagination عادي
+    }
+}
+
+function isAnyFilterActive() {
+    const fields = ['filterProductName','filterSKU','filterCategory','filterQuantity','filterReorder','filterPrice','filterStatus'];
+    return fields.some(id => {
+        const el = document.getElementById(id);
+        if (!el) return false;
+        if (el.tagName === 'SELECT') return el.value !== '';
+        return el.value.trim() !== '';
+    });
 }
 
 function applyInventoryFilters() {
@@ -185,10 +204,21 @@ function applyInventoryFilters() {
         return 0;
     });
 
-    renderInventoryTableHTML(filtered);
-    renderPagination(currentInventoryPage, totalInventoryPages, 'inventoryPagination', (page) => {
-        loadInventoryPage(page);
-    });
+    //renderInventoryTableHTML(filtered);
+	if (isAnyFilterActive()) {
+		// لو فيه فلتر نشط، احسب عدد الصفحات من النتائج المفلترة
+		totalInventoryPages = Math.ceil(filtered.length / inventoryLimit);
+		// خد فقط الصفحة الحالية من النتائج المفلترة للعرض
+		const pageStart = (currentInventoryPage - 1) * inventoryLimit;
+		const pageItems = filtered.slice(pageStart, pageStart + inventoryLimit);
+		renderInventoryTableHTML(pageItems);
+	} else {
+		renderInventoryTableHTML(filtered);
+	}
+
+	renderPagination(currentInventoryPage, totalInventoryPages, 'inventoryPagination', (page) => {
+		loadInventoryPage(page);
+	});
 }
 async function renderInventoryTable() {
     await loadInventoryPage(currentInventoryPage);
