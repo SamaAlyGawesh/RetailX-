@@ -55,8 +55,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // ========== فتح مودال بيع جديد ==========
     document.getElementById('addNewSale').onclick = async function(e) {
         e.preventDefault();
-        if (!appState.isAuthenticated || !hasPermission('sales')) return;
-
+        if (!appState.isAuthenticated || !hasPermission('sales')){
+			return;
+		}
+		if (!hasPermission('addSale')) {
+			document.getElementById('addNewSale').style.display = 'none';
+			//return;
+		}
         await apiGetProducts(1, 9999);
         saleItems = [];
         document.getElementById('saleCustomer').value = 'Walk-in Customer';
@@ -384,7 +389,7 @@ function renderSalesTableHTML(groups) {
     const startNumber = (currentSalesPage - 1) * salesLimit + 1;
 
     tbody.innerHTML = groups.map((g, index) => {
-        const deleteBtn = isAdmin ? `<button class="btn btn-sm btn-danger" onclick="deleteInvoice('${g.id}')"><i class="fas fa-trash"></i></button> ` : '';
+        const deleteBtn = (hasPermission('deleteSale')) ? `<button class="btn btn-sm btn-danger" onclick="deleteInvoice('${g.id}')"><i class="fas fa-trash"></i></button> ` : '';
         return `<tr>
             <td>${startNumber + index}</td>
             <td>${g.date}</td>

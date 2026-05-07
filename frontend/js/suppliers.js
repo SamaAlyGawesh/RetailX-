@@ -23,6 +23,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('addNewSupplier').onclick = async () => {
         if (!hasPermission('suppliers')) return;
+		if (!hasPermission('addSupplier')) {
+			document.getElementById('addNewSupplier').style.display = 'none';
+		}
         if (!allCategories.length) await loadInitialProducts();
         clearSupplierForm();
         supplierEditingId = null;
@@ -404,8 +407,8 @@ function renderSuppliersTableHTML(suppliers) {
             <td>${s.phone || '-'}</td>
             <td><div class="supplier-products-list">${categoriesHtml}</div></td>
             <td>
-                <button class="btn btn-sm btn-primary" onclick="editSupplier(${s.id})"><i class="fas fa-edit"></i></button>
-                <button class="btn btn-sm btn-danger" onclick="deleteSupplier(${s.id})"><i class="fas fa-trash"></i></button>
+                ${hasPermission('editSupplier') ? `<button class="btn btn-sm btn-primary" onclick="editSupplier(${s.id})"><i class="fas fa-edit"></i></button>` : ''}
+				${hasPermission('deleteSupplier') ? `<button class="btn btn-sm btn-danger" onclick="deleteSupplier(${s.id})"><i class="fas fa-trash"></i></button>` : ''}
             </td>
         </tr>`;
     }).join('');

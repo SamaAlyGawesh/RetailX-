@@ -20,13 +20,48 @@ let usersDatabase = [];
 
 // Role-based permissions
 const permissions = {
-    administrator: { dashboard: true, inventory: true, sales: true, reports: true, suppliers: true, settings: true, addProduct: true, importExport: true, manageUsers: true },
-    clerk: { dashboard: true, inventory: true, reports: true, addProduct: true, suppliers: false, settings: false, sales: false, importExport: false },
-    cashier: { dashboard: false, sales: true, inventory: false, reports: false, suppliers: false, settings: false, addProduct: false, importExport: false },
-    sales: { dashboard: false, sales: true, reports: true, inventory: false, suppliers: false, settings: false, addProduct: false, importExport: false },
-    user: { dashboard: false, inventory: false, sales: false, reports: false, suppliers: false, settings: false, addProduct: false, importExport: false },
-    viewer: { dashboard: false, inventory: false, sales: false, reports: false, suppliers: false, settings: false, addProduct: false, importExport: false },
-	guest: { dashboard: false, inventory: false, sales: false, reports: false, suppliers: false, settings: false, addProduct: false, importExport: false, manageUsers: false }
+    administrator: { 
+        dashboard: true, inventory: true, sales: true, reports: true, suppliers: true, settings: true,
+        addProduct: true, editProduct: true, deleteProduct: true,
+        addSale: true, deleteSale: true,
+        addSupplier: true, editSupplier: true, deleteSupplier: true,
+        manageUsers: true, importExport: true 
+    },
+    clerk: { 
+        dashboard: true, inventory: true, reports: true,
+        addProduct: true, editProduct: true, deleteProduct: false,
+        addSale: false, deleteSale: false,
+        addSupplier: false, editSupplier: false, deleteSupplier: false,
+        manageUsers: false, importExport: false 
+    },
+    cashier: { 
+        dashboard: false, sales: true,
+        addProduct: false, editProduct: false, deleteProduct: false,
+        addSale: true, deleteSale: false,
+        addSupplier: false, editSupplier: false, deleteSupplier: false,
+        manageUsers: false, importExport: false 
+    },
+    sales: { 
+        dashboard: false, sales: true, reports: true,
+        addProduct: false, editProduct: false, deleteProduct: false,
+        addSale: true, deleteSale: false,
+        addSupplier: false, editSupplier: false, deleteSupplier: false,
+        manageUsers: false, importExport: false 
+    },
+    user: { 
+        dashboard: false, inventory: false, sales: false, reports: false, suppliers: false, settings: false,
+        addProduct: false, editProduct: false, deleteProduct: false,
+        addSale: false, deleteSale: false,
+        addSupplier: false, editSupplier: false, deleteSupplier: false,
+        manageUsers: false, importExport: false 
+    },
+    viewer: { 
+        dashboard: false, inventory: false, sales: false, reports: false, suppliers: false, settings: false,
+        addProduct: false, editProduct: false, deleteProduct: false,
+        addSale: false, deleteSale: false,
+        addSupplier: false, editSupplier: false, deleteSupplier: false,
+        manageUsers: false, importExport: false 
+    }
 };
 
 function hasPermission(permission) {

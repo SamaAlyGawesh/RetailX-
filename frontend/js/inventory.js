@@ -10,7 +10,10 @@ let allInventoryForFilter = []; // يُستخدم فقط عند وجود فلت�
 document.addEventListener('DOMContentLoaded', () => {
     // Add product button
     document.getElementById('addNewProduct').onclick = async () => {
-		if (!hasPermission('addProduct')) return;
+		if (!hasPermission('addProduct')) {
+			document.getElementById('addNewProduct').style.display = 'none';
+			//return;
+		}
 		resetProductForm(); // <-- ينظف كل الحقول
 		await loadSuppliersAndCategories();
 		document.getElementById('addProductModal').classList.add('active');
@@ -251,10 +254,12 @@ function renderInventoryTableHTML(products) {
         const statusText = p.quantity === 0 ? 'Out of Stock' : (p.quantity <= p.reorderLevel ? 'Low Stock' : 'In Stock');
         const statusClass = p.quantity === 0 ? 'stock-out' : (p.quantity <= p.reorderLevel ? 'stock-low' : 'stock-in');
         let actions = '';
-        if (hasPermission('addProduct')) {
-            actions += `<button class="btn btn-sm btn-warning" onclick="updateStock(${p.id})"><i class="fas fa-edit"></i></button> `;
-            actions += `<button class="btn btn-sm btn-danger" onclick="deleteProduct(${p.id})"><i class="fas fa-trash"></i></button>`;
-        }
+		if (hasPermission('editProduct')) {
+			actions += `<button class="btn btn-sm btn-warning" onclick="updateStock(${p.id})"><i class="fas fa-edit"></i></button> `;
+		}
+		if (hasPermission('deleteProduct')) {
+			actions += `<button class="btn btn-sm btn-danger" onclick="deleteProduct(${p.id})"><i class="fas fa-trash"></i></button>`;
+		}
         const imgSrc = p.image ? `/uploads/${p.image}` : null;
 		const isActive = p.active == 1;
 		const avgCost = p.quantity > 0 ? (p.total_cost / p.quantity).toFixed(2) : '0.00';
