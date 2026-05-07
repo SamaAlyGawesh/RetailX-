@@ -404,6 +404,26 @@ body.light-theme input[type="date"] {
 .sticky-header thead tr:first-child th { top: 0; }
 .sticky-header thead tr:last-child th { top: 40px; }
 
+
+/* Pagination styling */
+.pagination {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 15px;
+    padding: 10px 0;
+}
+
+.pagination-container {
+    overflow: visible;
+}
+
+.pagination-ellipsis {
+    padding: 6px 10px;
+    color: var(--dark-text-lighter);
+}
+
 @media (max-width: 480px) {
     .container { padding: 0 15px; }
     .stat-card .value { font-size: 1.5rem; }
