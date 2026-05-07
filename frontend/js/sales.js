@@ -321,7 +321,7 @@ async function loadSalesPage(page) {
     const data = await api('GET', `/sales?page=1&limit=9999`);
     currentSales = data.sales;
     applySalesFilters();
-    populateSaleCategoryFilter(); // <-- أضف هذا السطر
+    // سننقل استدعاء populateSaleCategoryFilter إلى applySalesFilters
 }
 
 function applySalesFilters() {
@@ -335,7 +335,7 @@ function applySalesFilters() {
 
     // تجميع الفواتير أولاً
     let grouped = groupSales(currentSales);
-
+	populateSaleCategoryFilter(grouped); // مررنا grouped حتى لا نعيد تجميعه
     // تطبيق الفلاتر على المجموعات
     let filtered = grouped.filter(g => {
         const matchDate = date ? (g.date || '').toLowerCase().includes(date) : true;
@@ -588,3 +588,21 @@ window.deleteInvoice = async function(baseId) {
         updateDashboardStats();
     } catch (err) { alert(err.message); }
 };
+
+function populateSaleCategoryFilter(groupedSales) {
+    const select = document.getElementById('filterSaleCategory');
+    if (!select) return;
+
+    // استخدم groupedSales إن تم تمريره، وإلا قم بتجميعه الآن
+    const groups = groupedSales || groupSales(currentSales);
+    
+    // استخرج الفئات الفريدة من الفواتير المُجمّعة
+    const cats = [...new Set(groups.map(g => g.category).filter(Boolean))].sort();
+    
+    // أعد بناء الخيارات
+    select.innerHTML = '<option value="">All</option>';
+    cats.forEach(c => {
+        select.innerHTML += `<option value="${c}">${c}</option>`;
+    });
+}
+}
