@@ -605,4 +605,3 @@ function populateSaleCategoryFilter(groupedSales) {
         select.innerHTML += `<option value="${c}">${c}</option>`;
     });
 }
-}
