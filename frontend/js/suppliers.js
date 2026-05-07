@@ -10,6 +10,11 @@ let supplierEditingId = null;
 let allCategories = [];
 let selectedCategories = [];
 
+async function loadInitialProducts() {
+    await apiGetProducts(1, 9999);
+    allCategories = [...new Set(inventoryData.map(p => p.category).filter(Boolean))].sort();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     if (appState.isAuthenticated) {
         loadInitialProducts();

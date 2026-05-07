@@ -44,9 +44,10 @@ function groupSales(salesArray) {
         if (s.category) group.categories.add(s.category);
     });
     return Object.values(grouped).map(g => ({
-        ...g,
-        category: Array.from(g.categories).join(', ')
-    }));
+		...g,
+		categoriesSet: g.categories, // احتفظ بالـ Set لاستخدام الفلتر
+		category: Array.from(g.categories).join(', ') // النص اللي ظاهر في الجدول
+	}));
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -344,7 +345,7 @@ function applySalesFilters() {
         const matchItems = items ? g.items == items : true;
         const matchTotal = total ? Math.abs(g.total - total) < 0.001 : true;
         const matchStatus = status ? g.status === status : true;
-        const matchCategory = filterCategory ? g.category.toLowerCase().includes(filterCategory.toLowerCase()) : true;
+        const matchCategory = filterCategory ? (g.categoriesSet && g.categoriesSet.has(filterCategory)) : true;
         return matchDate && matchID && matchCust && matchItems && matchTotal && matchCategory && matchStatus;
     });
 
@@ -593,13 +594,20 @@ function populateSaleCategoryFilter(groupedSales) {
     const select = document.getElementById('filterSaleCategory');
     if (!select) return;
 
-    // استخدم groupedSales إن تم تمريره، وإلا قم بتجميعه الآن
     const groups = groupedSales || groupSales(currentSales);
     
-    // استخرج الفئات الفريدة من الفواتير المُجمّعة
-    const cats = [...new Set(groups.map(g => g.category).filter(Boolean))].sort();
+    // استخرج التصنيفات الفردية من كل فاتورة
+    const allCats = [];
+    groups.forEach(g => {
+        if (g.categoriesSet) {
+            g.categoriesSet.forEach(cat => allCats.push(cat));
+        }
+    });
     
-    // أعد بناء الخيارات
+    // فريد ومرتب
+    const cats = [...new Set(allCats)].sort();
+    
+    // بناء الخيارات
     select.innerHTML = '<option value="">All</option>';
     cats.forEach(c => {
         select.innerHTML += `<option value="${c}">${c}</option>`;
