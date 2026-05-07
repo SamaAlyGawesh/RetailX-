@@ -191,6 +191,7 @@ function renderInventoryTableHTML(products) {
 					<td>${startNumber + index}</td>
 					<td>${imgSrc ? `<img src="${imgSrc}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;">` : '—'}</td>
 					<td>${p.name}</td>
+					<td style="font-family:monospace;">${p.supplier_code || '—'}</td>   <!-- خلية Supplier Code -->
 					<td>${p.sku}</td>
 					<td>${p.category}</td>
 					<td>${p.quantity}</td>
