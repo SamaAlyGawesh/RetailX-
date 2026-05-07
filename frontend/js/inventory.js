@@ -5,6 +5,7 @@ let inventorySort = { field: 'name', order: 'asc' };
 let currentInventoryPage = 1;
 const inventoryLimit = 15;
 let totalInventoryPages = 1;
+let allInventoryForFilter = []; // يُستخدم فقط عند وجود فلتر نشط
 
 document.addEventListener('DOMContentLoaded', () => {
     // Add product button
@@ -103,11 +104,13 @@ document.addEventListener('DOMContentLoaded', () => {
     ['filterProductName','filterSKU','filterCategory','filterQuantity','filterReorder','filterPrice','filterStatus'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('input', () => {
+			allInventoryForFilter = [];
             currentInventoryPage = 1;
             loadInventoryPage(1);
         });
     });
     document.getElementById('filterStatus')?.addEventListener('change', () => {
+		allInventoryForFilter = [];
         currentInventoryPage = 1;
         loadInventoryPage(1);
     });
@@ -134,22 +137,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial load
     if (appState.isAuthenticated) {
-    loadInventoryPage(1);
+		allInventoryForFilter = [];
+		loadInventoryPage(1);
 	}
 });
 
 async function loadInventoryPage(page) {
     currentInventoryPage = page;
     const search = document.getElementById('inventorySearch')?.value || '';
-    
-    // إذا كان هناك أي فلتر نشط، نجلب كل المنتجات (بدون Pagination من الخادم)
-    const limitToUse = isAnyFilterActive() ? 9999 : inventoryLimit;
-    const data = await api('GET', `/products?page=${page}&limit=${limitToUse}&search=${encodeURIComponent(search)}`);
-    
-    currentInventory = data.products;
-    totalInventoryPages = data.pages; // سنعيد حسابه لاحقًا في applyInventoryFilters إذا لزم الأمر
-    
-    applyInventoryFilters();
+
+    if (isAnyFilterActive()) {
+        // نجلب جميع المنتجات مرة واحدة فقط إذا لم تكن قد حُملت بعد
+        if (allInventoryForFilter.length === 0) {
+            const data = await api('GET', `/products?page=1&limit=9999&search=${encodeURIComponent(search)}`);
+            allInventoryForFilter = data.products;
+        }
+        currentInventory = allInventoryForFilter;
+        applyInventoryFilters(); // ستتولى التقسيم والعرض محليًا
+    } else {
+        // السير العادي: Pagination من الخادم
+        const data = await api('GET', `/products?page=${page}&limit=${inventoryLimit}&search=${encodeURIComponent(search)}`);
+        currentInventory = data.products;
+        totalInventoryPages = data.pages;
+        applyInventoryFilters(); // بدون فلترة، تعرض الصفحة وتُحدّث الـ Pagination
+    }
 }
 
 function isAnyFilterActive() {
@@ -161,6 +172,7 @@ function isAnyFilterActive() {
         return el.value.trim() !== '';
     });
 }
+
 
 function applyInventoryFilters() {
     // إخفاء المنتجات الوهمية
