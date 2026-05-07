@@ -336,7 +336,7 @@ function applySalesFilters() {
 
     // تجميع الفواتير أولاً
     let grouped = groupSales(currentSales);
-	populateSaleCategoryFilter(grouped); // مررنا grouped حتى لا نعيد تجميعه
+	//populateSaleCategoryFilter(grouped); // مررنا grouped حتى لا نعيد تجميعه
     // تطبيق الفلاتر على المجموعات
     let filtered = grouped.filter(g => {
         const matchDate = date ? (g.date || '').toLowerCase().includes(date) : true;
@@ -595,19 +595,13 @@ function populateSaleCategoryFilter(groupedSales) {
     if (!select) return;
 
     const groups = groupedSales || groupSales(currentSales);
-    
-    // استخرج التصنيفات الفردية من كل فاتورة
     const allCats = [];
     groups.forEach(g => {
         if (g.categoriesSet) {
             g.categoriesSet.forEach(cat => allCats.push(cat));
         }
     });
-    
-    // فريد ومرتب
     const cats = [...new Set(allCats)].sort();
-    
-    // بناء الخيارات
     select.innerHTML = '<option value="">All</option>';
     cats.forEach(c => {
         select.innerHTML += `<option value="${c}">${c}</option>`;
