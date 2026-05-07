@@ -4,7 +4,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { getDB } = require('../db');
-const JWT_SECRET = process.env.JWT_SECRET || 'retailx_secret_key_change_in_production';
+const JWT_SECRET = process.env.JWT_SECRET || 'change_me_in_env';
 
 // ========== REGISTER ==========
 router.post('/register', (req, res) => {
