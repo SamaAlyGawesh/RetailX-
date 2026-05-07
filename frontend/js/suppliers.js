@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     // التحقق من أن جميع الحقول الأساسية مملوءة
                     if (!type || !issue || !expiry) {
-                        showToast(`Please fill all fields (type, dates) for the document "${type || 'unknown'}".`, 'error'));
+                        showToast(`Please fill all fields (type, dates) for the document "${type || 'unknown'}".`, 'error');
                         return; // إيقاف الحفظ بالكامل للفت الانتباه للخطأ
                     }
                     if (!fileInput.files[0]) {
