@@ -216,12 +216,32 @@ function updateInventorySortArrows() {
 // Existing functions
 window.updateStock = function(id) {
     if (!hasPermission('inventory')) return;
-    const p = inventoryData.find(p => p.id === id);
+    // استخدم currentInventory (البيانات المعروضة حالياً) للبحث عن المنتج
+    const p = currentInventory.find(p => p.id === id);
     if (!p) return;
+
+    // تعبئة الحقول الأساسية
     document.getElementById('editProductId').value = p.id;
     document.getElementById('editProductName').value = p.name;
     document.getElementById('editCurrentStock').value = p.quantity;
     document.getElementById('editNewStock').value = p.quantity;
+
+    // حقول العرض فقط (جديدة)
+    document.getElementById('editProductSKU').value = p.sku || '';
+    document.getElementById('editProductCategory').value = p.category || '';
+    document.getElementById('editProductPrice').value = formatPrice(p.price);
+    
+    // حساب وعرض حالة المخزون
+    const stockStatusEl = document.getElementById('editStockStatus');
+    if (stockStatusEl) {
+        const statusText = p.quantity === 0 ? 'Out of Stock' : (p.quantity <= p.reorderLevel ? 'Low Stock' : 'In Stock');
+        const statusColor = p.quantity === 0 ? 'var(--danger)' : (p.quantity <= p.reorderLevel ? 'var(--warning)' : 'var(--secondary)');
+        stockStatusEl.textContent = statusText;
+        stockStatusEl.style.color = statusColor;
+        stockStatusEl.style.fontWeight = 'bold';
+    }
+
+    // عرض فتح المودال
     document.getElementById('editProductModal').classList.add('active');
 };
 

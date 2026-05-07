@@ -557,17 +557,54 @@
 		</div>
 	</div>
 
-    <!-- Edit Product Stock Modal -->
-    <div class="modal" id="editProductModal">
-        <div class="modal-content">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 20px;"><h3 id="editProductTitle">Edit Product Stock</h3><button class="close-modal" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button></div>
-            <input type="hidden" id="editProductId">
-            <div class="form-group"><label id="editProductNameLabel">Product Name</label><input type="text" id="editProductName" class="form-control" readonly></div>
-            <div class="form-group"><label id="editCurrentStockLabel">Current Stock</label><input type="number" id="editCurrentStock" class="form-control" readonly></div>
-            <div class="form-group"><label id="editNewStockLabel">New Stock Quantity *</label><input type="number" id="editNewStock" class="form-control" value="0" min="0"></div>
-            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;"><button class="btn btn-outline close-modal"><span id="editCancelText">Cancel</span></button><button class="btn btn-success" id="submitStockUpdate"><span id="editUpdateText">Update Stock</span></button></div>
-        </div>
-    </div>
+    <!-- Edit Product Stock Modal (Enhanced) -->
+	<div class="modal" id="editProductModal">
+		<div class="modal-content" style="max-width: 650px;">
+			<div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+				<h3 id="editProductTitle"><i class="fas fa-edit"></i> Edit Product Stock</h3>
+				<button class="close-modal" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button>
+			</div>
+			<input type="hidden" id="editProductId">
+			
+			<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+				<div class="form-group">
+					<label>Product Name</label>
+					<input type="text" id="editProductName" class="form-control" readonly>
+				</div>
+				<div class="form-group">
+					<label>SKU</label>
+					<input type="text" id="editProductSKU" class="form-control" readonly>
+				</div>
+				<div class="form-group">
+					<label>Category</label>
+					<input type="text" id="editProductCategory" class="form-control" readonly>
+				</div>
+				<div class="form-group">
+					<label>Price</label>
+					<input type="text" id="editProductPrice" class="form-control" readonly>
+				</div>
+				<div class="form-group">
+					<label>Current Stock</label>
+					<input type="number" id="editCurrentStock" class="form-control" readonly>
+				</div>
+				<div class="form-group">
+					<label>New Stock Quantity *</label>
+					<input type="number" id="editNewStock" class="form-control" value="0" min="0">
+				</div>
+			</div>
+			
+			<!-- عرض حالة المخزون -->
+			<div class="form-group" style="margin-top: 15px; text-align: center;">
+				<label>Stock Status</label>
+				<div id="editStockStatus" style="font-size: 1.2rem; padding: 8px; border-radius: 6px; background: var(--dark-bg); color: var(--primary);">—</div>
+			</div>
+
+			<div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+				<button class="btn btn-outline close-modal">Cancel</button>
+				<button class="btn btn-success" id="submitStockUpdate">Update Stock</button>
+			</div>
+		</div>
+	</div>
 
     <!-- Add Supplier Modal -->
 	<div class="modal" id="addSupplierModal">
