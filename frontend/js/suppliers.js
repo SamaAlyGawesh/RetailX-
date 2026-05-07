@@ -228,7 +228,7 @@ window.toggleCategorySelect = function(category, isChecked) {
 window.deleteCategoryFromList = function(category) {
     const realProducts = inventoryData.filter(p => p.category === category && p.name !== '__category_placeholder__');
     if (realProducts.length > 0) {
-        showToast(`Cannot delete category "${category}". It is used by ${realProducts.length} real product(s).``, 'error');
+        showToast(`Cannot delete category "${category}". It is used by ${realProducts.length} real product(s).`, 'error');
         return;
     }
     if (confirm(`Are you sure you want to delete the category "${category}"?`)) {
