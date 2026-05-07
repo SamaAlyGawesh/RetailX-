@@ -571,7 +571,7 @@ function printInvoiceFromGroup(group) {
                 <tfoot><tr style="font-weight:bold;"><td colspan="3">Grand Total</td><td>${formatPrice(group.total)}</td></tr></tfoot>
             </table>
             <div class="total">Total Amount: ${formatPrice(group.total)}</div>
-            <div class="footer"><p>Thank you for shopping with RetailX!</p><p>support@retailx.com | Cairo, Egypt</p></div>
+            <div class="footer"><p>Thank you for shopping with RetailX!</p><p>support@retailx.com | Alexandria, Egypt</p></div>
         </div>
         <div style="text-align:center;"><button onclick="window.print()">Print Invoice</button></div>
         </body></html>
