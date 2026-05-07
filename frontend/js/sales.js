@@ -223,15 +223,14 @@ document.addEventListener('DOMContentLoaded', () => {
 		// ملء فلتر الفئة في جدول المبيعات (فقط إذا كان المستخدم مسجلاً)
 	if (appState.isAuthenticated) {
 		const populateSaleCategoryFilter = async () => {
+			const select = document.getElementById('filterSaleCategory');
+			if (!select || select.options.length > 1) return; // مملوءة بالفعل
 			await apiGetProducts(1, 9999);
 			const categories = [...new Set(inventoryData.map(p => p.category).filter(Boolean))].sort();
-			const select = document.getElementById('filterSaleCategory');
-			if (select) {
-				select.innerHTML = '<option value="">All</option>';
-				categories.forEach(c => {
-					select.innerHTML += `<option value="${c}">${c}</option>`;
-				});
-			}
+			select.innerHTML = '<option value="">All</option>';
+			categories.forEach(c => {
+				select.innerHTML += `<option value="${c}">${c}</option>`;
+			});
 		};
 		populateSaleCategoryFilter();
 	}
@@ -319,10 +318,10 @@ function updateSaleTotal() {
 // ========== دوال الصفحة والجدول (باقية دون تغيير كبير) ==========
 async function loadSalesPage(page) {
     currentSalesPage = page;
-    // نجلب جميع الصفوف لضمان تجميع كامل
     const data = await api('GET', `/sales?page=1&limit=9999`);
     currentSales = data.sales;
     applySalesFilters();
+    populateSaleCategoryFilter(); // <-- أضف هذا السطر
 }
 
 function applySalesFilters() {
