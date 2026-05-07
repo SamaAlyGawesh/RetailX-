@@ -201,22 +201,22 @@ function applyInventoryFilters() {
         return 0;
     });
 
-    const filterActive = isAnyFilterActive();
+    // حساب عدد الصفحات بناءً على النتائج المفلترة (دائماً)
+    totalInventoryPages = Math.ceil(filtered.length / inventoryLimit);
     
-    if (filterActive) {
-        // إعادة حساب الصفحات بناءً على النتائج المفلترة
-        totalInventoryPages = Math.ceil(filtered.length / inventoryLimit);
-        // اقتطاع الصفحة الحالية
-        const start = (currentInventoryPage - 1) * inventoryLimit;
-        const pageItems = filtered.slice(start, start + inventoryLimit);
-        renderInventoryTableHTML(pageItems);
-    } else {
-        totalInventoryPages = Math.ceil(filtered.length / inventoryLimit);
-        const start = (currentInventoryPage - 1) * inventoryLimit;
-        const pageItems = filtered.slice(start, start + inventoryLimit);
-        renderInventoryTableHTML(pageItems);
+    // لو الصفحة الحالية أكبر من العدد الجديد، نرجع للأولى
+    if (currentInventoryPage > totalInventoryPages) {
+        currentInventoryPage = 1;
     }
 
+    // اقتطاع الصفحة الحالية
+    const start = (currentInventoryPage - 1) * inventoryLimit;
+    const pageItems = filtered.slice(start, start + inventoryLimit);
+
+    // عرض الجدول
+    renderInventoryTableHTML(pageItems);
+
+    // عرض Pagination
     renderPagination(currentInventoryPage, totalInventoryPages, 'inventoryPagination', (page) => {
         loadInventoryPage(page);
     });
