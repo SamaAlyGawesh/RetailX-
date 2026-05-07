@@ -319,19 +319,10 @@ function updateSaleTotal() {
 // ========== دوال الصفحة والجدول (باقية دون تغيير كبير) ==========
 async function loadSalesPage(page) {
     currentSalesPage = page;
-    if (isAnySalesFilterActive()) {
-        if (allSalesForFilter.length === 0) {
-            const data = await api('GET', `/sales?page=1&limit=9999`);
-            allSalesForFilter = data.sales;
-        }
-        currentSales = allSalesForFilter;
-        applySalesFilters();
-    } else {
-        const data = await api('GET', `/sales?page=${page}&limit=${salesLimit}`);
-        currentSales = data.sales;
-        totalSalesPages = data.pages;
-        applySalesFilters();
-    }
+    // نجلب جميع الصفوف لضمان تجميع كامل
+    const data = await api('GET', `/sales?page=1&limit=9999`);
+    currentSales = data.sales;
+    applySalesFilters();
 }
 
 function applySalesFilters() {
@@ -369,16 +360,13 @@ function applySalesFilters() {
         return 0;
     });
 
-	const filterActive = isAnySalesFilterActive();
-    if (filterActive) {
-        totalSalesPages = Math.ceil(filtered.length / salesLimit);
-        if (currentSalesPage > totalSalesPages) currentSalesPage = 1;
-        const start = (currentSalesPage - 1) * salesLimit;
-        const pageItems = filtered.slice(start, start + salesLimit);
-        renderSalesTableHTML(pageItems);
-    } else {
-        renderSalesTableHTML(filtered);
-    }
+	    // حساب الصفحات من النتائج المُجمَّعة دائمًا
+    totalSalesPages = Math.ceil(filtered.length / salesLimit);
+    if (currentSalesPage > totalSalesPages) currentSalesPage = 1;
+
+    const start = (currentSalesPage - 1) * salesLimit;
+    const pageItems = filtered.slice(start, start + salesLimit);
+    renderSalesTableHTML(pageItems);
 
     renderPagination(currentSalesPage, totalSalesPages, 'salesPagination', (page) => {
         loadSalesPage(page);
