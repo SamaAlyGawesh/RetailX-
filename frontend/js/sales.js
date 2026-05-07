@@ -185,19 +185,21 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ========== أحداث الفلاتر ==========
-        ['filterSaleDate','filterTransID','filterCustomer','filterItems','filterTotal','filterSaleStatus'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener('input', () => {
-            allSalesForFilter = [];
-            currentSalesPage = 1;
-            loadSalesPage(1);
-        });
-    });
-    document.getElementById('filterSaleStatus')?.addEventListener('change', () => {
-        allSalesForFilter = [];
-        currentSalesPage = 1;
-        loadSalesPage(1);
-    });
+    const debouncedLoadSales = debounce(() => {
+		allSalesForFilter = [];
+		currentSalesPage = 1;
+		loadSalesPage(1);
+	}, 400);
+
+	['filterSaleDate','filterTransID','filterCustomer','filterItems','filterTotal'].forEach(id => {
+		const el = document.getElementById(id);
+		if (el) el.addEventListener('input', debouncedLoadSales);
+	});
+	document.getElementById('filterSaleStatus')?.addEventListener('change', () => {
+		allSalesForFilter = [];
+		currentSalesPage = 1;
+		loadSalesPage(1);
+	});
 
     // ========== الفرز ==========
     document.querySelectorAll('#salesTableMain th[data-sort]').forEach(th => {

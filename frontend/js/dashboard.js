@@ -24,11 +24,16 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('viewAllInventory').onclick = () => navigateToPage('inventoryPage');
 	
     // Filter events
-    ['filterDashProduct','filterDashSKU','filterDashQuantity','filterDashStatus'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener('input', renderDashboardInventory);
-    });
-    document.getElementById('filterDashStatus')?.addEventListener('change', renderDashboardInventory);
+    // Debounced filter for text inputs
+	const debouncedRenderDashboard = debounce(renderDashboardInventory, 400);
+
+	['filterDashProduct','filterDashSKU','filterDashQuantity'].forEach(id => {
+		const el = document.getElementById(id);
+		if (el) el.addEventListener('input', debouncedRenderDashboard);
+	});
+
+	// Select filter remains immediate (no debounce needed)
+	document.getElementById('filterDashStatus')?.addEventListener('change', renderDashboardInventory);
 
     // Sorting
     document.querySelectorAll('#dashboardInventoryTableMain th[data-sort]').forEach(th => {

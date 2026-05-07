@@ -22,24 +22,26 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    ['filterId', 'filterName', 'filterEmail', 'filterRole', 'filterStatus'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener('input', () => {
-            allUsersForFilter = [];
-            currentUserPage = 1;
-            loadUserPage(1);
-        });
-    });
-    document.getElementById('filterRole')?.addEventListener('change', () => {
-        allUsersForFilter = [];
-        currentUserPage = 1;
-        loadUserPage(1);
-    });
-    document.getElementById('filterStatus')?.addEventListener('change', () => {
-        allUsersForFilter = [];
-        currentUserPage = 1;
-        loadUserPage(1);
-    });
+    const debouncedLoadUsers = debounce(() => {
+		allUsersForFilter = [];
+		currentUserPage = 1;
+		loadUserPage(1);
+	}, 400);
+
+	['filterId', 'filterName', 'filterEmail'].forEach(id => {
+		const el = document.getElementById(id);
+		if (el) el.addEventListener('input', debouncedLoadUsers);
+	});
+	document.getElementById('filterRole')?.addEventListener('change', () => {
+		allUsersForFilter = [];
+		currentUserPage = 1;
+		loadUserPage(1);
+	});
+	document.getElementById('filterStatus')?.addEventListener('change', () => {
+		allUsersForFilter = [];
+		currentUserPage = 1;
+		loadUserPage(1);
+	});
 
     document.querySelectorAll('#usersTableMain th[data-sort]').forEach(th => {
         th.style.cursor = 'pointer';

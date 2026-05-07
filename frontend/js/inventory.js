@@ -101,19 +101,21 @@ document.addEventListener('DOMContentLoaded', () => {
 	};
 
     // Filter events: reset to page 1 and reload
-    ['filterProductName','filterSKU','filterCategory','filterQuantity','filterReorder','filterPrice','filterStatus'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener('input', () => {
-			allInventoryForFilter = [];
-            currentInventoryPage = 1;
-            loadInventoryPage(1);
-        });
-    });
-    document.getElementById('filterStatus')?.addEventListener('change', () => {
+    const debouncedLoadInventory = debounce(() => {
 		allInventoryForFilter = [];
-        currentInventoryPage = 1;
-        loadInventoryPage(1);
-    });
+		currentInventoryPage = 1;
+		loadInventoryPage(1);
+	}, 400);
+
+	['filterProductName','filterSKU','filterCategory','filterQuantity','filterReorder','filterPrice'].forEach(id => {
+		const el = document.getElementById(id);
+		if (el) el.addEventListener('input', debouncedLoadInventory);
+	});
+	document.getElementById('filterStatus')?.addEventListener('change', () => {
+		allInventoryForFilter = [];
+		currentInventoryPage = 1;
+		loadInventoryPage(1);
+	});
 
     // Sorting on headers (reload current page with sort)
     document.querySelectorAll('#inventoryTableMain th[data-sort]').forEach(th => {

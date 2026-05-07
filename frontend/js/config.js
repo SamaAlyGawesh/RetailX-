@@ -115,3 +115,12 @@ function showToast(message, type = 'success') {
         }
     }, 4000);
 }
+
+// Debounce utility
+function debounce(fn, delay = 400) {
+    let timer;
+    return function(...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn.apply(this, args), delay);
+    };
+}

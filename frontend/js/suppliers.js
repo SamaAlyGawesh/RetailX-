@@ -94,14 +94,16 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Filter events
-    ['filterSupplierName','filterContact','filterSupplierEmail','filterSupplierPhone','filterSupplierAddress','filterProductsSupplied','filterLeadTime'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener('input', () => {
-            allSuppliersForFilter = [];
-            currentSupplierPage = 1;
-            loadSupplierPage(1);
-        });
-    });
+    const debouncedLoadSuppliers = debounce(() => {
+		allSuppliersForFilter = [];
+		currentSupplierPage = 1;
+		loadSupplierPage(1);
+	}, 400);
+
+	['filterSupplierName','filterContact','filterSupplierEmail','filterSupplierPhone','filterSupplierAddress','filterProductsSupplied','filterLeadTime'].forEach(id => {
+		const el = document.getElementById(id);
+		if (el) el.addEventListener('input', debouncedLoadSuppliers);
+	});
 
     // Sorting
     document.querySelectorAll('#suppliersTableMain th[data-sort]').forEach(th => {
