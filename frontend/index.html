@@ -233,47 +233,49 @@
         <div class="container">
             <div class="dashboard-header"><h2 id="salesTitle">Sales</h2><div><button class="btn btn-primary" id="addNewSale"><i class="fas fa-plus"></i> <span id="newSaleBtnText">New Sale</span></button></div></div>
             <div class="stats-grid"><div class="stat-card"><h4 id="todaySalesLabel2">Today's Sales</h4><div class="value" id="todaySalesValue">$0</div></div><div class="stat-card"><h4 id="monthlyLabel">This Month</h4><div class="value" id="monthlySalesValue">$0</div></div><div class="stat-card"><h4 id="transactionsLabel">Transactions</h4><div class="value" id="transactionCount">0</div></div></div>
-            <div class="card"><h3 id="recentSalesTitle">Recent Sales</h3>
-			<table class="inventory-table" id="salesTableMain">
-				<thead>
-					<tr>
-						<th>#</th>
-						<th data-sort="date">Date <span class="sort-arrow"></span></th>
-						<th data-sort="id">Invoice ID <span class="sort-arrow"></span></th>
-						<th data-sort="customer">Customer <span class="sort-arrow"></span></th>
-						<th data-sort="items">Items <span class="sort-arrow"></span></th>
-						<th data-sort="total">Total <span class="sort-arrow"></span></th>
-						<th>Category</th>
-						<th data-sort="status">Status <span class="sort-arrow"></span></th>
-						<th>Actions</th>
-					</tr>
-					<tr id="salesFilterRow">
-						<th></th>
-						<th><input type="text" id="filterSaleDate" placeholder="Date"></th>
-						<th><input type="text" id="filterTransID" placeholder="ID"></th>
-						<th><input type="text" id="filterCustomer" placeholder="Customer"></th>
-						<th><input type="text" id="filterItems" placeholder="Items"></th>
-						<th><input type="number" id="filterTotal" placeholder="Total" step="0.01"></th>
-						<th>
-							<select id="filterSaleCategory">
-								<option value="">All</option>
-							</select>
-						</th>
-						<th>
-							<select id="filterSaleStatus">
-								<option value="">All</option>
-								<option value="Completed">Completed</option>
-								<option value="Pending">Pending</option>
-							</select>
-						</th>
-						<th></th>
-					</tr>
-				</thead>
-				<tbody id="salesTable"></tbody>
-			</table>
-			<div id="salesPagination" class="pagination-container"></div>
+            <div class="card">
+				<h3 id="recentSalesTitle">Recent Sales</h3>
+				<div style="max-height: 60vh; overflow-y: auto;">
+					<table class="inventory-table" id="salesTableMain">
+						<thead>
+							<tr>
+								<th>#</th>
+								<th data-sort="date">Date <span class="sort-arrow"></span></th>
+								<th data-sort="id">Invoice ID <span class="sort-arrow"></span></th>
+								<th data-sort="customer">Customer <span class="sort-arrow"></span></th>
+								<th data-sort="items">Items <span class="sort-arrow"></span></th>
+								<th data-sort="total">Total <span class="sort-arrow"></span></th>
+								<th>Category</th>
+								<th data-sort="status">Status <span class="sort-arrow"></span></th>
+								<th>Actions</th>
+							</tr>
+							<tr id="salesFilterRow">
+								<th></th>
+								<th><input type="text" id="filterSaleDate" placeholder="Date"></th>
+								<th><input type="text" id="filterTransID" placeholder="ID"></th>
+								<th><input type="text" id="filterCustomer" placeholder="Customer"></th>
+								<th><input type="text" id="filterItems" placeholder="Items"></th>
+								<th><input type="number" id="filterTotal" placeholder="Total" step="0.01"></th>
+								<th>
+									<select id="filterSaleCategory">
+										<option value="">All</option>
+									</select>
+								</th>
+								<th>
+									<select id="filterSaleStatus">
+										<option value="">All</option>
+										<option value="Completed">Completed</option>
+										<option value="Pending">Pending</option>
+									</select>
+								</th>
+								<th></th>
+							</tr>
+						</thead>
+						<tbody id="salesTable"></tbody>
+					</table>
+					<div id="salesPagination" class="pagination-container"></div>
+				</div>
 			</div>
-		</div>
 	</section>
 	<!-- مودال تفاصيل الفاتورة -->
 	<div class="modal" id="invoiceDetailModal">
