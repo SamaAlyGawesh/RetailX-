@@ -221,7 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('saleDate').value = local;
     };
 	
-		// ملء فلتر الفئة في جدول المبيعات (فقط إذا كان المستخدم مسجلاً)
+		/* ملء فلتر الفئة في جدول المبيعات (فقط إذا كان المستخدم مسجلاً)
 	if (appState.isAuthenticated) {
 		const populateSaleCategoryFilter = async () => {
 			const select = document.getElementById('filterSaleCategory');
@@ -234,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			});
 		};
 		populateSaleCategoryFilter();
-	}
+	}*/
 	document.getElementById('filterSaleCategory').addEventListener('change', () => {
 		currentSalesPage = 1;
 		loadSalesPage(1);
@@ -321,8 +321,8 @@ async function loadSalesPage(page) {
     currentSalesPage = page;
     const data = await api('GET', `/sales?page=1&limit=9999`);
     currentSales = data.sales;
+    populateSaleCategoryFilter(); // بناء الفلتر والحفاظ على الاختيار
     applySalesFilters();
-    // سننقل استدعاء populateSaleCategoryFilter إلى applySalesFilters
 }
 
 function applySalesFilters() {
@@ -590,11 +590,13 @@ window.deleteInvoice = async function(baseId) {
     } catch (err) { alert(err.message); }
 };
 
-function populateSaleCategoryFilter(groupedSales) {
+function populateSaleCategoryFilter() {
     const select = document.getElementById('filterSaleCategory');
     if (!select) return;
 
-    const groups = groupedSales || groupSales(currentSales);
+    const currentValue = select.value; // اختيارك الحالي (حتى لو "All")
+
+    const groups = groupSales(currentSales);
     const allCats = [];
     groups.forEach(g => {
         if (g.categoriesSet) {
@@ -602,8 +604,16 @@ function populateSaleCategoryFilter(groupedSales) {
         }
     });
     const cats = [...new Set(allCats)].sort();
+
     select.innerHTML = '<option value="">All</option>';
     cats.forEach(c => {
         select.innerHTML += `<option value="${c}">${c}</option>`;
     });
+
+    // استعادة اختيارك إن كان موجودًا بين التصنيفات الجديدة
+    if (currentValue && cats.includes(currentValue)) {
+        select.value = currentValue;
+    } else {
+        select.value = ''; // يرجع All لو التصنيف مش موجود
+    }
 }
