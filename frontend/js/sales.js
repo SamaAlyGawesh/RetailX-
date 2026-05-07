@@ -123,35 +123,35 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isProcessingSale) return;
         if (!appState.isAuthenticated || !hasPermission('sales')) return;
 
-        if (saleItems.length === 0) { alert('Add at least one product.'); return; }
+        if (saleItems.length === 0) { showToast('Add at least one product.', 'error'); return; }
 
         for (let i = 0; i < saleItems.length; i++) {
             const item = saleItems[i];
-            if (!item.productId) { alert(`Please select a product for row ${i + 1}.`); return; }
-            if (!item.quantity || item.quantity < 1) { alert(`Quantity for row ${i + 1} must be at least 1.`); return; }
+            if (!item.productId) { showToast(`Please select a product for row ${i + 1}.`, 'error'); return; }
+            if (!item.quantity || item.quantity < 1) { showToast(`Quantity for row ${i + 1} must be at least 1.`, 'error'); return; }
             const product = inventoryData.find(p => p.id === item.productId);
             if (product && item.quantity > product.quantity) {
-                alert(`${product.name} has only ${product.quantity} in stock. Please reduce the quantity.`);
+                showToast(`${product.name} has only ${product.quantity} in stock. Please reduce the quantity.`, 'error');
                 return;
             }
         }
 
         const customer = document.getElementById('saleCustomer').value.trim() || 'Walk-in Customer';
-        if (!customer) { alert('Please enter a customer name.'); return; }
+        if (!customer) { showToast('Please enter a customer name.', 'error'); return; }
 
         const discount = parseFloat(document.getElementById('saleDiscount').value) || 0;
-        if (discount < 0 || discount > 100) { alert('Discount must be between 0 and 100.'); return; }
+        if (discount < 0 || discount > 100) { showToast('Discount must be between 0 and 100.', 'error'); return; }
 
         const paymentMethod = document.getElementById('salePaymentMethod').value;
         const notes = document.getElementById('saleNotes').value;
         const localDateStr = document.getElementById('saleDate').value;
-        if (!localDateStr) { alert('Please select a date.'); return; }
+        if (!localDateStr) { showToast('Please select a date.', 'error'); return; }
 
         const selectedDate = new Date(localDateStr);
         const utcDateStr = selectedDate.toISOString();
         const now = new Date();
         if (selectedDate.getTime() > now.getTime() + 60000) {
-            alert('Future date is not allowed for sales.');
+            showToast('Future date is not allowed for sales.', 'error');
             return;
         }
 
@@ -174,9 +174,9 @@ document.addEventListener('DOMContentLoaded', () => {
             renderDashboardInventory();
             updateDashboardStats();
             document.getElementById('newSaleModal').classList.remove('active');
-            alert('Sale completed!');
+            showToast('Sale completed!', 'success');
         } catch (err) {
-            alert(err.message);
+            showToast(err.message, 'error');
         } finally {
             isProcessingSale = false;
             btn.disabled = false;
@@ -416,7 +416,7 @@ window.deleteSale = async function(id) {
         await apiDeleteSale(id);
         await loadSalesPage(currentSalesPage);
         updateDashboardStats();
-    } catch (err) { alert(err.message); }
+    } catch (err) { showToast(err.message, 'error'); }
 };
 
 // طباعة الفاتورة (سيتم تحسينها لاحقاً)
@@ -587,7 +587,7 @@ window.deleteInvoice = async function(baseId) {
         if (!res.ok) throw new Error((await res.json()).error || 'Delete failed');
         await loadSalesPage(currentSalesPage);
         updateDashboardStats();
-    } catch (err) { alert(err.message); }
+    } catch (err) { showToast(err.message, 'error'); }
 };
 
 function populateSaleCategoryFilter() {

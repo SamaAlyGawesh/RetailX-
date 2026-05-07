@@ -91,3 +91,27 @@ function updateAuthUI() {
         signOutLink.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
     }
 }
+
+// Toast notification system
+function showToast(message, type = 'success') {
+    // إزالة أي toast موجودة سابقاً
+    const existing = document.querySelector('.toast-notification');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.className = `toast-notification toast-${type}`;
+    toast.innerHTML = `
+        <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
+        <span>${message}</span>
+        <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
+    `;
+    document.body.appendChild(toast);
+
+    // إزالة تلقائية بعد 4 ثوان
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }
+    }, 4000);
+}

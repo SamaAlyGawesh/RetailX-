@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		const sku = document.getElementById('productSKU').value.trim();
 		const qty = parseInt(document.getElementById('productQuantity').value);
 		if (!name || !sku || isNaN(qty)) {
-			alert('Please fill in Product Name, SKU, and a valid Quantity.');
+			showToast('Please fill in Product Name, SKU, and a valid Quantity.', 'error');
 			return;
 		}
 
@@ -58,8 +58,8 @@ document.addEventListener('DOMContentLoaded', () => {
 			updateDashboardStats();
 			document.getElementById('addProductModal').classList.remove('active');
 			resetProductForm(); // يمسح الحقول بعد الإغلاق
-			alert('Product added successfully!');
-		} catch (err) { alert(err.message); }
+			showToast('Product added successfully!', 'success');
+		} catch (err) { showToast(err.message, 'error'); }
 	};
 
     document.getElementById('saveProductChanges').onclick = async () => {
@@ -96,8 +96,8 @@ document.addEventListener('DOMContentLoaded', () => {
 			renderDashboardInventory();
 			updateDashboardStats();
 			document.getElementById('editProductModal').classList.remove('active');
-			alert('Product updated successfully!');
-		} catch (err) { alert(err.message); }
+			showToast('Product updated successfully!', 'success');
+		} catch (err) { showToast(err.message, 'error'); }
 	};
 
     // Filter events: reset to page 1 and reload
@@ -363,7 +363,7 @@ window.deleteProduct = async function(id) {
         await loadInventoryPage(currentInventoryPage);
         renderDashboardInventory();
         updateDashboardStats();
-    } catch (err) { alert(err.message); }
+    } catch (err) { showToast(err.message, 'error'); }
 };
 
 // تحميل قائمة الموردين والفئات

@@ -48,11 +48,11 @@ document.addEventListener('DOMContentLoaded', () => {
             updateDashboardStats();
             renderDashboardInventory();
             renderRecentActivity();
-            alert(`Welcome ${appState.currentUser.name}!`);
+            showToast(`Welcome ${appState.currentUser.name}!`, 'success');
             saveAuthState();
             updateAuthUI();
         } catch (err) {
-            alert(err.message || 'Invalid credentials');
+            showToast(err.message || 'Invalid credentials', 'error');
         }
     };
 
@@ -64,13 +64,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = document.getElementById('signupPassword').value;
         const confirm = document.getElementById('signupConfirmPassword').value;
         const role = document.getElementById('signupRole').value;
-        if (password !== confirm) { alert('Passwords do not match'); return; }
+        if (password !== confirm) { showToast('Passwords do not match', 'error'); return; }
         try {
             await apiRegister(name, email, password, role);
-            alert('Account created! Please sign in.');
+            showToast('Account created! Please sign in.', 'success');
             document.getElementById('signInTab').click();
         } catch (err) {
-            alert(err.message || 'Registration failed');
+            showToast(err.message || 'Registration failed', 'error');
         }
     };
 
@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('profileLink').onclick = (e) => {
         e.preventDefault();
         if (appState.currentUser) {
-            alert(`Name: ${appState.currentUser.name}\nEmail: ${appState.currentUser.email}\nRole: ${appState.currentUser.role}`);
+            showToast(`Name: ${appState.currentUser.name}\nEmail: ${appState.currentUser.email}\nRole: ${appState.currentUser.role}`, 'info');
         }
     };
 });

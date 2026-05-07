@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
             leadTime: parseInt(document.getElementById('supplierLeadTimeInput').value) || 5,
             productsSuppliedList: selectedCategories
         };
-        if (!supplier.name || !supplier.email) return alert('Name and email required');
+        if (!supplier.name || !supplier.email) return showToast('Name and email required', 'error');
         try {
             if (supplierEditingId) {
                 await apiUpdateSupplier(supplierEditingId, supplier);
@@ -64,11 +64,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     // التحقق من أن جميع الحقول الأساسية مملوءة
                     if (!type || !issue || !expiry) {
-                        alert(`Please fill all fields (type, dates) for the document "${type || 'unknown'}".`);
+                        showToast(`Please fill all fields (type, dates) for the document "${type || 'unknown'}".`, 'error'));
                         return; // إيقاف الحفظ بالكامل للفت الانتباه للخطأ
                     }
                     if (!fileInput.files[0]) {
-                        alert(`Please select a file for the document "${type}".`);
+                        showToast(`Please select a file for the document "${type}".`, 'error');
                         return;
                     }
 
@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await loadSupplierPage(currentSupplierPage);
             document.getElementById('addSupplierModal').classList.remove('active');
             clearSupplierForm();
-        } catch (err) { alert(err.message); }
+        } catch (err) { showToast(err.message, 'error'); }
     };
 
     // Filter events
@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const newCat = input.value.trim();
         if (!newCat) return;
         if (allCategories.includes(newCat)) {
-            alert('Category already exists.');
+            showToast('Category already exists.', 'error');
             return;
         }
         try {
@@ -146,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderCategoriesCheckboxes(document.querySelector('.multi-select-search')?.value || '');
             input.value = '';
         } catch (err) {
-            alert('Failed to save category: ' + err.message);
+            showToast('Failed to save category: ' + err.message, 'error');
         }
     });
 
@@ -163,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 await apiDeleteSupplierDocument(docId);
                 btn.closest('tr').remove();
             } catch (err) {
-                alert(err.message);
+                showToast(err.message, 'error');
             }
         }
     });
@@ -228,7 +228,7 @@ window.toggleCategorySelect = function(category, isChecked) {
 window.deleteCategoryFromList = function(category) {
     const realProducts = inventoryData.filter(p => p.category === category && p.name !== '__category_placeholder__');
     if (realProducts.length > 0) {
-        alert(`Cannot delete category "${category}". It is used by ${realProducts.length} real product(s).`);
+        showToast(`Cannot delete category "${category}". It is used by ${realProducts.length} real product(s).``, 'error');
         return;
     }
     if (confirm(`Are you sure you want to delete the category "${category}"?`)) {
@@ -238,7 +238,7 @@ window.deleteCategoryFromList = function(category) {
                 allCategories = allCategories.filter(c => c !== category);
                 selectedCategories = selectedCategories.filter(c => c !== category);
                 renderCategoriesCheckboxes(document.querySelector('.multi-select-search')?.value || '');
-            }).catch(err => alert('Failed to delete category: ' + err.message));
+            }).catch(err => showToast('Failed to delete category: ' + err.message, 'error'));
         } else {
             allCategories = allCategories.filter(c => c !== category);
             selectedCategories = selectedCategories.filter(c => c !== category);
@@ -332,7 +332,7 @@ window.deleteSupplier = async function(id) {
     try {
         await apiDeleteSupplier(id);
         await loadSupplierPage(currentSupplierPage);
-    } catch (err) { alert(err.message); }
+    } catch (err) { showToast(err.message, 'error'); }
 };
 
 function applySupplierFilters() {

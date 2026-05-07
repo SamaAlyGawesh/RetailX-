@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
             appState.currency = newCurrency;
             updateAllPrices();
         }
-        alert('Settings saved!');
+        showToast('Settings saved!', 'success');
     };
 
     document.getElementById('createBackup').onclick = async () => {
@@ -29,8 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
             a.href = URL.createObjectURL(blob);
             a.download = `retailx_backup_${new Date().toISOString().split('T')[0]}.json`;
             a.click();
-            alert('Backup downloaded!');
-        } catch (err) { alert(err.message); }
+            showToast('Backup downloaded!', 'success');
+        } catch (err) { showToast(err.message, 'error'); }
     };
 });
 

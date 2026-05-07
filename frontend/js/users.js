@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const userId = e.target.dataset.userId;
             const select = document.getElementById(`roleSelect_${userId}`);
             await apiUpdateUserRole(userId, select.value);
-            alert('Role updated');
+            showToast('Role updated', 'success');
             loadUserPage(currentUserPage);
         } else if (e.target.classList.contains('toggle-status-btn')) {
             const userId = e.target.dataset.userId;
@@ -70,8 +70,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!confirm('Reset password to temporary password?')) return;
             try {
                 const result = await apiResetUserPassword(userId);
-                alert(`Password has been reset to: ${result.tempPassword}`);
-            } catch (err) { alert(err.message); }
+                showToast(`Password has been reset to: ${result.tempPassword}`, 'success');
+            } catch (err) { showToast(err.message, 'error'); }
         }
     });
 });

@@ -139,10 +139,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!appState.isAuthenticated) { navigateToPage('authPage'); return; }
             const low = inventoryData.filter(p => p.quantity > 0 && p.quantity <= p.reorderLevel);
             const out = inventoryData.filter(p => p.quantity === 0);
-            alert(`Low Stock (${low.length}):\n${low.map(p => `${p.name}: ${p.quantity}`).join('\n')}\n\nOut of Stock (${out.length}):\n${out.map(p => p.name).join('\n')}`);
+            showToast(`Low Stock (${low.length}):\n${low.map(p => `${p.name}: ${p.quantity}`).join('\n')}\n\nOut of Stock (${out.length}):\n${out.map(p => p.name).join('\n')}`, 'info');
         },
         quickProfileBtn: () => {
-            if (appState.currentUser) alert(`Name: ${appState.currentUser.name}\nEmail: ${appState.currentUser.email}\nRole: ${appState.currentUser.role}`);
+            if (appState.currentUser) showToast(`Name: ${appState.currentUser.name}\nEmail: ${appState.currentUser.email}\nRole: ${appState.currentUser.role}`, 'info');
         }
     };
 
