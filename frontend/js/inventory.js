@@ -142,19 +142,14 @@ async function loadInventoryPage(page) {
     currentInventoryPage = page;
     const search = document.getElementById('inventorySearch')?.value || '';
     
-    // جلب كل المنتجات (بدون تحديد صفحة) إذا كان هناك فلتر نشط
+    // إذا كان هناك أي فلتر نشط، نجلب كل المنتجات (بدون Pagination من الخادم)
     const limitToUse = isAnyFilterActive() ? 9999 : inventoryLimit;
     const data = await api('GET', `/products?page=${page}&limit=${limitToUse}&search=${encodeURIComponent(search)}`);
     
-    if (isAnyFilterActive()) {
-        // خزّن الكل مؤقتاً عشان نفلتر محلياً
-        currentInventory = data.products;
-        applyInventoryFilters(); // الفلترة هتحسب totalPages بناءً على النتائج المفلترة
-    } else {
-        currentInventory = data.products;
-        totalInventoryPages = data.pages;
-        applyInventoryFilters(); // بدون فلترة، مجرد ترتيب وعرض Pagination عادي
-    }
+    currentInventory = data.products;
+    totalInventoryPages = data.pages; // سنعيد حسابه لاحقًا في applyInventoryFilters إذا لزم الأمر
+    
+    applyInventoryFilters();
 }
 
 function isAnyFilterActive() {
@@ -168,9 +163,10 @@ function isAnyFilterActive() {
 }
 
 function applyInventoryFilters() {
-    // الفلترة المحلية بعد جلب الصفحة
-	// استبعاد المنتجات الوهمية من العرض
-	currentInventory = currentInventory.filter(p => p.name !== '__category_placeholder__');
+    // إخفاء المنتجات الوهمية
+    let workingSet = currentInventory.filter(p => p.name !== '__category_placeholder__');
+    
+    // الحصول على قيم الفلاتر
     const name = (document.getElementById('filterProductName')?.value || '').toLowerCase();
     const sku = (document.getElementById('filterSKU')?.value || '').toLowerCase();
     const category = (document.getElementById('filterCategory')?.value || '').toLowerCase();
@@ -179,7 +175,8 @@ function applyInventoryFilters() {
     const price = document.getElementById('filterPrice')?.value;
     const status = document.getElementById('filterStatus')?.value;
 
-    let filtered = currentInventory.filter(p => {
+    // تطبيق الفلاتر
+    let filtered = workingSet.filter(p => {
         const matchName = name ? p.name.toLowerCase().includes(name) : true;
         const matchSKU = sku ? p.sku.toLowerCase().includes(sku) : true;
         const matchCat = category ? p.category.toLowerCase().includes(category) : true;
@@ -204,22 +201,27 @@ function applyInventoryFilters() {
         return 0;
     });
 
-    //renderInventoryTableHTML(filtered);
-	if (isAnyFilterActive()) {
-		// لو فيه فلتر نشط، احسب عدد الصفحات من النتائج المفلترة
-		totalInventoryPages = Math.ceil(filtered.length / inventoryLimit);
-		// خد فقط الصفحة الحالية من النتائج المفلترة للعرض
-		const pageStart = (currentInventoryPage - 1) * inventoryLimit;
-		const pageItems = filtered.slice(pageStart, pageStart + inventoryLimit);
-		renderInventoryTableHTML(pageItems);
-	} else {
-		renderInventoryTableHTML(filtered);
-	}
+    const filterActive = isAnyFilterActive();
+    
+    if (filterActive) {
+        // إعادة حساب الصفحات بناءً على النتائج المفلترة
+        totalInventoryPages = Math.ceil(filtered.length / inventoryLimit);
+        // اقتطاع الصفحة الحالية
+        const start = (currentInventoryPage - 1) * inventoryLimit;
+        const pageItems = filtered.slice(start, start + inventoryLimit);
+        renderInventoryTableHTML(pageItems);
+    } else {
+        totalInventoryPages = Math.ceil(filtered.length / inventoryLimit);
+        const start = (currentInventoryPage - 1) * inventoryLimit;
+        const pageItems = filtered.slice(start, start + inventoryLimit);
+        renderInventoryTableHTML(pageItems);
+    }
 
-	renderPagination(currentInventoryPage, totalInventoryPages, 'inventoryPagination', (page) => {
-		loadInventoryPage(page);
-	});
+    renderPagination(currentInventoryPage, totalInventoryPages, 'inventoryPagination', (page) => {
+        loadInventoryPage(page);
+    });
 }
+
 async function renderInventoryTable() {
     await loadInventoryPage(currentInventoryPage);
 }
