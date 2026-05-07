@@ -61,19 +61,43 @@ document.addEventListener('DOMContentLoaded', () => {
 		} catch (err) { alert(err.message); }
 	};
 
-    document.getElementById('submitStockUpdate').onclick = async () => {
-        if (!hasPermission('inventory')) return;
-        const id = parseInt(document.getElementById('editProductId').value);
-        const newQty = parseInt(document.getElementById('editNewStock').value);
-        if (isNaN(newQty) || newQty < 0) return alert('Invalid quantity');
-        try {
-            await apiUpdateStock(id, newQty);
-            await loadInventoryPage(currentInventoryPage);
-            renderDashboardInventory();
-            updateDashboardStats();
-            document.getElementById('editProductModal').classList.remove('active');
-        } catch (err) { alert(err.message); }
-    };
+    document.getElementById('saveProductChanges').onclick = async () => {
+		if (!hasPermission('addProduct')) return;
+		const id = document.getElementById('editProductId').value;
+		const formData = new FormData();
+		
+		formData.append('name', document.getElementById('editProductName').value.trim());
+		formData.append('sku', document.getElementById('editProductSKU').value.trim());
+		formData.append('category', document.getElementById('editProductCategory').value);
+		formData.append('supplier_id', document.getElementById('editProductSupplier').value);
+		formData.append('price', document.getElementById('editProductPrice').value);
+		formData.append('unit_cost', document.getElementById('editUnitCost').value);
+		formData.append('reorderLevel', document.getElementById('editReorderLevel').value);
+		const newQty = parseInt(document.getElementById('editNewStock').value);
+		formData.append('quantity', isNaN(newQty) ? 0 : newQty);
+		formData.append('description', document.getElementById('editProductDescription').value);
+		formData.append('location', document.getElementById('editProductLocation').value);
+		formData.append('received_date', document.getElementById('editProductReceivedDate').value);
+		formData.append('expiry_date', document.getElementById('editProductExpiryDate').value);
+		formData.append('active', document.getElementById('editProductActive').checked ? 1 : 0);
+
+		const imageFile = document.getElementById('editProductImage').files[0];
+		if (imageFile) formData.append('image', imageFile);
+
+		try {
+			const res = await fetch(`${API_BASE}/products/${id}`, {
+				method: 'PUT',
+				headers: { 'Authorization': `Bearer ${appState.token}` },
+				body: formData
+			});
+			if (!res.ok) throw new Error((await res.json()).error || 'Failed');
+			await loadInventoryPage(currentInventoryPage);
+			renderDashboardInventory();
+			updateDashboardStats();
+			document.getElementById('editProductModal').classList.remove('active');
+			alert('Product updated successfully!');
+		} catch (err) { alert(err.message); }
+	};
 
     // Filter events: reset to page 1 and reload
     ['filterProductName','filterSKU','filterCategory','filterQuantity','filterReorder','filterPrice','filterStatus'].forEach(id => {
@@ -216,36 +240,76 @@ function updateInventorySortArrows() {
 }
 
 // Existing functions
-window.updateStock = function(id) {
+let currentProduct = null; // لتخزين المنتج الحالي مؤقتاً
+
+window.updateStock = async function(id) {
     if (!hasPermission('inventory')) return;
-    // استخدم currentInventory (البيانات المعروضة حالياً) للبحث عن المنتج
+    
+    // ابحث عن المنتج في currentInventory
     const p = currentInventory.find(p => p.id === id);
     if (!p) return;
+    currentProduct = p; // حفظ مرجع
 
     // تعبئة الحقول الأساسية
     document.getElementById('editProductId').value = p.id;
     document.getElementById('editProductName').value = p.name;
+    document.getElementById('editProductSKU').value = p.sku || '';
+    document.getElementById('editProductPrice').value = p.price;
+    document.getElementById('editReorderLevel').value = p.reorderLevel;
     document.getElementById('editCurrentStock').value = p.quantity;
     document.getElementById('editNewStock').value = p.quantity;
+    document.getElementById('editProductDescription').value = p.description || '';
+    document.getElementById('editProductLocation').value = p.location || '';
+    document.getElementById('editProductReceivedDate').value = p.received_date || '';
+    document.getElementById('editProductExpiryDate').value = p.expiry_date || '';
+    document.getElementById('editProductActive').checked = p.active == 1;
+    document.getElementById('editUnitCost').value = p.quantity > 0 ? (p.total_cost / p.quantity).toFixed(2) : p.price.toFixed(2);
 
-    // حقول العرض فقط (جديدة)
-    document.getElementById('editProductSKU').value = p.sku || '';
-    document.getElementById('editProductCategory').value = p.category || '';
-    document.getElementById('editProductPrice').value = formatPrice(p.price);
-    
-    // حساب وعرض حالة المخزون
+    // حالة المخزون
     const stockStatusEl = document.getElementById('editStockStatus');
     if (stockStatusEl) {
         const statusText = p.quantity === 0 ? 'Out of Stock' : (p.quantity <= p.reorderLevel ? 'Low Stock' : 'In Stock');
-        const statusColor = p.quantity === 0 ? 'var(--danger)' : (p.quantity <= p.reorderLevel ? 'var(--warning)' : 'var(--secondary)');
         stockStatusEl.textContent = statusText;
-        stockStatusEl.style.color = statusColor;
-        stockStatusEl.style.fontWeight = 'bold';
+        stockStatusEl.style.color = p.quantity === 0 ? 'var(--danger)' : (p.quantity <= p.reorderLevel ? 'var(--warning)' : 'var(--secondary)');
     }
 
-    // عرض فتح المودال
+    // ملء قوائم الموردين والفئات (اختياري لكن يفيد)
+    await loadSuppliersAndCategoriesForEdit();
+    
+    // ضبط القيم المختارة
+    setTimeout(() => {
+        document.getElementById('editProductCategory').value = p.category || '';
+        document.getElementById('editProductSupplier').value = p.supplier_id || '';
+    }, 100);
+
     document.getElementById('editProductModal').classList.add('active');
 };
+
+// دالة مساعدة لتحميل الموردين والفئات دون تفريغ باقي الحقول
+async function loadSuppliersAndCategoriesForEdit() {
+    const suppliersData = await apiGetSuppliers(1, 9999);
+    const supplierSelect = document.getElementById('editProductSupplier');
+    if (supplierSelect) {
+        supplierSelect.innerHTML = '';
+        suppliersData.suppliers.forEach(s => {
+            supplierSelect.innerHTML += `<option value="${s.id}">${s.name} (${s.supplier_code})</option>`;
+        });
+    }
+
+    const catSelect = document.getElementById('editProductCategory');
+    if (catSelect) {
+        const cats = [...new Set(
+            inventoryData
+                .filter(p => p.name !== '__category_placeholder__')
+                .map(p => p.category)
+                .filter(Boolean)
+        )].sort();
+        catSelect.innerHTML = '<option value="">Select category</option>';
+        cats.forEach(c => {
+            catSelect.innerHTML += `<option value="${c}">${c}</option>`;
+        });
+    }
+}
 
 window.deleteProduct = async function(id) {
     if (!hasPermission('addProduct')) return;

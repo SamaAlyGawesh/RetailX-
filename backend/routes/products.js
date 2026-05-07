@@ -99,4 +99,43 @@ router.delete('/:id', requireRole('administrator'), (req, res) => {
     res.json({ success: true });
 });
 
+
+// PUT /api/products/:id – تحديث كامل للمنتج
+router.put('/:id', requireRole('administrator'), upload.single('image'), (req, res) => {
+    const db = getDB();
+    const product = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+
+    const {
+        name, sku, category, quantity, reorderLevel, price,
+        supplier_id, description, location, expiry_date, received_date, active, unit_cost
+    } = req.body;
+
+    // حساب total_cost الجديد
+    const newQty = parseInt(quantity) || 0;
+    const unitCost = parseFloat(unit_cost) || product.price;
+    const newTotalCost = newQty * unitCost;
+
+    // التعامل مع الصورة الجديدة
+    const image = req.file ? req.file.filename : (product.image || null);
+
+    db.prepare(`
+        UPDATE products SET
+            name = ?, sku = ?, category = ?, quantity = ?, reorderLevel = ?, price = ?,
+            supplier_id = ?, description = ?, location = ?, expiry_date = ?, received_date = ?,
+            active = ?, total_cost = ?, image = ?
+        WHERE id = ?
+    `).run(
+        name || product.name, sku || product.sku, category || product.category,
+        newQty, reorderLevel || product.reorderLevel, price || product.price,
+        supplier_id || product.supplier_id, description || product.description,
+        location || product.location, expiry_date || product.expiry_date,
+        received_date || product.received_date, active !== undefined ? parseInt(active) : product.active,
+        newTotalCost, image, req.params.id
+    );
+
+    db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run('product', `Product updated: ${name || product.name}`, new Date().toLocaleString());
+    res.json({ success: true });
+});
+
 module.exports = router;

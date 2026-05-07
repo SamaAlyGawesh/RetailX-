@@ -563,51 +563,39 @@
 		</div>
 	</div>
 
-    <!-- Edit Product Stock Modal (Enhanced) -->
+	<!-- Edit Product Modal (Full Edit) -->
 	<div class="modal" id="editProductModal">
-		<div class="modal-content" style="max-width: 650px;">
-			<div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-				<h3 id="editProductTitle"><i class="fas fa-edit"></i> Edit Product Stock</h3>
+		<div class="modal-content" style="max-width: 700px; max-height: 85vh; overflow-y: auto;">
+			<div style="display: flex; justify-content: space-between; margin-bottom: 20px; position: sticky; top: 0; background: var(--dark-card); z-index: 10;">
+				<h3><i class="fas fa-edit"></i> Edit Product</h3>
 				<button class="close-modal" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button>
 			</div>
 			<input type="hidden" id="editProductId">
 			
-			<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-				<div class="form-group">
-					<label>Product Name</label>
-					<input type="text" id="editProductName" class="form-control" readonly>
-				</div>
-				<div class="form-group">
-					<label>SKU</label>
-					<input type="text" id="editProductSKU" class="form-control" readonly>
-				</div>
-				<div class="form-group">
-					<label>Category</label>
-					<input type="text" id="editProductCategory" class="form-control" readonly>
-				</div>
-				<div class="form-group">
-					<label>Price</label>
-					<input type="text" id="editProductPrice" class="form-control" readonly>
-				</div>
-				<div class="form-group">
-					<label>Current Stock</label>
-					<input type="number" id="editCurrentStock" class="form-control" readonly>
-				</div>
-				<div class="form-group">
-					<label>New Stock Quantity *</label>
-					<input type="number" id="editNewStock" class="form-control" value="0" min="0">
-				</div>
-			</div>
+			<div class="form-group"><label>Product Name *</label><input type="text" id="editProductName" class="form-control"></div>
+			<div class="form-group"><label>SKU *</label><input type="text" id="editProductSKU" class="form-control"></div>
+			<div class="form-group"><label>Category</label><select id="editProductCategory" class="form-control"></select></div>
+			<div class="form-group"><label>Supplier</label><select id="editProductSupplier" class="form-control"></select></div>
+			<div class="form-group"><label>Price *</label><input type="number" id="editProductPrice" class="form-control" step="0.01" min="0"></div>
+			<div class="form-group"><label>Unit Cost</label><input type="number" id="editUnitCost" class="form-control" step="0.01" min="0"></div>
+			<div class="form-group"><label>Reorder Level *</label><input type="number" id="editReorderLevel" class="form-control" min="1"></div>
+			<div class="form-group"><label>Current Stock</label><input type="number" id="editCurrentStock" class="form-control" readonly></div>
+			<div class="form-group"><label>New Stock Quantity</label><input type="number" id="editNewStock" class="form-control" value="0" min="0"></div>
+			<div class="form-group"><label>Description</label><textarea id="editProductDescription" class="form-control" rows="2"></textarea></div>
+			<div class="form-group"><label>Location</label><input type="text" id="editProductLocation" class="form-control"></div>
+			<div class="form-group"><label>Received Date</label><input type="date" id="editProductReceivedDate" class="form-control"></div>
+			<div class="form-group"><label>Expiry Date</label><input type="date" id="editProductExpiryDate" class="form-control"></div>
+			<div class="form-group"><label><input type="checkbox" id="editProductActive"> Active</label></div>
+			<div class="form-group"><label>Image</label><input type="file" id="editProductImage" class="form-control" accept="image/*"></div>
 			
-			<!-- عرض حالة المخزون -->
-			<div class="form-group" style="margin-top: 15px; text-align: center;">
-				<label>Stock Status</label>
+			<!-- Stock Status -->
+			<div class="form-group" style="text-align: center; margin-top: 15px;">
 				<div id="editStockStatus" style="font-size: 1.2rem; padding: 8px; border-radius: 6px; background: var(--dark-bg); color: var(--primary);">—</div>
 			</div>
 
 			<div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
 				<button class="btn btn-outline close-modal">Cancel</button>
-				<button class="btn btn-success" id="submitStockUpdate">Update Stock</button>
+				<button class="btn btn-success" id="saveProductChanges">Save Changes</button>
 			</div>
 		</div>
 	</div>
