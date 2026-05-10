@@ -105,7 +105,14 @@ function initDB() {
         db.prepare('INSERT INTO users (name, email, password, role, status) VALUES (?,?,?,?,?)')
           .run('Administrator', 'admin@retailx.com', hash, 'administrator', 'active');
     }
-
+	// إضافة أعمدة user_id و user_name لجدول activity إن لم تكن موجودة
+	const activityCols = db.pragma('table_info(activity)').map(c => c.name);
+	if (!activityCols.includes('user_id')) {
+		db.prepare('ALTER TABLE activity ADD COLUMN user_id INTEGER REFERENCES users(id)').run();
+	}
+	if (!activityCols.includes('user_name')) {
+		db.prepare('ALTER TABLE activity ADD COLUMN user_name TEXT').run();
+	}
     console.log('Database initialized');
 }
 

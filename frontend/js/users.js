@@ -89,22 +89,28 @@ function isAnyUserFilterActive() {
 }
 
 async function loadUserPage(page) {
-	showLoader();
-    currentUserPage = page;
-    if (isAnyUserFilterActive()) {
-        if (allUsersForFilter.length === 0) {
-            const data = await apiGetUsers(1, 9999);
-            allUsersForFilter = data.users;
+    showLoader();
+    try {
+        currentUserPage = page;
+        if (isAnyUserFilterActive()) {
+            if (allUsersForFilter.length === 0) {
+                const data = await apiGetUsers(1, 9999);
+                allUsersForFilter = data.users;
+            }
+            currentUsers = allUsersForFilter;
+            applyUserFilters();
+        } else {
+            const data = await apiGetUsers(page, userLimit);
+            currentUsers = data.users;
+            totalUserPages = data.pages;
+            applyUserFilters();
         }
-        currentUsers = allUsersForFilter;
-        applyUserFilters();
-    } else {
-        const data = await apiGetUsers(page, userLimit);
-        currentUsers = data.users;
-        totalUserPages = data.pages;
-        applyUserFilters();
+    } catch (err) {
+        console.error('Error loading users:', err);
+        showToast('Error loading user data', 'error');
+    } finally {
+        hideLoader();
     }
-	hideLoader();
 }
 
 function applyUserFilters() {

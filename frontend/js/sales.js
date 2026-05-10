@@ -325,13 +325,19 @@ function updateSaleTotal() {
 
 // ========== دوال الصفحة والجدول (باقية دون تغيير كبير) ==========
 async function loadSalesPage(page) {
-	showLoader();
-    currentSalesPage = page;
-    const data = await api('GET', `/sales?page=1&limit=9999`);
-    currentSales = data.sales;
-    populateSaleCategoryFilter(); // بناء الفلتر والحفاظ على الاختيار
-    applySalesFilters();
-	hideLoader();
+    showLoader();
+    try {
+        currentSalesPage = page;
+        const data = await api('GET', `/sales?page=1&limit=9999`);
+        currentSales = data.sales;
+        populateSaleCategoryFilter();
+        applySalesFilters();
+    } catch (err) {
+        console.error('Error loading sales:', err);
+        showToast('Error loading sales data', 'error');
+    } finally {
+        hideLoader();
+    }
 }
 
 function applySalesFilters() {

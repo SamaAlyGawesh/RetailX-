@@ -12,14 +12,21 @@ document.addEventListener('DOMContentLoaded', () => {
         renderRecentActivity();
     };*/
 	document.getElementById('refreshDashboard').onclick = async () => {
-		const allProducts = await apiGetProducts(1, 9999); // جميع المنتجات
-		const allSales = await apiGetSales(1, 9999);       // جميع المبيعات
-		inventoryData = allProducts.products;
-		salesData = allSales.sales;
-		await apiGetActivity();
-		updateDashboardStats();
-		renderDashboardInventory();
-		renderRecentActivity();
+		showLoader();
+		try {
+			const allProducts = await apiGetProducts(1, 9999);
+			const allSales = await apiGetSales(1, 9999);
+			inventoryData = allProducts.products;
+			salesData = allSales.sales;
+			await apiGetActivity();
+			updateDashboardStats();
+			renderDashboardInventory();
+			renderRecentActivity();
+		} catch (err) {
+			showToast('Error refreshing dashboard', 'error');
+		} finally {
+			hideLoader();
+		}
 	};
     document.getElementById('viewAllInventory').onclick = () => navigateToPage('inventoryPage');
 	
@@ -71,7 +78,13 @@ function renderRecentActivity() {
     const container = document.getElementById('recentActivity');
     if (!container) return;
     container.innerHTML = activityLog.slice(0, 5).map(a =>
-        `<li class="activity-item"><div class="activity-icon"><i class="fas ${a.type === 'sale' ? 'fa-shopping-cart' : 'fa-box'}"></i></div><div><strong>${a.message}</strong><br><small>${a.time || a.created_at}</small></div></li>`
+        `<li class="activity-item">
+            <div class="activity-icon"><i class="fas ${a.type === 'sale' ? 'fa-shopping-cart' : 'fa-box'}"></i></div>
+            <div>
+                <strong>${a.message}</strong><br>
+                <small>${a.time || a.created_at} ${a.user_name ? 'by ' + a.user_name : ''}</small>
+            </div>
+        </li>`
     ).join('');
 }
 

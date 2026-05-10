@@ -133,41 +133,133 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('exportInventory').onclick = async () => {
-        if (!hasPermission('importExport')) return;
-        // تصدير كل المنتجات (افتح كل الصفحات) – مبسط
-        const allData = await apiGetProducts(1, 9999); // نجيب كل المنتجات
-        if (allData.products.length === 0) return;
-        exportCSV(allData.products.map(p => ({ Name: p.name, SKU: p.sku, Quantity: p.quantity, Price: p.price })), 'inventory.csv');
-    };
+		if (!hasPermission('importExport')) return;
+		const search = document.getElementById('inventorySearch')?.value || '';
+
+		let productsToExport = [];
+
+		if (isAnyFilterActive()) {
+			// هناك فلتر نشط: استخدم allInventoryForFilter (اللي فيه كل النتائج بدون pagination)
+			productsToExport = allInventoryForFilter.slice(); // نعمل نسخة
+		} else if (search) {
+			// يوجد بحث لكن لا فلاتر: نجيب كل المنتجات المطابقة للبحث من الخادم
+			const res = await apiGetProducts(1, 9999, search);
+			productsToExport = res.products;
+		} else {
+			// لا بحث ولا فلاتر: نصدر الكل
+			const res = await apiGetProducts(1, 9999);
+			productsToExport = res.products;
+		}
+
+		if (productsToExport.length === 0) {
+			showToast('No data to export', 'error');
+			return;
+		}
+
+		const rows = [
+			'Name,SKU,Category,Quantity,Reorder Level,Price,Avg Cost,Total Value,Location,Received,Expiry,Active'
+		];
+		productsToExport.forEach(p => {
+			const active = p.active == 1 ? 'Active' : 'Inactive';
+			const avgCost = (p.total_cost && p.quantity > 0) ? (p.total_cost / p.quantity).toFixed(2) : '0.00';
+			const totalValue = (p.total_cost || 0).toFixed(2);
+			rows.push(`"${p.name}","${p.sku}","${p.category || ''}",${p.quantity},${p.reorderLevel},${p.price},${avgCost},${totalValue},"${p.location || ''}","${p.received_date || ''}","${p.expiry_date || ''}",${active}`);
+		});
+
+		const csvContent = rows.join('\n');
+		const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+		const link = document.createElement('a');
+		link.href = URL.createObjectURL(blob);
+		link.download = `inventory_${new Date().toISOString().slice(0,10)}.csv`;
+		link.click();
+	};
 
     // Initial load
     if (appState.isAuthenticated) {
 		allInventoryForFilter = [];
 		loadInventoryPage(1);
 	}
+	
+	// ---- Inventory Search Field ----
+	const inventorySearchField = document.getElementById('inventorySearch');
+	if (inventorySearchField) {
+		const debouncedSearch = debounce(() => {
+			allInventoryForFilter = [];
+			currentInventoryPage = 1;
+			loadInventoryPage(1);
+		}, 400);
+		inventorySearchField.addEventListener('input', debouncedSearch);
+	}
+	
+	// ---- Import Inventory ----
+	let importFileInput = document.getElementById('importFileInput');
+	if (!importFileInput) {
+		importFileInput = document.createElement('input');
+		importFileInput.type = 'file';
+		importFileInput.id = 'importFileInput';
+		importFileInput.accept = '.csv';
+		importFileInput.style.display = 'none';
+		document.body.appendChild(importFileInput);
+	}
+
+	document.getElementById('importInventory').onclick = () => {
+		if (!hasPermission('importExport')) return;
+		importFileInput.click();
+	};
+
+	importFileInput.addEventListener('change', async (e) => {
+		const file = e.target.files[0];
+		if (!file) return;
+
+		const formData = new FormData();
+		formData.append('file', file);
+
+		try {
+			showToast('Importing...', 'info');
+			const res = await fetch(`${API_BASE}/products/import`, {
+				method: 'POST',
+				headers: { 'Authorization': `Bearer ${appState.token}` },
+				body: formData
+			});
+			if (!res.ok) throw new Error((await res.json()).error || 'Import failed');
+			const result = await res.json();
+			showToast(result.message || 'Import successful!', 'success');
+			await loadInventoryPage(currentInventoryPage);
+			renderDashboardInventory();
+			updateDashboardStats();
+		} catch (err) {
+			showToast(err.message, 'error');
+		} finally {
+			importFileInput.value = '';
+		}
+	});
 });
 
 async function loadInventoryPage(page) {
-	showLoader();
-    currentInventoryPage = page;
-    const search = document.getElementById('inventorySearch')?.value || '';
+    showLoader();
+    try {
+        currentInventoryPage = page;
+        const search = document.getElementById('inventorySearch')?.value || '';
 
-    if (isAnyFilterActive()) {
-        // نجلب جميع المنتجات مرة واحدة فقط إذا لم تكن قد حُملت بعد
-        if (allInventoryForFilter.length === 0) {
-            const data = await api('GET', `/products?page=1&limit=9999&search=${encodeURIComponent(search)}`);
-            allInventoryForFilter = data.products;
+        if (isAnyFilterActive()) {
+            if (allInventoryForFilter.length === 0) {
+                const data = await api('GET', `/products?page=1&limit=9999&search=${encodeURIComponent(search)}`);
+                allInventoryForFilter = data.products;
+            }
+            currentInventory = allInventoryForFilter;
+            applyInventoryFilters();
+        } else {
+            const data = await api('GET', `/products?page=${page}&limit=${inventoryLimit}&search=${encodeURIComponent(search)}`);
+            currentInventory = data.products;
+            totalInventoryPages = data.pages;
+            applyInventoryFilters();
         }
-        currentInventory = allInventoryForFilter;
-        applyInventoryFilters(); // ستتولى التقسيم والعرض محليًا
-    } else {
-        // السير العادي: Pagination من الخادم
-        const data = await api('GET', `/products?page=${page}&limit=${inventoryLimit}&search=${encodeURIComponent(search)}`);
-        currentInventory = data.products;
-        totalInventoryPages = data.pages;
-        applyInventoryFilters(); // بدون فلترة، تعرض الصفحة وتُحدّث الـ Pagination
+    } catch (err) {
+        console.error('Error loading inventory:', err);
+        showToast('Error loading inventory data', 'error');
+    } finally {
+        hideLoader();
     }
-	hideLoader();
 }
 
 function isAnyFilterActive() {

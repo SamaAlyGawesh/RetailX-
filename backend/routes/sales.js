@@ -41,7 +41,10 @@ router.post('/', requireRole('administrator', 'cashier', 'sales'), (req, res) =>
     db.prepare('UPDATE products SET quantity = quantity - ? WHERE id = ?').run(quantity, productId);
     db.prepare('INSERT INTO sales (id, date, customer, items, total, status, cashier, productId) VALUES (?,?,?,?,?,?,?,?)')
       .run(id, date, customer || 'Walk-in Customer', quantity, total, 'Completed', cashier, productId);
-    db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run('sale', `New sale: ${quantity}x ${product.name} for ${total}`, date);
+    db.prepare('INSERT INTO activity (type, message, time, user_id, user_name) VALUES (?, ?, ?, ?, ?)').run(
+		'sale', `New sale: ${quantity}x ${product.name} for ${total}`, date, req.user.id, req.user.name
+	);
+	//db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run('sale', `New sale: ${quantity}x ${product.name} for ${total}`, date);
 
     res.status(201).json({ id, total });
 });
@@ -65,11 +68,15 @@ router.delete('/:id', requireRole('administrator'), (req, res) => {
 
     // 3. نحذف الفاتورة
     db.prepare('DELETE FROM sales WHERE id = ?').run(saleId);
-
+	
+	db.prepare('INSERT INTO activity (type, message, time, user_id, user_name) VALUES (?, ?, ?, ?, ?)').run(
+		'alert', `Sale ${saleId} deleted and stock restored`, new Date().toLocaleString(), req.user.id, req.user.name
+	);
+	/*
     // 4. تسجيل نشاط
     db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)')
       .run('alert', `Sale ${saleId} deleted and stock restored`, new Date().toLocaleString());
-
+	*/
     res.json({ success: true });
 });
 
@@ -127,7 +134,10 @@ router.post('/multi', requireRole('administrator', 'cashier', 'sales'), (req, re
                 const newTotalCost = currentTotalCost - (avgCost * item.quantity);
                 db.prepare('UPDATE products SET quantity = ?, total_cost = ? WHERE id = ?').run(newQty, newTotalCost, item.productId);
             }
-            db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run('sale', `Multi-sale ${saleId}: ${totalItemsCount} items, total ${grandTotal}`, finalSaleDate);
+			db.prepare('INSERT INTO activity (type, message, time, user_id, user_name) VALUES (?, ?, ?, ?, ?)').run(
+				'sale', `Multi-sale ${saleId}: ${totalItemsCount} items, total ${grandTotal}`, finalSaleDate, req.user.id, req.user.name
+			);
+            //db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run('sale', `Multi-sale ${saleId}: ${totalItemsCount} items, total ${grandTotal}`, finalSaleDate);
         });
 
         transaction(); // تنفيذ المعاملة
@@ -156,7 +166,10 @@ router.delete('/group/:baseId', requireRole('administrator'), (req, res) => {
             }
             db.prepare('DELETE FROM sales WHERE id = ?').run(item.id);
         }
-        db.prepare("INSERT INTO activity (type, message, time) VALUES (?,?,?)").run('alert', `Invoice ${baseId} deleted and stock restored`, new Date().toLocaleString());
+		db.prepare("INSERT INTO activity (type, message, time, user_id, user_name) VALUES (?,?,?,?,?)").run(
+			'alert', `Invoice ${baseId} deleted and stock restored`, new Date().toLocaleString(), req.user.id, req.user.name
+		);
+        //db.prepare("INSERT INTO activity (type, message, time) VALUES (?,?,?)").run('alert', `Invoice ${baseId} deleted and stock restored`, new Date().toLocaleString());
     });
     transaction();
     res.json({ success: true });

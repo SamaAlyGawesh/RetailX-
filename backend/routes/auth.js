@@ -40,12 +40,18 @@ router.post('/register', (req, res) => {
         db.prepare('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)').run(
             name, email, hashedPassword, role
         );
-
+		
+		
+		db.prepare('INSERT INTO activity (type, message, time, user_id, user_name) VALUES (?, ?, ?, ?, ?)').run(
+			'user', `New user registered: ${name}`, new Date().toLocaleString(), null, name
+		);
+		
         // تسجيل النشاط
+		/*
         db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run(
             'user', `New user registered: ${name}`, new Date().toLocaleString()
         );
-
+		*/
         res.status(201).json({ message: 'Account created successfully' });
 
     } catch (err) {
@@ -99,9 +105,14 @@ router.post('/login', (req, res) => {
         });
 
         // تسجيل النشاط
-        db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run(
+        /*
+		db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run(
             'login', `${user.name} logged in`, new Date().toLocaleString()
         );
+		*/
+		db.prepare('INSERT INTO activity (type, message, time, user_id, user_name) VALUES (?, ?, ?, ?, ?)').run(
+			'login', `${user.name} logged in`, new Date().toLocaleString(), user.id, user.name
+		);
 
     } catch (err) {
         console.error('Login error:', err);

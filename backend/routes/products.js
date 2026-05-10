@@ -26,25 +26,28 @@ router.get('/', (req, res) => {
     const offset = (page - 1) * limit;
 
     const db = getDB();
-    let where = '';
-    let params = [];
+	let whereClause = '';
+	let whereClauseForCount = '';
+	let params = [];
 
-    if (search) {
-        where = ' WHERE name LIKE ? OR sku LIKE ? OR category LIKE ?';
-        params = [`%${search}%`, `%${search}%`, `%${search}%`];
-    }
+	if (search) {
+		// جملة البحث للاستعلام الرئيسي (يستخدم الأسماء المستعارة p. لتجنب التعارض)
+		whereClause = ' WHERE p.name LIKE ? OR p.sku LIKE ? OR p.category LIKE ?';
+		// جملة البحث لاستعلام العد (جدول products فقط، لا تعارض)
+		whereClauseForCount = ' WHERE name LIKE ? OR sku LIKE ? OR category LIKE ?';
+		params = [`%${search}%`, `%${search}%`, `%${search}%`];
+	}
 
-    const totalRow = db.prepare(`SELECT COUNT(*) as total FROM products ${where}`).get(...params);
-    const total = totalRow?.total || 0;
+	const totalRow = db.prepare(`SELECT COUNT(*) as total FROM products ${whereClauseForCount}`).get(...params);
+	const total = totalRow?.total || 0;
 
-    // جلب المنتجات مع معلومات المورد (supplier_code)
-    const products = db.prepare(`
-        SELECT p.*, s.supplier_code
-        FROM products p
-        LEFT JOIN suppliers s ON p.supplier_id = s.id
-        ${where}
-        ORDER BY p.id DESC LIMIT ? OFFSET ?
-    `).all(...params, limit, offset);
+	const products = db.prepare(`
+		SELECT p.*, s.supplier_code
+		FROM products p
+		LEFT JOIN suppliers s ON p.supplier_id = s.id
+		${whereClause}
+		ORDER BY p.id DESC LIMIT ? OFFSET ?
+	`).all(...params, limit, offset);
 
     res.json({
         products,
@@ -79,8 +82,11 @@ router.post('/', requireRole('administrator'), upload.single('image'), (req, res
 		req.body.received_date || null, active ?? 1,
 		(price || 0) * (quantity || 0)   // total_cost = price * quantity
 	);
+	db.prepare('INSERT INTO activity (type, message, time, user_id, user_name) VALUES (?, ?, ?, ?, ?)').run(
+		'product', `New product: ${name}`, new Date().toLocaleString(), req.user.id, req.user.name
+	);
 
-    db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run('product', `New product: ${name}`, new Date().toLocaleString());
+    //db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run('product', `New product: ${name}`, new Date().toLocaleString());
     res.status(201).json({ id: result.lastInsertRowid, product_code: productCode });
 });
 
@@ -88,14 +94,28 @@ router.post('/', requireRole('administrator'), upload.single('image'), (req, res
 router.patch('/:id/stock', requireRole('administrator', 'clerk'), (req, res) => {
     const { quantity } = req.body;
     const db = getDB();
+    // جلب المنتج لتسجيل الاسم
+    const product = db.prepare('SELECT name FROM products WHERE id = ?').get(req.params.id);
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+
     db.prepare('UPDATE products SET quantity = ? WHERE id = ?').run(quantity, req.params.id);
+    db.prepare('INSERT INTO activity (type, message, time, user_id, user_name) VALUES (?, ?, ?, ?, ?)').run(
+        'product', `Product stock updated: ${product.name}`, new Date().toLocaleString(), req.user.id, req.user.name
+    );
     res.json({ success: true });
 });
 
 // DELETE /api/products/:id
 router.delete('/:id', requireRole('administrator'), (req, res) => {
     const db = getDB();
+    // جلب المنتج لتسجيل الاسم
+    const product = db.prepare('SELECT name FROM products WHERE id = ?').get(req.params.id);
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+
     db.prepare('DELETE FROM products WHERE id = ?').run(req.params.id);
+    db.prepare('INSERT INTO activity (type, message, time, user_id, user_name) VALUES (?, ?, ?, ?, ?)').run(
+        'alert', `Product deleted: ${product.name}`, new Date().toLocaleString(), req.user.id, req.user.name
+    );
     res.json({ success: true });
 });
 
@@ -133,9 +153,56 @@ router.put('/:id', requireRole('administrator'), upload.single('image'), (req, r
         received_date || product.received_date, active !== undefined ? parseInt(active) : product.active,
         newTotalCost, image, req.params.id
     );
+	db.prepare('INSERT INTO activity (type, message, time, user_id, user_name) VALUES (?, ?, ?, ?, ?)').run(
+		'product', `Product updated: ${name || product.name}`, new Date().toLocaleString(), req.user.id, req.user.name
+	);
 
-    db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run('product', `Product updated: ${name || product.name}`, new Date().toLocaleString());
+    //db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run('product', `Product updated: ${name || product.name}`, new Date().toLocaleString());
     res.json({ success: true });
+});
+
+// استيراد المنتجات من CSV
+router.post('/import', requireRole('administrator'), upload.single('file'), (req, res) => {
+    const db = getDB();
+    const file = req.file;
+    if (!file) return res.status(400).json({ error: 'No CSV file provided' });
+
+    const fs = require('fs');
+    const content = fs.readFileSync(file.path, 'utf-8');
+    const lines = content.split('\n').filter(line => line.trim() !== '');
+    if (lines.length < 2) return res.status(400).json({ error: 'Empty or invalid CSV' });
+
+    const header = lines[0].toLowerCase().split(',').map(h => h.trim().replace(/"/g, ''));
+    const nameIdx = header.indexOf('name');
+    const skuIdx = header.indexOf('sku');
+    if (nameIdx === -1 || skuIdx === -1) return res.status(400).json({ error: 'CSV must contain Name and SKU columns' });
+
+    let imported = 0;
+    const transaction = db.transaction(() => {
+        for (let i = 1; i < lines.length; i++) {
+            const cols = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+            if (!cols || cols.length < header.length) continue;
+            const name = cols[nameIdx]?.replace(/^"|"$/g, '');
+            const sku = cols[skuIdx]?.replace(/^"|"$/g, '');
+            if (!name || !sku) continue;
+
+            const existing = db.prepare('SELECT id FROM products WHERE sku = ?').get(sku);
+            if (existing) continue;
+
+            const priceIdx = header.indexOf('price');
+            const qtyIdx = header.indexOf('quantity');
+            const price = priceIdx !== -1 ? parseFloat(cols[priceIdx]?.replace(/^"|"$/g, '')) || 0 : 0;
+            const qty = qtyIdx !== -1 ? parseInt(cols[qtyIdx]?.replace(/^"|"$/g, '')) || 0 : 0;
+            const totalCost = price * qty;
+
+            db.prepare(`INSERT INTO products (name, sku, price, quantity, total_cost) VALUES (?,?,?,?,?)`).run(name, sku, price, qty, totalCost);
+            imported++;
+        }
+    });
+    transaction();
+    // تنظيف الملف بعد الاستيراد (اختياري)
+    fs.unlinkSync(file.path);
+    res.json({ message: `Imported ${imported} products successfully` });
 });
 
 module.exports = router;

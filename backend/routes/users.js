@@ -41,6 +41,9 @@ router.patch('/:id/role', authenticate, (req, res) => {
     const userId = req.params.id;
     const db = getDB();
     db.prepare('UPDATE users SET role = ? WHERE id = ?').run(role, userId);
+	db.prepare('INSERT INTO activity (type, message, time, user_id, user_name) VALUES (?, ?, ?, ?, ?)').run(
+		'settings', `User ${userId} role changed to ${role}`, new Date().toLocaleString(), req.user.id, req.user.name
+	);
     res.json({ message: 'Role updated' });
 });
 
@@ -55,6 +58,9 @@ router.patch('/:id/status', authenticate, (req, res) => {
 
     const db = getDB();
     db.prepare('UPDATE users SET status = ? WHERE id = ?').run(status, req.params.id);
+	db.prepare('INSERT INTO activity (type, message, time, user_id, user_name) VALUES (?, ?, ?, ?, ?)').run(
+		'settings', `User ${req.params.id} status changed to ${status}`, new Date().toLocaleString(), req.user.id, req.user.name
+	);
     res.json({ message: 'Status updated' });
 });
 
@@ -67,6 +73,9 @@ router.patch('/:id/reset-password', authenticate, (req, res) => {
     const hashed = bcrypt.hashSync(tempPassword, 10);
     const db = getDB();
     db.prepare('UPDATE users SET password = ? WHERE id = ?').run(hashed, req.params.id);
+	db.prepare('INSERT INTO activity (type, message, time, user_id, user_name) VALUES (?, ?, ?, ?, ?)').run(
+		'settings', `Password reset for user ${req.params.id}`, new Date().toLocaleString(), req.user.id, req.user.name
+	);
     res.json({ message: 'Password reset successfully', tempPassword });
 });
 

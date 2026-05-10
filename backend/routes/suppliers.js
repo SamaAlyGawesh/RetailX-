@@ -49,7 +49,10 @@ router.post('/', requireRole('administrator'), (req, res) => {
         name, contact || '', email, phone || '', JSON.stringify(productsSuppliedList || []), leadTime || 5, new Date().toISOString(),
         address1 || '', address2 || '', website || '', payment_terms || '', code
     );
-    db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run('product', `New supplier: ${name}`, new Date().toLocaleString());
+	db.prepare('INSERT INTO activity (type, message, time, user_id, user_name) VALUES (?, ?, ?, ?, ?)').run(
+		'product', `New supplier: ${name}`, new Date().toLocaleString(), req.user.id, req.user.name
+	);
+    //db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run('product', `New supplier: ${name}`, new Date().toLocaleString());
     res.status(201).json({ id: result.lastInsertRowid, code });
 });
 
@@ -61,14 +64,20 @@ router.put('/:id', requireRole('administrator'), (req, res) => {
         name, contact || '', email, phone || '', JSON.stringify(productsSuppliedList || []), leadTime || 5,
         address1 || '', address2 || '', website || '', payment_terms || '', req.params.id
     );
-    db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run('product', `Supplier updated: ${name}`, new Date().toLocaleString());
+	db.prepare('INSERT INTO activity (type, message, time, user_id, user_name) VALUES (?, ?, ?, ?, ?)').run(
+		'product', `Supplier updated: ${name}`, new Date().toLocaleString(), req.user.id, req.user.name
+	);
+    //db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run('product', `Supplier updated: ${name}`, new Date().toLocaleString());
     res.json({ success: true });
 });
 
 router.delete('/:id', requireRole('administrator'), (req, res) => {
     const db = getDB();
     db.prepare('DELETE FROM suppliers WHERE id = ?').run(req.params.id);
-    db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run('alert', 'Supplier deleted', new Date().toLocaleString());
+    db.prepare('INSERT INTO activity (type, message, time, user_id, user_name) VALUES (?, ?, ?, ?, ?)').run(
+		'alert', 'Supplier deleted', new Date().toLocaleString(), req.user.id, req.user.name
+	);
+	//db.prepare('INSERT INTO activity (type, message, time) VALUES (?, ?, ?)').run('alert', 'Supplier deleted', new Date().toLocaleString());
     res.json({ success: true });
 });
 

@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('generateReport').onclick = async () => {
         if (!hasPermission('reports')) return;
-        await apiGetSales();
+        //await apiGetSales();
         const totalSales = salesData.reduce((a, b) => a + b.total, 0);
         const profit = totalSales * 0.4;
         document.getElementById('reportTitle').innerText = 'Profit & Sales Report';

@@ -188,22 +188,28 @@ function isAnySupplierFilterActive() {
 
 // ========== دوال تحميل وعرض الجدول ==========
 async function loadSupplierPage(page) {
-	showLoader();
-    currentSupplierPage = page;
-    if (isAnySupplierFilterActive()) {
-        if (allSuppliersForFilter.length === 0) {
-            const data = await apiGetSuppliers(1, 9999);
-            allSuppliersForFilter = data.suppliers;
+    showLoader();
+    try {
+        currentSupplierPage = page;
+        if (isAnySupplierFilterActive()) {
+            if (allSuppliersForFilter.length === 0) {
+                const data = await apiGetSuppliers(1, 9999);
+                allSuppliersForFilter = data.suppliers;
+            }
+            currentSuppliers = allSuppliersForFilter;
+            applySupplierFilters();
+        } else {
+            const data = await apiGetSuppliers(page, supplierLimit);
+            currentSuppliers = data.suppliers;
+            totalSupplierPages = data.pages;
+            applySupplierFilters();
         }
-        currentSuppliers = allSuppliersForFilter;
-        applySupplierFilters();
-    } else {
-        const data = await apiGetSuppliers(page, supplierLimit);
-        currentSuppliers = data.suppliers;
-        totalSupplierPages = data.pages;
-        applySupplierFilters();
+    } catch (err) {
+        console.error('Error loading suppliers:', err);
+        showToast('Error loading supplier data', 'error');
+    } finally {
+        hideLoader();
     }
-	hideLoader();
 }
 
 function renderCategoriesCheckboxes(filter = '') {
