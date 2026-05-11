@@ -26,6 +26,7 @@ function groupSales(salesArray) {
                 items: 0,
                 total: 0,
                 status: s.status,
+                cashier: s.cashier || '', 
                 products: [],
                 categories: new Set()
             };

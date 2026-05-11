@@ -71,9 +71,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     break;
                 case 'sales':
-                    csv += 'ID;Date;Customer;Items;Total\n';
+                    csv += 'ID;Date;Customer;Items;Total;Cashier\n';   // أضف Cashier في الرأس
                     lastReportData.data.forEach(g => {
-                        csv += `"${g.id}";"${g.date}";"${g.customer}";${g.items};${g.total}\n`;
+                        csv += `"${g.id}";"${g.date}";"${g.customer}";${g.items};${g.total};${g.cashier || ''}\n`;   // أضف g.cashier
                     });
                     break;
                 case 'value':
@@ -194,8 +194,8 @@ function generateReportView(type, extra) {
         const items = DataStore.getProducts().filter(p => p.quantity <= p.reorderLevel);
         lastReportData = { type: 'lowstock', data: items };
 
+    
     } else if (type === 'sales') {
-        // فلترة حسب النطاق الزمني
         let filteredSales = DataStore.getSales();
         const from = extra?.from || document.getElementById('salesDateFrom')?.value || '';
         const to = extra?.to || document.getElementById('salesDateTo')?.value || '';
@@ -215,11 +215,9 @@ function generateReportView(type, extra) {
             title = 'Sales Report (All Time)';
         }
 
-        // تجميع الفواتير
         const grouped = groupSales(filteredSales);
 
-        let grandTotal = 0;
-        let totalItems = 0;
+        let grandTotal = 0, totalItems = 0;
         let rows = '';
         grouped.forEach(g => {
             totalItems += g.items;
@@ -230,23 +228,24 @@ function generateReportView(type, extra) {
                 <td>${g.customer}</td>
                 <td>${g.items}</td>
                 <td>${formatPrice(g.total)}</td>
+                <td>${g.cashier || '—'}</td>   <!-- ✅ عمود الكاشير -->
             </tr>`;
         });
 
         html = `<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%">
             <thead><tr style="background:#6d28d9;color:white">
-                <th>ID</th><th>Date</th><th>Customer</th><th>Items</th><th>Total</th>
+                <th>ID</th><th>Date</th><th>Customer</th><th>Items</th><th>Total</th><th>Cashier</th>   <!-- ✅ رأس العمود -->
             </tr></thead>
             <tbody>${rows}</tbody>
             <tfoot><tr style="background:#1a202c;color:#cbd5e0;font-weight:bold;">
                 <td colspan="3">Grand Total</td>
                 <td>${totalItems}</td>
                 <td>${formatPrice(grandTotal)}</td>
+                <td></td>
             </tr></tfoot></table>`;
 
-        // تخزين للتصدير
-        lastReportData = { type: 'sales', data: filteredSales };
-
+        // تخزين للتصدير (نمرر grouped)
+        lastReportData = { type: 'sales', data: grouped };
     } else if (type === 'value') {
         title = 'Inventory Value';
         let totalQty = 0;
@@ -370,8 +369,8 @@ function generateReportDownload(type) {
         DataStore.getProducts().filter(p => p.quantity <= p.reorderLevel).forEach(p => tsv += `${p.name}\t${p.quantity}\t${p.reorderLevel}\n`);
     }
     else if (type === 'sales') {
-        tsv += BOM + 'ID\tDate\tCustomer\tItems\tTotal\n';
-        DataStore.getSales().forEach(s => tsv += `${s.id}\t${s.date}\t${s.customer}\t${s.items}\t${s.total}\n`);
+        tsv += BOM + 'ID\tDate\tCustomer\tItems\tTotal\tCashier\n';
+        DataStore.getSales().forEach(s => tsv += `${s.id}\t${s.date}\t${s.customer}\t${s.items}\t${s.total}\t${s.cashier || ''}\n`);
     }
     else if (type === 'value') {
         tsv += BOM + 'Name\tQty\tUnitPrice\tTotalValue\n';
