@@ -155,23 +155,24 @@ document.addEventListener('DOMContentLoaded', () => {
 			showToast('No data to export', 'error');
 			return;
 		}
-   
-		// const rows = [
-		// 	'Name,SKU,Category,Quantity,Reorder Level,Price,Avg Cost,Total Value,Location,Received,Expiry,Active'
-		// ];
-		// productsToExport.forEach(p => {
-		// 	const active = p.active == 1 ? 'Active' : 'Inactive';
-		// 	const avgCost = (p.total_cost && p.quantity > 0) ? (p.total_cost / p.quantity).toFixed(2) : '0.00';
-		// 	const totalValue = (p.total_cost || 0).toFixed(2);
-		// 	rows.push(`"${p.name}","${p.sku}","${p.category || ''}",${p.quantity},${p.reorderLevel},${p.price},${avgCost},${totalValue},"${p.location || ''}","${p.received_date || ''}","${p.expiry_date || ''}",${active}`);
-		// });
-
-		const rows = ['\uFEFFName\tSKU\tCategory\tQuantity\tReorder Level\tPrice\tAvg Cost\tTotal Value\tLocation\tReceived\tExpiry\tActive'];
+		/*
+		const rows = [
+			'Name,SKU,Category,Quantity,Reorder Level,Price,Avg Cost,Total Value,Location,Received,Expiry,Active'
+		];
 		productsToExport.forEach(p => {
 			const active = p.active == 1 ? 'Active' : 'Inactive';
 			const avgCost = (p.total_cost && p.quantity > 0) ? (p.total_cost / p.quantity).toFixed(2) : '0.00';
 			const totalValue = (p.total_cost || 0).toFixed(2);
-			rows.push(`${p.name}\t${p.sku}\t${p.category || ''}\t${p.quantity}\t${p.reorderLevel}\t${p.price}\t${avgCost}\t${totalValue}\t${p.location || ''}\t${p.received_date || ''}\t${p.expiry_date || ''}\t${active}`);
+			rows.push(`"${p.name}","${p.sku}","${p.category || ''}",${p.quantity},${p.reorderLevel},${p.price},${avgCost},${totalValue},"${p.location || ''}","${p.received_date || ''}","${p.expiry_date || ''}",${active}`);
+		});
+		*/
+
+		const rows = ['\uFEFFsep=;\nName;SKU;Category;Quantity;Reorder Level;Price;Avg Cost;Total Value;Location;Received;Expiry;Active'];
+		productsToExport.forEach(p => {
+			const active = p.active == 1 ? 'Active' : 'Inactive';
+			const avgCost = (p.total_cost && p.quantity > 0) ? (p.total_cost / p.quantity).toFixed(2) : '0.00';
+			const totalValue = (p.total_cost || 0).toFixed(2);
+			rows.push(`"${p.name}";"${p.sku}";"${p.category || ''}";${p.quantity};${p.reorderLevel};${p.price};${avgCost};${totalValue};"${p.location || ''}";"${p.received_date || ''}";"${p.expiry_date || ''}";${active}`);
 		});
 
 		const csvContent = rows.join('\n');

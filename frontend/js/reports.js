@@ -357,28 +357,28 @@ function generateReportView(type, extra) {
 }
 
 function generateReportDownload(type) {
-    let tsv = '', filename = `${type}_report.csv`;
-    const BOM = '\uFEFF'; // دعم العربي
+    let csv = '', filename = `${type}_report.csv`;
+    const header = '\uFEFFsep=;\n'; // BOM + تعليمات لـExcel
 
     if (type === 'stock') {
-        tsv += BOM + 'Name\tSKU\tQty\tPrice\n';
-        DataStore.getProducts().forEach(p => tsv += `${p.name}\t${p.sku}\t${p.quantity}\t${p.price}\n`);
+        csv += header + 'Name;SKU;Qty;Price\n';
+        DataStore.getProducts().forEach(p => csv += `"${p.name}";"${p.sku}";${p.quantity};${p.price}\n`);
     }
     else if (type === 'lowstock') {
-        tsv += BOM + 'Name\tCurrent\tReorder\n';
-        DataStore.getProducts().filter(p => p.quantity <= p.reorderLevel).forEach(p => tsv += `${p.name}\t${p.quantity}\t${p.reorderLevel}\n`);
+        csv += header + 'Name;Current;Reorder\n';
+        DataStore.getProducts().filter(p => p.quantity <= p.reorderLevel).forEach(p => csv += `"${p.name}";${p.quantity};${p.reorderLevel}\n`);
     }
     else if (type === 'sales') {
-        tsv += BOM + 'ID\tDate\tCustomer\tItems\tTotal\tCashier\n';
-        DataStore.getSales().forEach(s => tsv += `${s.id}\t${s.date}\t${s.customer}\t${s.items}\t${s.total}\t${s.cashier || ''}\n`);
+        csv += header + 'ID;Date;Customer;Items;Total;Cashier\n';
+        DataStore.getSales().forEach(s => csv += `"${s.id}";"${s.date}";"${s.customer}";${s.items};${s.total};"${s.cashier || ''}"\n`);
     }
     else if (type === 'value') {
-        tsv += BOM + 'Name\tQty\tUnitPrice\tTotalValue\n';
-        DataStore.getProducts().forEach(p => tsv += `${p.name}\t${p.quantity}\t${p.price}\t${(p.price * p.quantity).toFixed(2)}\n`);
+        csv += header + 'Name;Qty;UnitPrice;TotalValue\n';
+        DataStore.getProducts().forEach(p => csv += `"${p.name}";${p.quantity};${p.price};${(p.price * p.quantity).toFixed(2)}\n`);
     }
     else if (type === 'supplier') {
-        tsv += BOM + 'Name\tContact\tEmail\tLeadTime\n';
-        DataStore.getSuppliers().forEach(s => tsv += `${s.name}\t${s.contact || ''}\t${s.email}\t${s.leadTime}\n`);
+        csv += header + 'Name;Contact;Email;LeadTime\n';
+        DataStore.getSuppliers().forEach(s => csv += `"${s.name}";"${s.contact || ''}";"${s.email}";${s.leadTime}\n`);
     }
     else if (type === 'topselling') {
         const from = document.getElementById('topSellingDateFrom')?.value || '';
@@ -403,7 +403,6 @@ function generateReportDownload(type) {
             productStats[pid].qty += s.items || 0;
             productStats[pid].revenue += s.total || 0;
         });
-
         const productList = Object.entries(productStats).map(([pid, stats]) => {
             const product = DataStore.getProducts().find(p => p.id === Number(pid));
             return {
@@ -414,12 +413,12 @@ function generateReportDownload(type) {
             };
         }).sort((a, b) => b.qty - a.qty);
 
-        tsv += BOM + 'Product\tSKU\tQuantitySold\tTotalRevenue\n';
-        productList.forEach(p => tsv += `${p.name}\t${p.sku}\t${p.qty}\t${p.revenue}\n`);
+        csv += header + 'Product;SKU;QuantitySold;TotalRevenue\n';
+        productList.forEach(p => csv += `"${p.name}";"${p.sku}";${p.qty};${p.revenue}\n`);
         filename = 'topselling_report.csv';
     }
 
-    const blob = new Blob([tsv], { type: 'text/tab-separated-values;charset=utf-8;' });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = filename;
