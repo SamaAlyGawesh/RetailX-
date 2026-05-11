@@ -35,7 +35,7 @@ function groupSales(salesArray) {
         group.total += s.total || 0;
         group.products.push({
             productId: s.productId,
-            name: inventoryData.find(p => p.id === s.productId)?.name || 'Unknown',
+            name: DataStore.getProducts().find(p => p.id === s.productId)?.name || 'Unknown',
             category: s.category || '',
             quantity: s.items,
             unitPrice: s.total / s.items,
@@ -62,7 +62,8 @@ document.addEventListener('DOMContentLoaded', () => {
 			document.getElementById('addNewSale').style.display = 'none';
 			//return;
 		}
-        await apiGetProducts(1, 9999);
+        const prods = await apiGetProducts(1, 9999);
+        DataStore.setProducts(prods.products);
         saleItems = [];
         document.getElementById('saleCustomer').value = 'Walk-in Customer';
         document.getElementById('saleDiscount').value = 0;
@@ -134,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const item = saleItems[i];
             if (!item.productId) { showToast(`Please select a product for row ${i + 1}.`, 'error'); return; }
             if (!item.quantity || item.quantity < 1) { showToast(`Quantity for row ${i + 1} must be at least 1.`, 'error'); return; }
-            const product = inventoryData.find(p => p.id === item.productId);
+            const product = DataStore.getProducts().find(p => p.id === item.productId);
             if (product && item.quantity > product.quantity) {
                 showToast(`${product.name} has only ${product.quantity} in stock. Please reduce the quantity.`, 'error');
                 return;
@@ -173,7 +174,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             await apiCreateMultiSale(customer, items, discount, paymentMethod, notes, appState.currentUser.name, utcDateStr);
-            await apiGetProducts(1, 9999);
+            // تحديث المخزون في DataStore
+			const prodsData = await apiGetProducts(1, 9999);
+			DataStore.setProducts(prodsData.products);
             await loadSalesPage(currentSalesPage);
             renderInventoryTable();
             renderDashboardInventory();
@@ -234,7 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			const select = document.getElementById('filterSaleCategory');
 			if (!select || select.options.length > 1) return; // مملوءة بالفعل
 			await apiGetProducts(1, 9999);
-			const categories = [...new Set(inventoryData.map(p => p.category).filter(Boolean))].sort();
+			const categories = [...new Set(DataStore.getProducts().map(p => p.category).filter(Boolean))].sort();
 			select.innerHTML = '<option value="">All</option>';
 			categories.forEach(c => {
 				select.innerHTML += `<option value="${c}">${c}</option>`;
@@ -260,7 +263,7 @@ function isAnySalesFilterActive() {
 
 function addSaleItemRow() {
     const row = document.createElement('tr');
-    const categories = [...new Set(inventoryData.map(p => p.category).filter(Boolean))].sort();
+    const categories = [...new Set(DataStore.getProducts().map(p => p.category).filter(Boolean))].sort();
     const catOptions = ['<option value="">All</option>', ...categories.map(c => `<option value="${c}">${c}</option>`)].join('');
 
     row.innerHTML = `
@@ -330,6 +333,7 @@ async function loadSalesPage(page) {
         currentSalesPage = page;
         const data = await api('GET', `/sales?page=1&limit=9999`);
         currentSales = data.sales;
+		DataStore.setSales(data.sales);
         populateSaleCategoryFilter();
         applySalesFilters();
     } catch (err) {
@@ -436,7 +440,7 @@ window.deleteSale = async function(id) {
 
 // طباعة الفاتورة (سيتم تحسينها لاحقاً)
 window.printInvoice = function(id) {
-    const sale = salesData.find(s => s.id === id);
+    const sale = DataStore.getSales().find(s => s.id === id);
     if (!sale) return;
     const win = window.open('', '_blank');
     win.document.write(`<h1>Invoice ${sale.id}</h1><pre>${JSON.stringify(sale, null, 2)}</pre><button onclick="window.print()">Print</button>`);
@@ -456,7 +460,7 @@ function refreshSingleRowCategory(row, index) {
             .map(item => item.productId)
     );
 
-    let available = inventoryData;
+    let available = DataStore.getProducts();
     if (selectedCategory) {
         available = available.filter(p => p.category === selectedCategory);
     }
@@ -502,7 +506,7 @@ function refreshAllRows() {
 function updateStockCell(row, productId) {
     const stockCell = row.querySelector('.stock-info');
     if (!stockCell) return;
-    const product = inventoryData.find(p => p.id === productId);
+    const product = DataStore.getProducts().find(p => p.id === productId);
     if (product) {
         stockCell.textContent = product.quantity;
         if (product.quantity === 0) stockCell.style.color = 'var(--danger)';
@@ -515,7 +519,7 @@ function updateStockCell(row, productId) {
 
 // ========== دوال الفاتورة ==========
 window.viewInvoice = function(baseId) {
-    const group = groupSales(currentSales).find(g => g.id === baseId);
+    const group = groupSales(DataStore.getSales()).find(g => g.id === baseId);
     if (!group) return;
 
     const productsHtml = group.products.map(p => `
@@ -601,6 +605,7 @@ window.deleteInvoice = async function(baseId) {
         });
         if (!res.ok) throw new Error((await res.json()).error || 'Delete failed');
         await loadSalesPage(currentSalesPage);
+		// البيانات اتحدثت جوه loadSalesPage، فمش محتاجين نحدث يدوي
         updateDashboardStats();
     } catch (err) { showToast(err.message, 'error'); }
 };

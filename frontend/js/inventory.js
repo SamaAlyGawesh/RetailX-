@@ -245,6 +245,7 @@ async function loadInventoryPage(page) {
             if (allInventoryForFilter.length === 0) {
                 const data = await api('GET', `/products?page=1&limit=9999&search=${encodeURIComponent(search)}`);
                 allInventoryForFilter = data.products;
+				DataStore.setProducts(data.products);
             }
             currentInventory = allInventoryForFilter;
             applyInventoryFilters();
@@ -391,7 +392,7 @@ window.updateStock = async function(id) {
     if (!hasPermission('inventory')) return;
     
     // ابحث عن المنتج في currentInventory
-    const p = currentInventory.find(p => p.id === id);
+    const p = DataStore.getProducts().find(p => p.id === id);
     if (!p) return;
     currentProduct = p; // حفظ مرجع
 
@@ -432,11 +433,12 @@ window.updateStock = async function(id) {
 
 // دالة مساعدة لتحميل الموردين والفئات دون تفريغ باقي الحقول
 async function loadSuppliersAndCategoriesForEdit() {
-    const suppliersData = await apiGetSuppliers(1, 9999);
+    const apiSuppliersData = await apiGetSuppliers(1, 9999);
+	DataStore.setSuppliers(apiSuppliersData.suppliers);
     const supplierSelect = document.getElementById('editProductSupplier');
     if (supplierSelect) {
         supplierSelect.innerHTML = '';
-        suppliersData.suppliers.forEach(s => {
+        DataStore.getSuppliers().forEach(s => {
             supplierSelect.innerHTML += `<option value="${s.id}">${s.name} (${s.supplier_code})</option>`;
         });
     }
@@ -444,9 +446,9 @@ async function loadSuppliersAndCategoriesForEdit() {
     const catSelect = document.getElementById('editProductCategory');
     if (catSelect) {
         const cats = [...new Set(
-            inventoryData
-                .filter(p => p.name !== '__category_placeholder__')
-                .map(p => p.category)
+            DataStore.getProducts()
+				.filter(p => p.name !== '__category_placeholder__')
+				.map(p => p.category)
                 .filter(Boolean)
         )].sort();
         catSelect.innerHTML = '<option value="">Select category</option>';
@@ -462,6 +464,7 @@ window.deleteProduct = async function(id) {
     try {
         await apiDeleteProduct(id);
         await loadInventoryPage(currentInventoryPage);
+		DataStore.removeProduct(id);
         renderDashboardInventory();
         updateDashboardStats();
     } catch (err) { showToast(err.message, 'error'); }
@@ -469,11 +472,12 @@ window.deleteProduct = async function(id) {
 
 // تحميل قائمة الموردين والفئات
 async function loadSuppliersAndCategories() {
-    const suppliersData = await apiGetSuppliers(1, 9999);
+    const apiSuppliersData = await apiGetSuppliers(1, 9999);
+	DataStore.setSuppliers(apiSuppliersData.suppliers);
     const supplierSelect = document.getElementById('productSupplier');
     if (supplierSelect) {
         supplierSelect.innerHTML = '';
-        suppliersData.suppliers.forEach(s => {
+        DataStore.getSuppliers().forEach(s => {
             supplierSelect.innerHTML += `<option value="${s.id}">${s.name} (${s.supplier_code})</option>`;
         });
     }
@@ -481,9 +485,9 @@ async function loadSuppliersAndCategories() {
         const catSelect = document.getElementById('productCategory');
     if (catSelect) {
         const cats = [...new Set(
-            inventoryData
-                .filter(p => p.name !== '__category_placeholder__')
-                .map(p => p.category)
+            DataStore.getProducts()
+				.filter(p => p.name !== '__category_placeholder__')
+				.map(p => p.category)
                 .filter(Boolean)
         )].sort();
         catSelect.innerHTML = '<option value="">Select category</option>';

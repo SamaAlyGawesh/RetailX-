@@ -16,8 +16,10 @@ document.addEventListener('DOMContentLoaded', () => {
 		try {
 			const allProducts = await apiGetProducts(1, 9999);
 			const allSales = await apiGetSales(1, 9999);
-			inventoryData = allProducts.products;
-			salesData = allSales.sales;
+			DataStore.setProducts(allProducts.products);
+            //inventoryData = allProducts.products;
+            //salesData = allSales.sales;
+			DataStore.setSales(allSales.sales);
 			await apiGetActivity();
 			updateDashboardStats();
 			renderDashboardInventory();
@@ -56,19 +58,19 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function updateDashboardStats() {
-    document.getElementById('totalProducts').innerText = inventoryData.length;
-    document.getElementById('lowStock').innerText = inventoryData.filter(p => p.quantity > 0 && p.quantity <= p.reorderLevel).length;
-    document.getElementById('outOfStock').innerText = inventoryData.filter(p => p.quantity === 0).length;
-    const todaySales = salesData.filter(s => new Date(s.date).toDateString() === new Date().toDateString()).reduce((s, i) => s + i.total, 0);
+    document.getElementById('totalProducts').innerText = DataStore.getProducts().length;
+    document.getElementById('lowStock').innerText = DataStore.getProducts().filter(p => p.quantity > 0 && p.quantity <= p.reorderLevel).length;
+    document.getElementById('outOfStock').innerText = DataStore.getProducts().filter(p => p.quantity === 0).length;
+    const todaySales = DataStore.getSales().filter(s => new Date(s.date).toDateString() === new Date().toDateString()).reduce((s, i) => s + i.total, 0);
     document.getElementById('todaySales').innerText = formatPrice(todaySales);
     document.getElementById('todaySalesValue').innerText = formatPrice(todaySales);
-    const monthlySales = salesData.filter(s => new Date(s.date).getMonth() === new Date().getMonth()).reduce((s, i) => s + i.total, 0);
+    const monthlySales = DataStore.getSales().filter(s => new Date(s.date).getMonth() === new Date().getMonth()).reduce((s, i) => s + i.total, 0);
     document.getElementById('monthlySalesValue').innerText = formatPrice(monthlySales);
-    document.getElementById('transactionCount').innerText = salesData.length;
+    document.getElementById('transactionCount').innerText = DataStore.getSales().length;
 	// تحديث شارة التنبيه في القائمة
 	const badge = document.getElementById('dashboardBadge');
 	if (badge) {
-		const lowStockCount = inventoryData.filter(p => p.quantity > 0 && p.quantity <= p.reorderLevel).length;
+		const lowStockCount = DataStore.getProducts().filter(p => p.quantity > 0 && p.quantity <= p.reorderLevel).length;
 		badge.innerText = lowStockCount;
 		badge.style.display = lowStockCount > 0 ? 'flex' : 'none';
 	}
@@ -77,7 +79,7 @@ function updateDashboardStats() {
 function renderRecentActivity() {
     const container = document.getElementById('recentActivity');
     if (!container) return;
-    container.innerHTML = activityLog.slice(0, 5).map(a =>
+    container.innerHTML = DataStore.getActivity().slice(0, 5).map(a =>
         `<li class="activity-item">
             <div class="activity-icon"><i class="fas ${a.type === 'sale' ? 'fa-shopping-cart' : 'fa-box'}"></i></div>
             <div>
@@ -98,7 +100,7 @@ function renderDashboardInventory() {
     const quantity = document.getElementById('filterDashQuantity')?.value;
     const status = document.getElementById('filterDashStatus')?.value;
 
-    let filtered = inventoryData.filter(p => {
+    let filtered = DataStore.getProducts().filter(p => {
         const matchName = name ? p.name.toLowerCase().includes(name) : true;
         const matchSKU = sku ? p.sku.toLowerCase().includes(sku) : true;
         const matchQty = quantity ? p.quantity == quantity : true;

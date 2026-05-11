@@ -11,8 +11,9 @@ let allCategories = [];
 let selectedCategories = [];
 
 async function loadInitialProducts() {
-    await apiGetProducts(1, 9999);
-    allCategories = [...new Set(inventoryData.map(p => p.category).filter(Boolean))].sort();
+    const result = await apiGetProducts(1, 9999);
+    DataStore.setProducts(result.products);
+    allCategories = [...new Set(result.products.map(p => p.category).filter(Boolean))].sort();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -197,10 +198,12 @@ async function loadSupplierPage(page) {
                 allSuppliersForFilter = data.suppliers;
             }
             currentSuppliers = allSuppliersForFilter;
+			DataStore.setSuppliers(currentSuppliers);
             applySupplierFilters();
         } else {
             const data = await apiGetSuppliers(page, supplierLimit);
             currentSuppliers = data.suppliers;
+            DataStore.setSuppliers(currentSuppliers);
             totalSupplierPages = data.pages;
             applySupplierFilters();
         }
@@ -239,13 +242,13 @@ window.toggleCategorySelect = function(category, isChecked) {
 };
 
 window.deleteCategoryFromList = function(category) {
-    const realProducts = inventoryData.filter(p => p.category === category && p.name !== '__category_placeholder__');
+    const realProducts = DataStore.getProducts().filter(p => p.category === category && p.name !== '__category_placeholder__');
     if (realProducts.length > 0) {
         showToast(`Cannot delete category "${category}". It is used by ${realProducts.length} real product(s).`, 'error');
         return;
     }
     if (confirm(`Are you sure you want to delete the category "${category}"?`)) {
-        const placeholder = inventoryData.find(p => p.category === category && p.name === '__category_placeholder__');
+        const placeholder = DataStore.getProducts().find(p => p.category === category && p.name === '__category_placeholder__');
         if (placeholder) {
             apiDeleteProduct(placeholder.id).then(() => {
                 allCategories = allCategories.filter(c => c !== category);
@@ -318,7 +321,7 @@ function clearSupplierForm() {
 
 window.editSupplier = async function(id) {
     if (!hasPermission('suppliers')) return;
-    const s = suppliersData.find(s => s.id === id);
+    const s = DataStore.getSuppliers().find(s => s.id === id);
     if (!s) return;
     if (!allCategories.length) await loadInitialProducts();
     

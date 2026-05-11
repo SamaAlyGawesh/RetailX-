@@ -12,10 +12,10 @@ const appState = {
 };
 
 // Global data stores (cached from API)
-let inventoryData = [];
-let salesData = [];
-let suppliersData = [];
-let activityLog = [];
+//let inventoryData = [];
+//let salesData = [];
+//let suppliersData = [];
+//let activityLog = [];
 let usersDatabase = [];
 
 // Role-based permissions

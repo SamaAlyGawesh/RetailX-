@@ -28,9 +28,9 @@ function sendMessage() {
 function getSmartResponse(message) {
     const msg = message.toLowerCase();
     if (msg.includes('hello') || msg.includes('hi')) return 'Hello! How can I help you with your inventory today?';
-    if (msg.includes('inventory')) return `You can manage inventory from the Inventory page. Current total products: ${inventoryData.length}`;
+    if (msg.includes('inventory')) return `You can manage inventory from the Inventory page. Current total products: ${DataStore.getProducts().length}`;
     if (msg.includes('sale')) {
-        const todayTotal = salesData.filter(s => new Date(s.date).toDateString() === new Date().toDateString()).reduce((a, b) => a + b.total, 0);
+        const todayTotal = DataStore.getSales().filter(s => new Date(s.date).toDateString() === new Date().toDateString()).reduce((a, b) => a + b.total, 0);
         return `Today's sales total: ${formatPrice(todayTotal)}`;
     }
     return "I'm your RetailX assistant. Ask me about inventory, sales, or suppliers!";

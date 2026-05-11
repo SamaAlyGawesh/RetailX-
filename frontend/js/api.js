@@ -37,7 +37,7 @@ async function apiRegister(name, email, password, role) {
 async function apiGetProducts(page = 1, limit = 15, search = '') {
     const data = await api('GET', `/products?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`);
     // البيانات تأتي كـ { products, total, page, pages }
-    inventoryData = data.products;  // نضع المصفوفة فقط للتوافق مع الكود القديم
+    //inventoryData = data.products;  // نضع المصفوفة فقط للتوافق مع الكود القديم
     return data;                    // نعيد الكائن كاملاً لاستعماله في pagination
 }
 
@@ -56,7 +56,7 @@ async function apiDeleteProduct(id) {
 // ========== SALES (Pagination) ==========
 async function apiGetSales(page = 1, limit = 15) {
     const data = await api('GET', `/sales?page=${page}&limit=${limit}`);
-    salesData = data.sales;
+    //salesData = data.sales;
     return data;
 }
 
@@ -71,7 +71,7 @@ async function apiDeleteSale(id) {
 // ========== SUPPLIERS (Pagination) ==========
 async function apiGetSuppliers(page = 1, limit = 15) {
     const data = await api('GET', `/suppliers?page=${page}&limit=${limit}`);
-    suppliersData = data.suppliers;
+    //suppliersData = data.suppliers;
     return data;
 }
 
@@ -90,7 +90,7 @@ async function apiDeleteSupplier(id) {
 // ========== ACTIVITY ==========
 async function apiGetActivity() {
     const data = await api('GET', '/activity');
-    activityLog = data;
+    //activityLog = data;
     return data;
 }
 

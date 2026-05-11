@@ -31,12 +31,17 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // --- تحميل البيانات العالمية فوراً ---
             try {
-                const allProds = await apiGetProducts(1, 9999);
-                inventoryData = allProds.products;
-                const allSales = await apiGetSales(1, 9999);
-                salesData = allSales.sales;
-                suppliersData = (await apiGetSuppliers(1, 9999)).suppliers;
-                await apiGetActivity();
+				const [allProds, allSales, allSuppliersRes] = await Promise.all([
+					apiGetProducts(1, 9999),
+					apiGetSales(1, 9999),
+					apiGetSuppliers(1, 9999)
+				]);
+				DataStore.setProducts(allProds.products);
+				DataStore.setSales(allSales.sales);
+				DataStore.setSuppliers(allSuppliersRes.suppliers);
+				
+				const activity = await apiGetActivity();
+				DataStore.setActivity(activity);
             } catch (e) {
                 console.log('Initial data load after login failed', e);
             }

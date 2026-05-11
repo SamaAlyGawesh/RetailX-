@@ -33,14 +33,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log('Backend not available – using empty data');
         }
     }*/
-	if(appState.isAuthenticated){
+	if (appState.isAuthenticated) {
 		try {
-			const allProds = await apiGetProducts(1, 9999);
-			inventoryData = allProds.products;
-			const allSales = await apiGetSales(1, 9999);
-			salesData = allSales.sales;
-			await apiGetSuppliers();
-			await apiGetActivity();
+			const [allProds, allSales, allSuppliersRes] = await Promise.all([
+				apiGetProducts(1, 9999),
+				apiGetSales(1, 9999),
+				apiGetSuppliers(1, 9999)
+			]);
+			DataStore.setProducts(allProds.products);
+			DataStore.setSales(allSales.sales);
+			DataStore.setSuppliers(allSuppliersRes.suppliers);
+			
+			// النشاط مش متقسم صفحات، فخلينا نحتفظ بتحميله كما هو
+			const activity = await apiGetActivity();
+			DataStore.setActivity(activity);
 		} catch (err) {
 			console.log('Backend not available – clearing auth');
 			// فشل التحميل يعني أن التوكن غير صالح؛ نمسح حالة الجلسة
@@ -137,8 +143,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         quickReportsBtn: () => { if (hasPermission('reports')) navigateToPage('reportsPage'); },
         quickLowStockBtn: () => {
             if (!appState.isAuthenticated) { navigateToPage('authPage'); return; }
-            const low = inventoryData.filter(p => p.quantity > 0 && p.quantity <= p.reorderLevel);
-            const out = inventoryData.filter(p => p.quantity === 0);
+            const low = DataStore.getProducts().filter(p => p.quantity > 0 && p.quantity <= p.reorderLevel);
+            const out = DataStore.getProducts().filter(p => p.quantity === 0);
             showToast(`Low Stock (${low.length}):\n${low.map(p => `${p.name}: ${p.quantity}`).join('\n')}\n\nOut of Stock (${out.length}):\n${out.map(p => p.name).join('\n')}`, 'info');
         },
         quickProfileBtn: () => {

@@ -6,9 +6,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!hasPermission('reports')) return;
             const type = btn.getAttribute('data-report');
             // جلب جميع البيانات (بدون pagination) لتكون متاحة لجميع التقارير
-			await apiGetProducts(1, 9999);
-			await apiGetSales(1, 9999);
-			await apiGetSuppliers(1, 9999);
+			const [prods, sales, supps] = await Promise.all([
+				apiGetProducts(1, 9999),
+				apiGetSales(1, 9999),
+				apiGetSuppliers(1, 9999)
+			]);
+			DataStore.setProducts(prods.products);
+			DataStore.setSales(sales.sales);
+			DataStore.setSuppliers(supps.suppliers);
 
             let extra = {};
             if (type === 'stock') {
@@ -35,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('generateReport').onclick = async () => {
         if (!hasPermission('reports')) return;
         //await apiGetSales();
-        const totalSales = salesData.reduce((a, b) => a + b.total, 0);
+        const totalSales = DataStore.getSales().reduce((a, b) => a + b.total, 0);
         const profit = totalSales * 0.4;
         document.getElementById('reportTitle').innerText = 'Profit & Sales Report';
         document.getElementById('reportContent').innerHTML = `<p><strong>Total Sales:</strong> ${formatPrice(totalSales)}</p><p><strong>Estimated Profit:</strong> ${formatPrice(profit)}</p><canvas id="profitChart" width="400" height="200"></canvas>`;
@@ -67,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		const populateCategories = async () => {
             await apiGetProducts(1, 9999);
             const cats = [...new Set(
-                inventoryData
+                DataStore.getProducts()
                     .filter(p => p.name !== '__category_placeholder__')
                     .map(p => p.category)
                     .filter(Boolean)
@@ -88,10 +93,10 @@ function generateReportView(type, extra) {
     let title = '', html = '';
 
     if (type === 'stock') {
-        let filteredData = inventoryData;
+        let filteredData = DataStore.getProducts();
         let categoryFilter = extra?.category || document.getElementById('stockCategoryFilter')?.value || '';
         if (categoryFilter) {
-            filteredData = inventoryData.filter(p => p.category === categoryFilter);
+            filteredData = DataStore.getProducts().filter(p => p.category === categoryFilter);
             title = 'Stock Summary – ' + categoryFilter;
         } else {
             title = 'Stock Summary – All Categories';
@@ -131,17 +136,17 @@ function generateReportView(type, extra) {
     } else if (type === 'lowstock') {
         title = 'Low Stock Alert';
         html = '<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%"><tr style="background:#6d28d9;color:white"><th>Product</th><th>Current</th><th>Reorder</th></tr>';
-        inventoryData.filter(p => p.quantity <= p.reorderLevel).forEach(p => html += `<tr><td>${p.name}</td><td>${p.quantity}</td><td>${p.reorderLevel}</td></tr>`);
+        DataStore.getProducts().filter(p => p.quantity <= p.reorderLevel).forEach(p => html += `<tr><td>${p.name}</td><td>${p.quantity}</td><td>${p.reorderLevel}</td></tr>`);
         html += '</table>';
 
     } else if (type === 'sales') {
 		// فلترة حسب النطاق الزمني
-		let filteredSales = salesData;
+		let filteredSales = DataStore.getSales();
 		const from = extra?.from || document.getElementById('salesDateFrom')?.value || '';
 		const to = extra?.to || document.getElementById('salesDateTo')?.value || '';
 
 		if (from || to) {
-			filteredSales = salesData.filter(s => {
+			filteredSales = DataStore.getSales().filter(s => {
 				const saleDate = new Date(s.date);
 				if (isNaN(saleDate.getTime())) return false;
 				if (from && saleDate < new Date(from)) return false;
@@ -192,7 +197,7 @@ function generateReportView(type, extra) {
 		html = '<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%">' +
 			   '<tr style="background:#6d28d9;color:white"><th>Product</th><th>Qty</th><th>Unit Price</th><th>Total Value</th></tr>';
 		
-		inventoryData.forEach(p => {
+		DataStore.getProducts().forEach(p => {
 			const val = p.price * p.quantity;
 			totalQty += p.quantity;
 			totalValue += val;
@@ -210,7 +215,7 @@ function generateReportView(type, extra) {
 	} else if (type === 'supplier') {
         title = 'Supplier Performance';
         html = '<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%"><tr style="background:#6d28d9;color:white"><th>Name</th><th>Contact</th><th>Email</th><th>Lead Time</th></tr>';
-        suppliersData.forEach(s => html += `<tr><td>${s.name}</td><td>${s.contact||'-'}</td><td>${s.email}</td><td>${s.leadTime} days</td></tr>`);
+        DataStore.getSuppliers().forEach(s => html += `<tr><td>${s.name}</td><td>${s.contact||'-'}</td><td>${s.email}</td><td>${s.leadTime} days</td></tr>`);
         html += '</table>';
 	} else if (type === 'topselling') {
 		// قراءة الفترة من extra
@@ -218,9 +223,9 @@ function generateReportView(type, extra) {
 		const to = extra?.to || document.getElementById('topSellingDateTo')?.value || '';
 
 		// فلترة المبيعات
-		let filteredSales = salesData;
+		let filteredSales = DataStore.getSales();
 		if (from || to) {
-			filteredSales = salesData.filter(s => {
+			filteredSales = DataStore.getSales().filter(s => {
 				const saleDate = new Date(s.date);
 				if (isNaN(saleDate.getTime())) return false;
 				if (from && saleDate < new Date(from)) return false;
@@ -245,7 +250,7 @@ function generateReportView(type, extra) {
 		});
 
 		const productList = Object.entries(productStats).map(([pid, stats]) => {
-			const product = inventoryData.find(p => p.id === Number(pid));
+			const product = DataStore.getProducts().find(p => p.id === Number(pid));
 			return {
 				name: product ? product.name : 'Unknown (ID ' + pid + ')',
 				sku: product ? product.sku : '-',
@@ -284,18 +289,18 @@ function generateReportView(type, extra) {
 
 function generateReportDownload(type) {
     let csv = '', filename = `${type}_report.csv`;
-    if (type === 'stock') { csv = 'Name,SKU,Qty,Price\n'; inventoryData.forEach(p => csv += `"${p.name}","${p.sku}",${p.quantity},${p.price}\n`); }
-    else if (type === 'lowstock') { csv = 'Name,Current,Reorder\n'; inventoryData.filter(p => p.quantity <= p.reorderLevel).forEach(p => csv += `"${p.name}",${p.quantity},${p.reorderLevel}\n`); }
-    else if (type === 'sales') { csv = 'ID,Date,Customer,Items,Total\n'; salesData.forEach(s => csv += `"${s.id}","${s.date}","${s.customer}",${s.items},${s.total}\n`); }
-    else if (type === 'value') { csv = 'Name,Qty,UnitPrice,TotalValue\n'; inventoryData.forEach(p => csv += `"${p.name}",${p.quantity},${p.price},${(p.price*p.quantity).toFixed(2)}\n`); }
-    else if (type === 'supplier') { csv = 'Name,Contact,Email,LeadTime\n'; suppliersData.forEach(s => csv += `"${s.name}","${s.contact||''}","${s.email}",${s.leadTime}\n`); }
+    if (type === 'stock') { csv = 'Name,SKU,Qty,Price\n'; DataStore.getProducts().forEach(p => csv += `"${p.name}","${p.sku}",${p.quantity},${p.price}\n`); }
+    else if (type === 'lowstock') { csv = 'Name,Current,Reorder\n'; DataStore.getProducts().filter(p => p.quantity <= p.reorderLevel).forEach(p => csv += `"${p.name}",${p.quantity},${p.reorderLevel}\n`); }
+    else if (type === 'sales') { csv = 'ID,Date,Customer,Items,Total\n'; DataStore.getSales().forEach(s => csv += `"${s.id}","${s.date}","${s.customer}",${s.items},${s.total}\n`); }
+    else if (type === 'value') { csv = 'Name,Qty,UnitPrice,TotalValue\n'; DataStore.getProducts().forEach(p => csv += `"${p.name}",${p.quantity},${p.price},${(p.price*p.quantity).toFixed(2)}\n`); }
+    else if (type === 'supplier') { csv = 'Name,Contact,Email,LeadTime\n'; DataStore.getSuppliers().forEach(s => csv += `"${s.name}","${s.contact||''}","${s.email}",${s.leadTime}\n`); }
 	else if (type === 'topselling') {
 		const from = document.getElementById('topSellingDateFrom')?.value || '';
 		const to = document.getElementById('topSellingDateTo')?.value || '';
 
-		let filteredSales = salesData;
+		let filteredSales = DataStore.getSales();
 		if (from || to) {
-			filteredSales = salesData.filter(s => {
+			filteredSales = DataStore.getSales().filter(s => {
 				const saleDate = new Date(s.date);
 				if (isNaN(saleDate.getTime())) return false;
 				if (from && saleDate < new Date(from)) return false;
@@ -313,7 +318,7 @@ function generateReportDownload(type) {
 			productStats[pid].revenue += s.total || 0;
 		});
 		const productList = Object.entries(productStats).map(([pid, stats]) => {
-			const product = inventoryData.find(p => p.id === Number(pid));
+			const product = DataStore.getProducts().find(p => p.id === Number(pid));
 			return {
 				name: product ? product.name : 'Unknown (ID ' + pid + ')',
 				sku: product ? product.sku : '-',
@@ -344,7 +349,8 @@ function exportCSV(data, filename) {
     a.click();
 }
 
-function renderMonthlySalesChart() {
+async function renderMonthlySalesChart() {
+	await apiGetSales(1, 9999);
     const ctx = document.getElementById('monthlySalesChart')?.getContext('2d');
     if (!ctx) return;
 
@@ -353,7 +359,7 @@ function renderMonthlySalesChart() {
     if (existingChart) existingChart.destroy();
 
     const monthly = {};
-    salesData.forEach(s => {
+    DataStore.getSales().forEach(s => {
         const d = new Date(s.date);
         if (isNaN(d.getTime())) return;
         const key = d.toLocaleString('default', { month: 'short', year: 'numeric' });
@@ -380,7 +386,9 @@ function renderMonthlySalesChart() {
     });
 }
 
-function renderTopProductsChart() {
+async function renderTopProductsChart() {
+	// ❤️ أضف هذا السطر – بيضمن إن المخزون محدث وكامل
+    await apiGetProducts(1, 9999);
     const ctx = document.getElementById('topProductsChart')?.getContext('2d');
     if (!ctx) return;
 
@@ -391,9 +399,9 @@ function renderTopProductsChart() {
     const from = document.getElementById('salesDateFrom')?.value || '';
     const to = document.getElementById('salesDateTo')?.value || '';
 
-    let filteredSales = salesData;
+    let filteredSales = DataStore.getSales();
     if (from || to) {
-        filteredSales = salesData.filter(s => {
+        filteredSales = DataStore.getSales().filter(s => {
             const saleDate = new Date(s.date);
             if (isNaN(saleDate.getTime())) return false;
             if (from && saleDate < new Date(from)) return false;
@@ -434,7 +442,7 @@ function renderTopProductsChart() {
     }
 
     const productIds = sorted.map(e => Number(e[0]));
-    const products = inventoryData.filter(p => productIds.includes(p.id));
+    const products = DataStore.getProducts().filter(p => productIds.includes(p.id));
     const labels = products.map(p => p.name);
     const data = sorted.map(e => e[1]);
 
