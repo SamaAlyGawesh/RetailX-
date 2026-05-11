@@ -177,30 +177,56 @@ router.post('/import', requireRole('administrator'), upload.single('file'), (req
     const skuIdx = header.indexOf('sku');
     if (nameIdx === -1 || skuIdx === -1) return res.status(400).json({ error: 'CSV must contain Name and SKU columns' });
 
+    const categoryIdx = header.indexOf('category');
+    const priceIdx = header.indexOf('price');
+    const qtyIdx = header.indexOf('quantity');
+
     let imported = 0;
     const transaction = db.transaction(() => {
         for (let i = 1; i < lines.length; i++) {
-            const cols = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
-            if (!cols || cols.length < header.length) continue;
-            const name = cols[nameIdx]?.replace(/^"|"$/g, '');
-            const sku = cols[skuIdx]?.replace(/^"|"$/g, '');
+            // ----- تحليل الصف يدوياً لتفادي مشاكل الأعمدة الفارغة -----
+            const cols = [];
+            let current = '';
+            let inQuotes = false;
+            for (const char of lines[i]) {
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                    current += char;
+                } else if (char === ',' && !inQuotes) {
+                    cols.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            cols.push(current.trim());
+
+            // تنظيف القيم من علامات التنصيص والمسافات
+            const cleanCols = cols.map(c => c.replace(/^"|"$/g, '').trim());
+
+            // استخراج القيم الأساسية
+            const name = cleanCols[nameIdx] || '';
+            const sku = cleanCols[skuIdx] || '';
             if (!name || !sku) continue;
 
+            // هل SKU موجود مسبقاً؟
             const existing = db.prepare('SELECT id FROM products WHERE sku = ?').get(sku);
             if (existing) continue;
 
-            const priceIdx = header.indexOf('price');
-            const qtyIdx = header.indexOf('quantity');
-            const price = priceIdx !== -1 ? parseFloat(cols[priceIdx]?.replace(/^"|"$/g, '')) || 0 : 0;
-            const qty = qtyIdx !== -1 ? parseInt(cols[qtyIdx]?.replace(/^"|"$/g, '')) || 0 : 0;
+            // قراءة الأعمدة الاختيارية
+            const category = categoryIdx !== -1 ? cleanCols[categoryIdx] || '' : '';
+            const price = priceIdx !== -1 ? parseFloat(cleanCols[priceIdx]) || 0 : 0;
+            const qty = qtyIdx !== -1 ? parseInt(cleanCols[qtyIdx]) || 0 : 0;
             const totalCost = price * qty;
 
-            db.prepare(`INSERT INTO products (name, sku, price, quantity, total_cost) VALUES (?,?,?,?,?)`).run(name, sku, price, qty, totalCost);
+            db.prepare(`INSERT INTO products (name, sku, category, price, quantity, total_cost) VALUES (?,?,?,?,?,?)`)
+              .run(name, sku, category, price, qty, totalCost);
             imported++;
         }
     });
+
     transaction();
-    // تنظيف الملف بعد الاستيراد (اختياري)
+    // حذف الملف بعد الاستيراد
     fs.unlinkSync(file.path);
     res.json({ message: `Imported ${imported} products successfully` });
 });
