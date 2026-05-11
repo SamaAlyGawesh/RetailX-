@@ -535,8 +535,12 @@ window.viewInvoice = function(baseId) {
 
     document.getElementById('invoiceDetailContent').innerHTML = `
         <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
-            <div><strong>Invoice:</strong> ${group.id}<br><strong>Date:</strong> ${group.date}<br><strong>Customer:</strong> ${group.customer}</div>
-            <div><strong>Status:</strong> ${group.status}</div>
+            <div>
+                <strong>Invoice:</strong> ${group.id}<br>
+                <strong>Date:</strong> ${group.date}<br>
+                <strong>Customer:</strong> ${group.customer}<br>
+                <strong>Cashier:</strong> ${group.cashier || '—'}
+            </div>
         </div>
         <table class="inventory-table">
             <thead><tr><th>Product</th><th>Category</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead>
@@ -578,7 +582,7 @@ function printInvoiceFromGroup(group) {
         <div class="invoice">
             <div class="header"><h1>RetailX</h1><p>Smart Inventory Management</p></div>
             <div class="details">
-                <div><strong>Invoice:</strong> ${group.id}<br><strong>Date:</strong> ${group.date}<br><strong>Customer:</strong> ${group.customer}</div>
+                <div><strong>Invoice:</strong> ${group.id}<br><strong>Date:</strong> ${group.date}<br><strong>Customer:</strong> ${group.customer}<br><strong>Cashier:</strong> ${group.cashier || '—'}</div>
                 <div><strong>Status:</strong> ${group.status}</div>
             </div>
             <table>
