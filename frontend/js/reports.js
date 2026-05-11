@@ -1,4 +1,5 @@
 // reports.js - Report generation & export
+let lastReportData = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.view-report').forEach(btn => {
@@ -6,14 +7,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!hasPermission('reports')) return;
             const type = btn.getAttribute('data-report');
             // جلب جميع البيانات (بدون pagination) لتكون متاحة لجميع التقارير
-			const [prods, sales, supps] = await Promise.all([
-				apiGetProducts(1, 9999),
-				apiGetSales(1, 9999),
-				apiGetSuppliers(1, 9999)
-			]);
-			DataStore.setProducts(prods.products);
-			DataStore.setSales(sales.sales);
-			DataStore.setSuppliers(supps.suppliers);
+            const [prods, sales, supps] = await Promise.all([
+                apiGetProducts(1, 9999),
+                apiGetSales(1, 9999),
+                apiGetSuppliers(1, 9999)
+            ]);
+            DataStore.setProducts(prods.products);
+            DataStore.setSales(sales.sales);
+            DataStore.setSuppliers(supps.suppliers);
 
             let extra = {};
             if (type === 'stock') {
@@ -52,11 +53,58 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     document.getElementById('exportReportBtn').onclick = () => {
-        const content = document.getElementById('reportContent').innerText;
-        const blob = new Blob([content], { type: 'text/csv' });
+        const title = document.getElementById('reportTitle').innerText;
+        let csv = '\uFEFFsep=;\n'; // BOM + تحديد الفاصل فاصلة منقوطة
+
+        if (lastReportData) {
+            switch (lastReportData.type) {
+                case 'stock':
+                    csv += 'Name;SKU;Category;Qty;Price;Total Value\n';
+                    lastReportData.data.forEach(p => {
+                        csv += `"${p.name}";"${p.sku}";"${p.category || ''}";${p.quantity};${formatPrice(p.price).replace(appState.currency, '')};${(p.price * p.quantity).toFixed(2)}\n`;
+                    });
+                    break;
+                case 'lowstock':
+                    csv += 'Name;Current;Reorder\n';
+                    lastReportData.data.forEach(p => {
+                        csv += `"${p.name}";${p.quantity};${p.reorderLevel}\n`;
+                    });
+                    break;
+                case 'sales':
+                    csv += 'ID;Date;Customer;Items;Total\n';
+                    lastReportData.data.forEach(g => {
+                        csv += `"${g.id}";"${g.date}";"${g.customer}";${g.items};${g.total}\n`;
+                    });
+                    break;
+                case 'value':
+                    csv += 'Name;Qty;UnitPrice;TotalValue\n';
+                    lastReportData.data.forEach(p => {
+                        csv += `"${p.name}";${p.quantity};${formatPrice(p.price).replace(appState.currency, '')};${(p.price * p.quantity).toFixed(2)}\n`;
+                    });
+                    break;
+                case 'supplier':
+                    csv += 'Name;Contact;Email;LeadTime\n';
+                    lastReportData.data.forEach(s => {
+                        csv += `"${s.name}";"${s.contact || ''}";"${s.email}";${s.leadTime}\n`;
+                    });
+                    break;
+                case 'topselling':
+                    csv += 'Product;SKU;QuantitySold;TotalRevenue\n';
+                    lastReportData.data.forEach(p => {
+                        csv += `"${p.name}";"${p.sku}";${p.qty};${p.revenue}\n`;
+                    });
+                    break;
+                default:
+                    csv += document.getElementById('reportContent').innerText;
+            }
+        } else {
+            csv += document.getElementById('reportContent').innerText;
+        }
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = 'report.csv';
+        a.download = (title || 'report').replace(/[^a-zA-Z0-9\u0600-\u06FF]/g, '_') + '.csv';
         a.click();
     };
 
@@ -65,11 +113,11 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTopProductsChart();
     }
 
-        // Populate category filter on page load (فقط إذا كان المستخدم مسجلاً)
+    // Populate category filter on page load (فقط إذا كان المستخدم مسجلاً)
     const stockCatFilter = document.getElementById('stockCategoryFilter');
     if (stockCatFilter && appState.isAuthenticated) {
-		if (!appState.isAuthenticated) return;
-		const populateCategories = async () => {
+        if (!appState.isAuthenticated) return;
+        const populateCategories = async () => {
             await apiGetProducts(1, 9999);
             const cats = [...new Set(
                 DataStore.getProducts()
@@ -133,205 +181,246 @@ function generateReportView(type, extra) {
         html += `<tr style="background:#6d28d9;color:white;font-weight:bold;"><td colspan="3">Grand Total</td><td>${grandQty}</td><td></td><td>${formatPrice(grandValue)}</td></tr>`;
         html += '</tbody></table>';
 
+        // تخزين للتصدير
+        lastReportData = { type: 'stock', data: filteredData };
+
     } else if (type === 'lowstock') {
         title = 'Low Stock Alert';
         html = '<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%"><tr style="background:#6d28d9;color:white"><th>Product</th><th>Current</th><th>Reorder</th></tr>';
         DataStore.getProducts().filter(p => p.quantity <= p.reorderLevel).forEach(p => html += `<tr><td>${p.name}</td><td>${p.quantity}</td><td>${p.reorderLevel}</td></tr>`);
         html += '</table>';
 
+        // تخزين للتصدير
+        const items = DataStore.getProducts().filter(p => p.quantity <= p.reorderLevel);
+        lastReportData = { type: 'lowstock', data: items };
+
     } else if (type === 'sales') {
-		// فلترة حسب النطاق الزمني
-		let filteredSales = DataStore.getSales();
-		const from = extra?.from || document.getElementById('salesDateFrom')?.value || '';
-		const to = extra?.to || document.getElementById('salesDateTo')?.value || '';
+        // فلترة حسب النطاق الزمني
+        let filteredSales = DataStore.getSales();
+        const from = extra?.from || document.getElementById('salesDateFrom')?.value || '';
+        const to = extra?.to || document.getElementById('salesDateTo')?.value || '';
 
-		if (from || to) {
-			filteredSales = DataStore.getSales().filter(s => {
-				const saleDate = new Date(s.date);
-				if (isNaN(saleDate.getTime())) return false;
-				if (from && saleDate < new Date(from)) return false;
-				if (to && saleDate > new Date(to + 'T23:59:59')) return false;
-				return true;
-			});
-			title = 'Sales Report';
-			if (from) title += ` from ${from}`;
-			if (to) title += ` to ${to}`;
-		} else {
-			title = 'Sales Report (All Time)';
-		}
+        if (from || to) {
+            filteredSales = DataStore.getSales().filter(s => {
+                const saleDate = new Date(s.date);
+                if (isNaN(saleDate.getTime())) return false;
+                if (from && saleDate < new Date(from)) return false;
+                if (to && saleDate > new Date(to + 'T23:59:59')) return false;
+                return true;
+            });
+            title = 'Sales Report';
+            if (from) title += ` from ${from}`;
+            if (to) title += ` to ${to}`;
+        } else {
+            title = 'Sales Report (All Time)';
+        }
 
-		// تجميع الفواتير
-		const grouped = groupSales(filteredSales);
+        // تجميع الفواتير
+        const grouped = groupSales(filteredSales);
 
-		let grandTotal = 0;
-		let totalItems = 0;
-		let rows = '';
-		grouped.forEach(g => {
-			totalItems += g.items;
-			grandTotal += g.total;
-			rows += `<tr>
-				<td>${g.id}</td>
-				<td>${g.date}</td>
-				<td>${g.customer}</td>
-				<td>${g.items}</td>
-				<td>${formatPrice(g.total)}</td>
-			</tr>`;
-		});
+        let grandTotal = 0;
+        let totalItems = 0;
+        let rows = '';
+        grouped.forEach(g => {
+            totalItems += g.items;
+            grandTotal += g.total;
+            rows += `<tr>
+                <td>${g.id}</td>
+                <td>${g.date}</td>
+                <td>${g.customer}</td>
+                <td>${g.items}</td>
+                <td>${formatPrice(g.total)}</td>
+            </tr>`;
+        });
 
-		html = `<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%">
-			<thead><tr style="background:#6d28d9;color:white">
-				<th>ID</th><th>Date</th><th>Customer</th><th>Items</th><th>Total</th>
-			</tr></thead>
-			<tbody>${rows}</tbody>
-			<tfoot><tr style="background:#1a202c;color:#cbd5e0;font-weight:bold;">
-				<td colspan="3">Grand Total</td>
-				<td>${totalItems}</td>
-				<td>${formatPrice(grandTotal)}</td>
-			</tr></tfoot></table>`;
+        html = `<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%">
+            <thead><tr style="background:#6d28d9;color:white">
+                <th>ID</th><th>Date</th><th>Customer</th><th>Items</th><th>Total</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+            <tfoot><tr style="background:#1a202c;color:#cbd5e0;font-weight:bold;">
+                <td colspan="3">Grand Total</td>
+                <td>${totalItems}</td>
+                <td>${formatPrice(grandTotal)}</td>
+            </tr></tfoot></table>`;
+
+        // تخزين للتصدير
+        lastReportData = { type: 'sales', data: filteredSales };
 
     } else if (type === 'value') {
-		title = 'Inventory Value';
-		let totalQty = 0;
-		let totalValue = 0;
-		
-		html = '<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%">' +
-			   '<tr style="background:#6d28d9;color:white"><th>Product</th><th>Qty</th><th>Unit Price</th><th>Total Value</th></tr>';
-		
-		DataStore.getProducts().forEach(p => {
-			const val = p.price * p.quantity;
-			totalQty += p.quantity;
-			totalValue += val;
-			html += `<tr><td>${p.name}</td><td>${p.quantity}</td><td>${formatPrice(p.price)}</td><td>${formatPrice(val)}</td></tr>`;
-		});
-		
-		// صف الإجمالي
-		html += `<tr style="background:#1a202c;color:#cbd5e0;font-weight:bold;">
-					<td>Grand Total</td>
-					<td>${totalQty}</td>
-					<td></td>
-					<td>${formatPrice(totalValue)}</td>
-				 </tr>`;
-		html += '</table>';
-	} else if (type === 'supplier') {
+        title = 'Inventory Value';
+        let totalQty = 0;
+        let totalValue = 0;
+
+        html = '<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%">' +
+               '<tr style="background:#6d28d9;color:white"><th>Product</th><th>Qty</th><th>Unit Price</th><th>Total Value</th></tr>';
+
+        DataStore.getProducts().forEach(p => {
+            const val = p.price * p.quantity;
+            totalQty += p.quantity;
+            totalValue += val;
+            html += `<tr><td>${p.name}</td><td>${p.quantity}</td><td>${formatPrice(p.price)}</td><td>${formatPrice(val)}</td></tr>`;
+        });
+
+        // صف الإجمالي
+        html += `<tr style="background:#1a202c;color:#cbd5e0;font-weight:bold;">
+                    <td>Grand Total</td>
+                    <td>${totalQty}</td>
+                    <td></td>
+                    <td>${formatPrice(totalValue)}</td>
+                 </tr>`;
+        html += '</table>';
+
+        // تخزين للتصدير
+        lastReportData = { type: 'value', data: DataStore.getProducts() };
+
+    } else if (type === 'supplier') {
         title = 'Supplier Performance';
         html = '<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%"><tr style="background:#6d28d9;color:white"><th>Name</th><th>Contact</th><th>Email</th><th>Lead Time</th></tr>';
         DataStore.getSuppliers().forEach(s => html += `<tr><td>${s.name}</td><td>${s.contact||'-'}</td><td>${s.email}</td><td>${s.leadTime} days</td></tr>`);
         html += '</table>';
-	} else if (type === 'topselling') {
-		// قراءة الفترة من extra
-		const from = extra?.from || document.getElementById('topSellingDateFrom')?.value || '';
-		const to = extra?.to || document.getElementById('topSellingDateTo')?.value || '';
 
-		// فلترة المبيعات
-		let filteredSales = DataStore.getSales();
-		if (from || to) {
-			filteredSales = DataStore.getSales().filter(s => {
-				const saleDate = new Date(s.date);
-				if (isNaN(saleDate.getTime())) return false;
-				if (from && saleDate < new Date(from)) return false;
-				if (to && saleDate > new Date(to + 'T23:59:59')) return false;
-				return true;
-			});
-			title = 'Top Selling Products';
-			if (from) title += ` from ${from}`;
-			if (to) title += ` to ${to}`;
-		} else {
-			title = 'Top Selling Products (All Time)';
-		}
+        // تخزين للتصدير
+        lastReportData = { type: 'supplier', data: DataStore.getSuppliers() };
 
-		// حساب الكميات والإيرادات لكل منتج
-		const productStats = {};
-		filteredSales.forEach(s => {
-			const pid = Number(s.productId);
-			if (!pid) return;
-			if (!productStats[pid]) productStats[pid] = { qty: 0, revenue: 0 };
-			productStats[pid].qty += s.items || 0;
-			productStats[pid].revenue += s.total || 0;
-		});
+    } else if (type === 'topselling') {
+        // قراءة الفترة من extra
+        const from = extra?.from || document.getElementById('topSellingDateFrom')?.value || '';
+        const to = extra?.to || document.getElementById('topSellingDateTo')?.value || '';
 
-		const productList = Object.entries(productStats).map(([pid, stats]) => {
-			const product = DataStore.getProducts().find(p => p.id === Number(pid));
-			return {
-				name: product ? product.name : 'Unknown (ID ' + pid + ')',
-				sku: product ? product.sku : '-',
-				qty: stats.qty,
-				revenue: stats.revenue
-			};
-		}).sort((a, b) => b.qty - a.qty);
+        // فلترة المبيعات
+        let filteredSales = DataStore.getSales();
+        if (from || to) {
+            filteredSales = DataStore.getSales().filter(s => {
+                const saleDate = new Date(s.date);
+                if (isNaN(saleDate.getTime())) return false;
+                if (from && saleDate < new Date(from)) return false;
+                if (to && saleDate > new Date(to + 'T23:59:59')) return false;
+                return true;
+            });
+            title = 'Top Selling Products';
+            if (from) title += ` from ${from}`;
+            if (to) title += ` to ${to}`;
+        } else {
+            title = 'Top Selling Products (All Time)';
+        }
 
-		// حساب الإجمالي
-		let totalQty = 0, totalRevenue = 0;
-		let rows = '';
-		productList.forEach(p => {
-			totalQty += p.qty;
-			totalRevenue += p.revenue;
-			rows += `<tr><td>${p.name}</td><td>${p.sku}</td><td>${p.qty}</td><td>${formatPrice(p.revenue)}</td></tr>`;
-		});
+        // حساب الكميات والإيرادات لكل منتج
+        const productStats = {};
+        filteredSales.forEach(s => {
+            const pid = Number(s.productId);
+            if (!pid) return;
+            if (!productStats[pid]) productStats[pid] = { qty: 0, revenue: 0 };
+            productStats[pid].qty += s.items || 0;
+            productStats[pid].revenue += s.total || 0;
+        });
 
-		html = `<div style="max-height: 60vh; overflow-y: auto;">
-			<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%;font-size:14px;">
-				<thead><tr style="background:#6d28d9;color:white;position:sticky;top:0;">
-					<th>Product</th><th>SKU</th><th>Quantity Sold</th><th>Total Revenue</th>
-				</tr></thead>
-				<tbody>${rows}</tbody>
-				<tfoot><tr style="background:#1a202c;color:#cbd5e0;font-weight:bold;position:sticky;bottom:0;">
-					<td colspan="2">Grand Total</td>
-					<td>${totalQty}</td>
-					<td>${formatPrice(totalRevenue)}</td>
-				</tr></tfoot>
-			</table>
-		</div>`;
-	}
+        const productList = Object.entries(productStats).map(([pid, stats]) => {
+            const product = DataStore.getProducts().find(p => p.id === Number(pid));
+            return {
+                name: product ? product.name : 'Unknown (ID ' + pid + ')',
+                sku: product ? product.sku : '-',
+                qty: stats.qty,
+                revenue: stats.revenue
+            };
+        }).sort((a, b) => b.qty - a.qty);
+
+        // حساب الإجمالي
+        let totalQty = 0, totalRevenue = 0;
+        let rows = '';
+        productList.forEach(p => {
+            totalQty += p.qty;
+            totalRevenue += p.revenue;
+            rows += `<tr><td>${p.name}</td><td>${p.sku}</td><td>${p.qty}</td><td>${formatPrice(p.revenue)}</td></tr>`;
+        });
+
+        html = `<div style="max-height: 60vh; overflow-y: auto;">
+            <table border="1" cellpadding="8" style="border-collapse:collapse;width:100%;font-size:14px;">
+                <thead><tr style="background:#6d28d9;color:white;position:sticky;top:0;">
+                    <th>Product</th><th>SKU</th><th>Quantity Sold</th><th>Total Revenue</th>
+                </tr></thead>
+                <tbody>${rows}</tbody>
+                <tfoot><tr style="background:#1a202c;color:#cbd5e0;font-weight:bold;position:sticky;bottom:0;">
+                    <td colspan="2">Grand Total</td>
+                    <td>${totalQty}</td>
+                    <td>${formatPrice(totalRevenue)}</td>
+                </tr></tfoot>
+            </table>
+        </div>`;
+
+        // تخزين للتصدير
+        lastReportData = { type: 'topselling', data: productList };
+    }
+
     document.getElementById('reportTitle').innerText = title;
     document.getElementById('reportContent').innerHTML = html;
     document.getElementById('reportViewModal').classList.add('active');
 }
 
 function generateReportDownload(type) {
-    let csv = '', filename = `${type}_report.csv`;
-    if (type === 'stock') { csv = 'Name,SKU,Qty,Price\n'; DataStore.getProducts().forEach(p => csv += `"${p.name}","${p.sku}",${p.quantity},${p.price}\n`); }
-    else if (type === 'lowstock') { csv = 'Name,Current,Reorder\n'; DataStore.getProducts().filter(p => p.quantity <= p.reorderLevel).forEach(p => csv += `"${p.name}",${p.quantity},${p.reorderLevel}\n`); }
-    else if (type === 'sales') { csv = 'ID,Date,Customer,Items,Total\n'; DataStore.getSales().forEach(s => csv += `"${s.id}","${s.date}","${s.customer}",${s.items},${s.total}\n`); }
-    else if (type === 'value') { csv = 'Name,Qty,UnitPrice,TotalValue\n'; DataStore.getProducts().forEach(p => csv += `"${p.name}",${p.quantity},${p.price},${(p.price*p.quantity).toFixed(2)}\n`); }
-    else if (type === 'supplier') { csv = 'Name,Contact,Email,LeadTime\n'; DataStore.getSuppliers().forEach(s => csv += `"${s.name}","${s.contact||''}","${s.email}",${s.leadTime}\n`); }
-	else if (type === 'topselling') {
-		const from = document.getElementById('topSellingDateFrom')?.value || '';
-		const to = document.getElementById('topSellingDateTo')?.value || '';
+    let tsv = '', filename = `${type}_report.csv`;
+    const BOM = '\uFEFF'; // دعم العربي
 
-		let filteredSales = DataStore.getSales();
-		if (from || to) {
-			filteredSales = DataStore.getSales().filter(s => {
-				const saleDate = new Date(s.date);
-				if (isNaN(saleDate.getTime())) return false;
-				if (from && saleDate < new Date(from)) return false;
-				if (to && saleDate > new Date(to + 'T23:59:59')) return false;
-				return true;
-			});
-		}
+    if (type === 'stock') {
+        tsv += BOM + 'Name\tSKU\tQty\tPrice\n';
+        DataStore.getProducts().forEach(p => tsv += `${p.name}\t${p.sku}\t${p.quantity}\t${p.price}\n`);
+    }
+    else if (type === 'lowstock') {
+        tsv += BOM + 'Name\tCurrent\tReorder\n';
+        DataStore.getProducts().filter(p => p.quantity <= p.reorderLevel).forEach(p => tsv += `${p.name}\t${p.quantity}\t${p.reorderLevel}\n`);
+    }
+    else if (type === 'sales') {
+        tsv += BOM + 'ID\tDate\tCustomer\tItems\tTotal\n';
+        DataStore.getSales().forEach(s => tsv += `${s.id}\t${s.date}\t${s.customer}\t${s.items}\t${s.total}\n`);
+    }
+    else if (type === 'value') {
+        tsv += BOM + 'Name\tQty\tUnitPrice\tTotalValue\n';
+        DataStore.getProducts().forEach(p => tsv += `${p.name}\t${p.quantity}\t${p.price}\t${(p.price * p.quantity).toFixed(2)}\n`);
+    }
+    else if (type === 'supplier') {
+        tsv += BOM + 'Name\tContact\tEmail\tLeadTime\n';
+        DataStore.getSuppliers().forEach(s => tsv += `${s.name}\t${s.contact || ''}\t${s.email}\t${s.leadTime}\n`);
+    }
+    else if (type === 'topselling') {
+        const from = document.getElementById('topSellingDateFrom')?.value || '';
+        const to = document.getElementById('topSellingDateTo')?.value || '';
 
-		const productStats = {};
-		filteredSales.forEach(s => {
-			const pid = Number(s.productId);
-			if (!pid) return;
-			if (!productStats[pid]) productStats[pid] = { qty: 0, revenue: 0 };
-			productStats[pid].qty += s.items || 0;
-			productStats[pid].revenue += s.total || 0;
-		});
-		const productList = Object.entries(productStats).map(([pid, stats]) => {
-			const product = DataStore.getProducts().find(p => p.id === Number(pid));
-			return {
-				name: product ? product.name : 'Unknown (ID ' + pid + ')',
-				sku: product ? product.sku : '-',
-				qty: stats.qty,
-				revenue: stats.revenue
-			};
-		}).sort((a, b) => b.qty - a.qty);
+        let filteredSales = DataStore.getSales();
+        if (from || to) {
+            filteredSales = DataStore.getSales().filter(s => {
+                const saleDate = new Date(s.date);
+                if (isNaN(saleDate.getTime())) return false;
+                if (from && saleDate < new Date(from)) return false;
+                if (to && saleDate > new Date(to + 'T23:59:59')) return false;
+                return true;
+            });
+        }
 
-		csv = 'Product,SKU,QuantitySold,TotalRevenue\n';
-		productList.forEach(p => csv += `"${p.name}","${p.sku}",${p.qty},${p.revenue}\n`);
-		filename = 'topselling_report.csv';
-	}
-    const blob = new Blob([csv], { type: 'text/csv' });
+        const productStats = {};
+        filteredSales.forEach(s => {
+            const pid = Number(s.productId);
+            if (!pid) return;
+            if (!productStats[pid]) productStats[pid] = { qty: 0, revenue: 0 };
+            productStats[pid].qty += s.items || 0;
+            productStats[pid].revenue += s.total || 0;
+        });
+
+        const productList = Object.entries(productStats).map(([pid, stats]) => {
+            const product = DataStore.getProducts().find(p => p.id === Number(pid));
+            return {
+                name: product ? product.name : 'Unknown (ID ' + pid + ')',
+                sku: product ? product.sku : '-',
+                qty: stats.qty,
+                revenue: stats.revenue
+            };
+        }).sort((a, b) => b.qty - a.qty);
+
+        tsv += BOM + 'Product\tSKU\tQuantitySold\tTotalRevenue\n';
+        productList.forEach(p => tsv += `${p.name}\t${p.sku}\t${p.qty}\t${p.revenue}\n`);
+        filename = 'topselling_report.csv';
+    }
+
+    const blob = new Blob([tsv], { type: 'text/tab-separated-values;charset=utf-8;' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = filename;
