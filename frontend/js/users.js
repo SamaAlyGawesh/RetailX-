@@ -8,19 +8,19 @@ let totalUserPages = 1;
 let allUsersForFilter = []; // للتخزين المؤقت عند الفلترة
 
 document.addEventListener('DOMContentLoaded', () => {
-    const navUsers = document.getElementById('navUsers');
-    if (navUsers) {
-        navUsers.onclick = (e) => {
-            e.preventDefault();
-            if (!appState.isAuthenticated || !hasPermission('manageUsers')) {
-                navigateToPage('authPage');
-                return;
-            }
-            navigateToPage('usersPage');
-            allUsersForFilter = [];
-            loadUserPage(1);
-        };
-    }
+    // const navUsers = document.getElementById('navUsers');
+    // if (navUsers) {
+    //     navUsers.onclick = (e) => {
+    //         e.preventDefault();
+    //         if (!appState.isAuthenticated || !hasPermission('manageUsers')) {
+    //             navigateToPage('authPage');
+    //             return;
+    //         }
+    //         navigateToPage('usersPage');
+    //         allUsersForFilter = [];
+    //         loadUserPage(1);
+    //     };
+    // }
 
     const debouncedLoadUsers = debounce(() => {
 		allUsersForFilter = [];

@@ -25,7 +25,8 @@ const permissions = {
         addProduct: true, editProduct: true, deleteProduct: true,
         addSale: true, deleteSale: true,
         addSupplier: true, editSupplier: true, deleteSupplier: true,
-        manageUsers: true, importExport: true 
+        manageUsers: true, importExport: true,
+        cashiers: true
     },
     clerk: { 
         dashboard: true, inventory: true, reports: true,
@@ -113,17 +114,49 @@ function clearAuthState() {
     localStorage.removeItem('retailx_token');
     localStorage.removeItem('retailx_user');
 }
+/*
+function updateAuthUI() {
+    const userNameDisplay = document.getElementById('userNameDisplay');
+    const signOutLink = document.getElementById('signOutLink');
+    const sidebar = document.getElementById('sidebar');
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    const shiftStatus = document.getElementById('shiftStatusText');
+    
+    if (appState.isAuthenticated && appState.currentUser) {
+        userNameDisplay.innerText = appState.currentUser.name;
+        signOutLink.innerHTML = '<i class="fas fa-sign-out-alt"></i> Sign Out';
+        if (sidebar) sidebar.style.display = 'flex';
+        if (hamburgerBtn) hamburgerBtn.style.display = 'flex';
+        if (shiftStatus) shiftStatus.style.display = 'inline';
+    } else {
+        userNameDisplay.innerText = 'Sign In';
+        signOutLink.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+        if (sidebar) sidebar.style.display = 'none';
+        if (hamburgerBtn) hamburgerBtn.style.display = 'none';
+        if (shiftStatus) shiftStatus.style.display = 'none';
+    }
+}
+*/
 
 function updateAuthUI() {
     const userNameDisplay = document.getElementById('userNameDisplay');
     const signOutLink = document.getElementById('signOutLink');
-    
+    const sidebar = document.getElementById('sidebar');
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    const shiftStatus = document.getElementById('shiftStatusText');
+
     if (appState.isAuthenticated && appState.currentUser) {
-        userNameDisplay.innerText = appState.currentUser.name;   // أو 'Sign Out' لو تحب
+        userNameDisplay.innerText = appState.currentUser.name;
         signOutLink.innerHTML = '<i class="fas fa-sign-out-alt"></i> Sign Out';
+        document.body.classList.add('logged-in');
+        if (shiftStatus) shiftStatus.style.display = 'inline';
     } else {
         userNameDisplay.innerText = 'Sign In';
         signOutLink.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+        document.body.classList.remove('logged-in');
+        if (sidebar) sidebar.classList.remove('open'); // تأكيد إخفاء الموبايل
+        if (hamburgerBtn) hamburgerBtn.classList.remove('active');
+        if (shiftStatus) shiftStatus.style.display = 'none';
     }
 }
 

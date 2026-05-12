@@ -35,7 +35,8 @@ router.post('/', requireRole('administrator', 'cashier', 'sales'), (req, res) =>
     if (product.quantity < quantity) return res.status(400).json({ error: `Insufficient stock. Only ${product.quantity} available.` });
 
     const total = product.price * quantity;
-    const id = 'TXN-' + Date.now();
+    //const id = 'TXN-' + Date.now();
+    const id = 'TXN-' + Date.now() + '-' + Math.random().toString(36).substring(2, 8);
     const date = new Date().toLocaleString();
 
     db.prepare('UPDATE products SET quantity = quantity - ? WHERE id = ?').run(quantity, productId);
@@ -83,7 +84,7 @@ router.delete('/:id', requireRole('administrator'), (req, res) => {
 // POST /api/sales/multi
 router.post('/multi', requireRole('administrator', 'cashier', 'sales'), (req, res) => {
     try {
-        const { customer, items, discount, paymentMethod, notes, cashier, saleDate } = req.body;
+        const { customer, items, discount, tax, paymentMethod, notes, cashier, saleDate } = req.body;
         if (!items || !Array.isArray(items) || items.length === 0)
             return res.status(400).json({ error: 'Items array required' });
 
@@ -100,7 +101,8 @@ router.post('/multi', requireRole('administrator', 'cashier', 'sales'), (req, re
             finalSaleDate = new Date().toLocaleString();
         }
 
-        const saleId = 'TXN-' + Date.now();
+        //const saleId = 'TXN-' + Date.now();
+        const saleId = 'TXN-' + Date.now() + '-' + Math.random().toString(36).substring(2, 8);
         let subtotal = 0, totalItemsCount = 0;
 
         // التحقق من المخزون أولاً
@@ -113,7 +115,9 @@ router.post('/multi', requireRole('administrator', 'cashier', 'sales'), (req, re
         }
 
         const discountAmount = (subtotal * (discount || 0)) / 100;
-        const grandTotal = subtotal - discountAmount;
+        const taxPercent = tax || 0;
+        const taxAmount = (subtotal * taxPercent) / 100;
+        const grandTotal = subtotal - discountAmount + taxAmount;
 
         // تنفيذ العملية داخل معاملة واحدة
         const transaction = db.transaction(() => {
@@ -123,9 +127,8 @@ router.post('/multi', requireRole('administrator', 'cashier', 'sales'), (req, re
                 const itemTotal = product.price * item.quantity;
                 
                 // إدراج صف البيع
-                db.prepare('INSERT INTO sales (id, date, customer, items, total, status, cashier, productId, category) VALUES (?,?,?,?,?,?,?,?,?)')
-                    .run(saleId + '-' + item.productId, finalSaleDate, customer || 'Walk-in Customer', item.quantity, itemTotal, 'Completed', cashier, item.productId, item.category || '');
-                
+                db.prepare('INSERT INTO sales (id, date, customer, items, total, status, cashier, productId, category, discount_percent, tax_percent) VALUES (?,?,?,?,?,?,?,?,?,?,?)')
+                .run(saleId + '-' + item.productId, finalSaleDate, customer || 'Walk-in Customer', item.quantity, itemTotal, 'Completed', cashier, item.productId, item.category || '', discount || 0, taxPercent);
                 // حساب المتوسط المرجح وخصم المخزون
                 const currentQty = product.quantity;
                 const currentTotalCost = product.total_cost || 0;

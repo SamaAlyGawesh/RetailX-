@@ -8,11 +8,45 @@ document.addEventListener('DOMContentLoaded', async () => {
         else console.warn(`Element #${id} not found`);
     }
 
+    // ========== SIDEBAR NAVIGATION ==========
+    document.querySelectorAll('.sidebar-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            const pageId = item.getAttribute('data-page');
+            navigateToPage(pageId);
+            document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+            item.classList.add('active');
+        });
+    });
+
+    // ========== HAMBURGER & SIDEBAR ==========
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    const sidebar = document.getElementById('sidebar');
+
+    if (hamburgerBtn && sidebar) {
+        hamburgerBtn.addEventListener('click', () => {
+            const isCollapsed = sidebar.classList.toggle('collapsed');
+            // تعديل الكلاس النشط للهامبرغر
+            hamburgerBtn.classList.toggle('active', isCollapsed);
+            // تحديث تمدد المحتوى
+            const mainContent = document.querySelector('.main-content');
+            if (mainContent) {
+                mainContent.classList.toggle('expanded', isCollapsed);
+            }
+        });
+
+        // sidebar.querySelectorAll('.sidebar-item').forEach(link => {
+        //     link.addEventListener('click', () => {
+        //         sidebar.classList.remove('open');
+        //         hamburgerBtn.classList.remove('active');
+        //     });
+        // });
+    }
+
     // ---- أهم شيء: إغلاق المودالات دائماً ----
     document.querySelectorAll('.close-modal').forEach(btn => {
         if (btn) btn.onclick = function() { this.closest('.modal').classList.remove('active'); };
     });
-    //window.onclick = (e) => { if (e.target.classList.contains('modal')) e.target.classList.remove('active'); };
 
     // ---- تحميل بيانات الجلسة ----
     if (typeof appState === 'undefined') {
@@ -23,116 +57,51 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ---- استعادة الجلسة إن وجدت ----
     loadAuthState();
     applyRoleBasedAccess();
-    /*if (appState.isAuthenticated) {
-        try {
-            await apiGetProducts();
-            await apiGetSales();
-            await apiGetSuppliers();
-            await apiGetActivity();
-        } catch (err) {
-            console.log('Backend not available – using empty data');
-        }
-    }*/
-	if (appState.isAuthenticated) {
-		try {
-			const [allProds, allSales, allSuppliersRes] = await Promise.all([
-				apiGetProducts(1, 9999),
-				apiGetSales(1, 9999),
-				apiGetSuppliers(1, 9999)
-			]);
-			DataStore.setProducts(allProds.products);
-			DataStore.setSales(allSales.sales);
-			DataStore.setSuppliers(allSuppliersRes.suppliers);
-			
-			// النشاط مش متقسم صفحات، فخلينا نحتفظ بتحميله كما هو
-			const activity = await apiGetActivity();
-			DataStore.setActivity(activity);
-		} catch (err) {
-			console.log('Backend not available – clearing auth');
-			// فشل التحميل يعني أن التوكن غير صالح؛ نمسح حالة الجلسة
-			appState.isAuthenticated = false;
-			appState.token = null;
-			appState.currentUser = null;
-			clearAuthState();
-			// تحديث واجهة المستخدم مباشرة
-			updateAuthUI();
-			applyRoleBasedAccess();
-		}
-	}
 
-    // ========== NAVIGATION BAR (آمنة بالكامل) ==========
-    safeBind('homeLink', (e) => { e.preventDefault(); navigateToPage('homePage'); });
-    safeBind('navHome', (e) => { e.preventDefault(); navigateToPage('homePage'); });
-    safeBind('navDashboard', (e) => {
-        e.preventDefault();
-        if (!appState.isAuthenticated) { navigateToPage('authPage'); return; }
-        if (!hasPermission('dashboard')) return;
-        navigateToPage('dashboardPage');
-    });
-    safeBind('navInventory', (e) => {
-        e.preventDefault();
-        if (!appState.isAuthenticated) { navigateToPage('authPage'); return; }
-        if (!hasPermission('inventory')) return;
-        navigateToPage('inventoryPage');
-    });
-    safeBind('navSales', (e) => {
-        e.preventDefault();
-        if (!appState.isAuthenticated) { navigateToPage('authPage'); return; }
-        if (!hasPermission('sales')) return;
-        navigateToPage('salesPage');
-    });
-    safeBind('navReports', (e) => {
-        e.preventDefault();
-        if (!appState.isAuthenticated) { navigateToPage('authPage'); return; }
-        if (!hasPermission('reports')) return;
-        navigateToPage('reportsPage');
-    });
-    safeBind('navSuppliers', (e) => {
-        e.preventDefault();
-        if (!appState.isAuthenticated) { navigateToPage('authPage'); return; }
-        if (!hasPermission('suppliers')) return;
-        navigateToPage('suppliersPage');
-    });
-	/*
-    safeBind('navSettings', (e) => {
-        e.preventDefault();
-        if (!appState.isAuthenticated) { navigateToPage('authPage'); return; }
-        if (!hasPermission('settings')) return;
-        navigateToPage('settingsPage');
-    });
-	*/
-    // Get Started button on home page
-    safeBind('getStartedBtn', () => {
     if (appState.isAuthenticated) {
-        if (hasPermission('dashboard')) {
-            navigateToPage('dashboardPage');
-        } else {
-            navigateToPage('homePage');   // أو صفحة بديلة لو حابب
+        try {
+            const [allProds, allSales, allSuppliersRes] = await Promise.all([
+                apiGetProducts(1, 9999),
+                apiGetSales(1, 9999),
+                apiGetSuppliers(1, 9999)
+            ]);
+            DataStore.setProducts(allProds.products);
+            DataStore.setSales(allSales.sales);
+            DataStore.setSuppliers(allSuppliersRes.suppliers);
+            
+            const activity = await apiGetActivity();
+            DataStore.setActivity(activity);
+            fetchAndDisplayShiftStatus(); // أول مرة
+            // تحديث الحالة كل دقيقة لو حابب (اختياري)
+            setInterval(fetchAndDisplayShiftStatus, 60000);
+        } catch (err) {
+            console.log('Backend not available – clearing auth');
+            appState.isAuthenticated = false;
+            appState.token = null;
+            appState.currentUser = null;
+            clearAuthState();
+            updateAuthUI();
+            applyRoleBasedAccess();
         }
-    } else {
-        navigateToPage('authPage');
     }
-	});
 
-    // Theme toggle
-    safeBind('themeToggle', () => {
-        document.body.classList.toggle('light-theme');
-        const icon = document.querySelector('#themeToggle i');
-        if (icon) icon.className = document.body.classList.contains('light-theme') ? 'fas fa-sun' : 'fas fa-moon';
+    // ========== NAVIGATION (روابط أساسية فقط) ==========
+    safeBind('homeLink', (e) => { e.preventDefault(); navigateToPage('homePage'); });
+
+    // Get Started button
+    safeBind('getStartedBtn', () => {
+        if (appState.isAuthenticated) {
+            if (hasPermission('dashboard')) {
+                navigateToPage('dashboardPage');
+            } else {
+                navigateToPage('homePage');
+            }
+        } else {
+            navigateToPage('authPage');
+        }
     });
 
-    // Language toggle
-    safeBind('languageToggle', () => {
-        currentLang = currentLang === 'en' ? 'ar' : 'en';
-        applyRoleBasedAccess();
-        applyLanguage();
-        renderInventoryTable();
-        renderSuppliersTable();
-        renderSalesTable();
-        updateDashboardStats();
-    });
-
-    // ---- Quick Access buttons (طريقة آمنة) ----
+    // ---- Quick Access buttons ----
     const quickMap = {
         quickDashboardBtn: () => { if (hasPermission('dashboard')) navigateToPage('dashboardPage'); },
         quickInventoryBtn: () => { if (hasPermission('inventory')) navigateToPage('inventoryPage'); },
@@ -197,39 +166,78 @@ function navigateToPage(pageId) {
     if (pageId === 'salesPage') renderSalesTable();
     if (pageId === 'suppliersPage') renderSuppliersTable();
     if (pageId === 'reportsPage') {
-        // تدمير المخططات القديمة أولاً (لتجنب تراكم المخططات الوهمية)
         const monthlyChart = Chart.getChart('monthlySalesChart');
         if (monthlyChart) monthlyChart.destroy();
         const topChart = Chart.getChart('topProductsChart');
         if (topChart) topChart.destroy();
-
-        // استدعاء الرسوم البيانية بعد أن تصبح عناصر Canvas جاهزة
         setTimeout(() => {
-            if (typeof renderMonthlySalesChart === 'function') {
-                renderMonthlySalesChart();
-            }
-            if (typeof renderTopProductsChart === 'function') {
-                renderTopProductsChart();
-            }
+            if (typeof renderMonthlySalesChart === 'function') renderMonthlySalesChart();
+            if (typeof renderTopProductsChart === 'function') renderTopProductsChart();
         }, 200);
+    }
+
+    // ✅ الصفحات الجديدة:
+    if (pageId === 'usersPage') {
+        if (typeof loadUserPage === 'function') loadUserPage(1);
+    }
+    if (pageId === 'posPage') {
+        // نتأكد إن بيانات المبيعات محملة
+        if (typeof checkShift === 'function') {
+            checkShift(); // استدعاء الدالة من pos.js مباشرة
+        }
+    }
+    if (pageId === 'cashiersPage') {
+        if (typeof loadCashiersPage === 'function') loadCashiersPage();
+        if (typeof loadLiveCashiers === 'function') loadLiveCashiers();
     }
     
     window.scrollTo(0, 0);
 }
 
 function applyRoleBasedAccess() {
-    //const pages = ['dashboard', 'inventory', 'sales', 'reports', 'suppliers', 'users', 'settings'];
-	const pages = ['dashboard', 'inventory', 'sales', 'reports', 'suppliers', 'users'];
     const role = appState.isAuthenticated ? appState.currentUser.role : 'guest';
-    pages.forEach(page => {
-        const el = document.getElementById(`nav${page.charAt(0).toUpperCase() + page.slice(1)}`);
-        if (el) {
-            if (page === 'users') {
-                el.style.display = (role === 'administrator' && permissions.administrator.manageUsers) ? 'flex' : 'none';
-            } else {
-                const perm = permissions[role]?.[page];
-                el.style.display = perm ? 'flex' : 'none';
-            }
+    const userPermissions = permissions[role] || {};
+
+    // التحكم في عناصر الـ Sidebar
+    document.querySelectorAll('.sidebar-item').forEach(item => {
+        const page = item.getAttribute('data-page')?.replace('Page', ''); // dashboardPage -> dashboard
+        if (!page) return;
+
+        if (page === 'users') {
+            item.style.display = (role === 'administrator' && permissions.administrator.manageUsers) ? 'flex' : 'none';
+        } else if (page === 'cashiers') {
+            item.style.display = userPermissions.cashiers ? 'flex' : 'none';
+        } else if (page === 'pos') {
+            item.style.display = userPermissions.sales ? 'flex' : 'none';
+        } else {
+            const perm = userPermissions[page];
+            item.style.display = perm ? 'flex' : 'none';
         }
     });
+}
+
+// ========== تحديث مؤشر حالة الشيفت في الشريط العلوي ==========
+window.updateShiftStatus = function(shift) {
+    const statusEl = document.getElementById('shiftStatusText');
+    if (!statusEl) return;
+    if (shift) {
+        statusEl.innerHTML = `<i class="fas fa-circle" style="color:#10b981; font-size:10px;"></i> Shift active · ${shift.start_time}`;
+    } else {
+        statusEl.innerHTML = `<i class="fas fa-circle" style="color:#94a3b8; font-size:10px;"></i> No shift`;
+    }
+};
+
+// استدعاء حالة الشيفت الحالية بمجرد التوثيق
+async function fetchAndDisplayShiftStatus() {
+    if (!appState.isAuthenticated || !hasPermission('sales')) return;
+    try {
+        const res = await fetch(`${API_BASE}/shifts/my-shift`, {
+            headers: { 'Authorization': `Bearer ${appState.token}` }
+        });
+        if (!res.ok) return;
+        const shift = await res.json();
+        window.updateShiftStatus(shift || null);
+    } catch (e) {
+        // فشل، لا شيء
+    }
 }

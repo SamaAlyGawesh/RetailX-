@@ -34,4 +34,6 @@ app.use(express.static('../frontend'));
 
 app.use('/files', require('./routes/fileView'));
 
+app.use('/api/shifts', require('./routes/shifts'));
+
 app.listen(PORT, () => console.log(`RetailX API running on port ${PORT}`));

@@ -14,9 +14,8 @@ let allSalesForFilter = [];
 function groupSales(salesArray) {
     const grouped = {};
     salesArray.forEach(s => {
-        // استخراج baseId (الجزء قبل آخر "-")
         const parts = s.id.split('-');
-        parts.pop(); // إزالة productId الملحق
+        parts.pop();
         const baseId = parts.join('-');
         if (!grouped[baseId]) {
             grouped[baseId] = {
@@ -26,29 +25,41 @@ function groupSales(salesArray) {
                 items: 0,
                 total: 0,
                 status: s.status,
-                cashier: s.cashier || '', 
+                cashier: s.cashier || '',
+                discount_percent: s.discount_percent || 0,
+                tax_percent: s.tax_percent || 0,
                 products: [],
                 categories: new Set()
             };
         }
         const group = grouped[baseId];
         group.items += s.items || 0;
-        group.total += s.total || 0;
+        const lineTotal = s.total || 0;
+        group.total += lineTotal;
         group.products.push({
             productId: s.productId,
             name: DataStore.getProducts().find(p => p.id === s.productId)?.name || 'Unknown',
             category: s.category || '',
             quantity: s.items,
             unitPrice: s.total / s.items,
-            total: s.total
+            total: lineTotal
         });
         if (s.category) group.categories.add(s.category);
     });
-    return Object.values(grouped).map(g => ({
-		...g,
-		categoriesSet: g.categories, // احتفظ بالـ Set لاستخدام الفلتر
-		category: Array.from(g.categories).join(', ') // النص اللي ظاهر في الجدول
-	}));
+    return Object.values(grouped).map(g => {
+        const discountAmount = g.total * g.discount_percent / 100;
+        const taxAmount = g.total * g.tax_percent / 100;
+        const grandTotal = g.total - discountAmount + taxAmount;
+        return {
+            ...g,
+            subtotal: g.total,
+            discountAmount,
+            taxAmount,
+            total: grandTotal,  // الإجمالي بعد الخصم والضريبة
+            categoriesSet: g.categories,
+            category: Array.from(g.categories).join(', ')
+        };
+    });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -68,6 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
         saleItems = [];
         document.getElementById('saleCustomer').value = 'Walk-in Customer';
         document.getElementById('saleDiscount').value = 0;
+        document.getElementById('saleTax').value = 0;
         document.getElementById('salePaymentMethod').value = 'Cash';
         document.getElementById('saleNotes').value = '';
         document.getElementById('saleItemsBody').innerHTML = '';
@@ -129,7 +141,22 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         if (isProcessingSale) return;
         if (!appState.isAuthenticated || !hasPermission('sales')) return;
-
+        // تأكد من أن الكاشير لديه وردية نشطة
+        try {
+            const res = await fetch(`${API_BASE}/shifts/my-shift`, {
+                headers: { 'Authorization': `Bearer ${appState.token}` }
+            });
+            if (!res.ok) throw new Error('Failed to check shift');
+            const shift = await res.json();
+            if (!shift) {
+                showToast('You must start your shift before making any sales.', 'error');
+                return;
+            }
+        } catch (err) {
+            showToast('Error verifying shift status', 'error');
+            return;
+        }
+        
         if (saleItems.length === 0) { showToast('Add at least one product.', 'error'); return; }
 
         for (let i = 0; i < saleItems.length; i++) {
@@ -174,7 +201,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }));
 
         try {
-            await apiCreateMultiSale(customer, items, discount, paymentMethod, notes, appState.currentUser.name, utcDateStr);
+            const taxPercent = parseFloat(document.getElementById('saleTax')?.value) || 0;
+            await apiCreateMultiSale(customer, items, discount, taxPercent, paymentMethod, notes, appState.currentUser.name, utcDateStr);
             // تحديث المخزون في DataStore
 			const prodsData = await apiGetProducts(1, 9999);
 			DataStore.setProducts(prodsData.products);
@@ -184,12 +212,19 @@ document.addEventListener('DOMContentLoaded', () => {
             updateDashboardStats();
             document.getElementById('newSaleModal').classList.remove('active');
             showToast('Sale completed!', 'success');
+            // تحديث صفحة POS لو كانت مفتوحة
+            // if (typeof window.refreshPOS === 'function') {
+            //     window.refreshPOS();
+            // }
         } catch (err) {
             showToast(err.message, 'error');
         } finally {
             isProcessingSale = false;
             btn.disabled = false;
             btn.innerHTML = 'Process Sale';
+            if (typeof window.refreshPOS === 'function') {
+                window.refreshPOS();
+            }
         }
     };
 
@@ -264,7 +299,10 @@ function isAnySalesFilterActive() {
 
 function addSaleItemRow() {
     const row = document.createElement('tr');
-    const categories = [...new Set(DataStore.getProducts().map(p => p.category).filter(Boolean))].sort();
+    const categories = [...new Set(DataStore.getProducts()
+        .map(p => p.category)
+        .filter(cat => cat && cat !== '__category_placeholder__')
+    )].sort();
     const catOptions = ['<option value="">All</option>', ...categories.map(c => `<option value="${c}">${c}</option>`)].join('');
 
     row.innerHTML = `
@@ -323,7 +361,10 @@ function updateRowTotal(row, index) {
 function updateSaleTotal() {
     let subtotal = saleItems.reduce((sum, item) => sum + (item.price * item.quantity || 0), 0);
     const discount = parseFloat(document.getElementById('saleDiscount')?.value) || 0;
-    const grandTotal = subtotal - (subtotal * discount / 100);
+    const tax = parseFloat(document.getElementById('saleTax')?.value) || 0;
+    const discountAmount = subtotal * discount / 100;
+    const taxAmount = subtotal * tax / 100;
+    const grandTotal = subtotal - discountAmount + taxAmount;
     document.getElementById('saleGrandTotal').innerText = formatPrice(grandTotal > 0 ? grandTotal : 0);
 }
 
@@ -535,23 +576,81 @@ window.viewInvoice = function(baseId) {
 
     document.getElementById('invoiceDetailContent').innerHTML = `
         <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
-            <div>
-                <strong>Invoice:</strong> ${group.id}<br>
-                <strong>Date:</strong> ${group.date}<br>
-                <strong>Customer:</strong> ${group.customer}<br>
-                <strong>Cashier:</strong> ${group.cashier || '—'}
-            </div>
+            <div><strong>Invoice:</strong> ${group.id}<br><strong>Date:</strong> ${group.date}<br><strong>Customer:</strong> ${group.customer}<br><strong>Cashier:</strong> ${group.cashier || '—'}</div>
+            <div><strong>Status:</strong> ${group.status}</div>
         </div>
         <table class="inventory-table">
             <thead><tr><th>Product</th><th>Category</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead>
             <tbody>${productsHtml}</tbody>
-            <tfoot><tr style="font-weight:bold;"><td colspan="4">Grand Total</td><td>${formatPrice(group.total)}</td></tr></tfoot>
+            <tfoot>
+                <tr><td colspan="4" style="text-align:right;">Subtotal</td><td>${formatPrice(group.subtotal)}</td></tr>
+                <tr><td colspan="4" style="text-align:right;">Discount (${group.discount_percent}%)</td><td>-${formatPrice(group.discountAmount)}</td></tr>
+                <tr><td colspan="4" style="text-align:right;">Tax (${group.tax_percent}%)</td><td>+${formatPrice(group.taxAmount)}</td></tr>
+                <tr style="font-weight:bold;"><td colspan="4">Grand Total</td><td>${formatPrice(group.total)}</td></tr>
+            </tfoot>
         </table>
     `;
 
     // تخزين baseId لزر الطباعة
     document.getElementById('printInvoiceBtn').onclick = () => {
         printInvoiceFromGroup(group);
+    };
+
+    document.getElementById('pdfInvoiceBtn').onclick = () => {
+        const doc = new jspdf.jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const pageWidth = doc.internal.pageSize.getWidth();
+
+        // Header
+        doc.setFontSize(22);
+        doc.setTextColor(109, 40, 217);
+        doc.text('RetailX', pageWidth / 2, 20, { align: 'center' });
+        doc.setFontSize(12);
+        doc.setTextColor(100);
+        doc.text('Smart Inventory Management', pageWidth / 2, 28, { align: 'center' });
+
+        // Invoice details
+        doc.setFontSize(12);
+        doc.setTextColor(0);
+        const leftX = 14;
+        doc.text(`Invoice: ${group.id}`, leftX, 45);
+        doc.text(`Date: ${group.date}`, leftX, 52);
+        doc.text(`Customer: ${group.customer}`, leftX, 59);
+        doc.text(`Cashier: ${group.cashier || '—'}`, leftX, 66);
+        doc.text(`Status: ${group.status}`, leftX, 73);
+
+        // Products table
+        const tableRows = group.products.map(p => [
+            p.name,
+            p.category || '-',
+            p.quantity,
+            formatPrice(p.unitPrice),
+            formatPrice(p.total)
+        ]);
+
+        doc.autoTable({
+            head: [['Product', 'Category', 'Qty', 'Unit Price', 'Total']],
+            body: tableRows,
+            startY: 80,
+            theme: 'striped',
+            headStyles: { fillColor: [109, 40, 217] },
+            // تغيير لون التذييل إلى رمادي أغمق ليكون النص واضحاً
+            footStyles: { fillColor: [200, 200, 200], textColor: [0, 0, 0] },
+            foot: [
+                ['', '', '', 'Subtotal', formatPrice(group.subtotal)],
+                ['', '', '', `Discount (${group.discount_percent}%)`, `-${formatPrice(group.discountAmount)}`],
+                ['', '', '', `Tax (${group.tax_percent}%)`, `+${formatPrice(group.taxAmount)}`],
+                ['', '', '', 'Grand Total', formatPrice(group.total)]
+            ]
+        });
+
+        // Footer
+        const finalY = doc.lastAutoTable.finalY + 10;
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text('Thank you for shopping with RetailX!', pageWidth / 2, finalY, { align: 'center' });
+        doc.text('support@retailx.com | Alexandria, Egypt', pageWidth / 2, finalY + 6, { align: 'center' });
+
+        doc.save(`Invoice_${group.id}.pdf`);
     };
 
     document.getElementById('invoiceDetailModal').classList.add('active');
@@ -588,7 +687,13 @@ function printInvoiceFromGroup(group) {
             <table>
                 <thead><tr><th>Product</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead>
                 <tbody>${productsRows}</tbody>
-                <tfoot><tr style="font-weight:bold;"><td colspan="3">Grand Total</td><td>${formatPrice(group.total)}</td></tr></tfoot>
+                <!-- ✅ إضافة صفوف الخصم والضريبة -->
+                <tfoot>
+                    <tr><td colspan="3" style="text-align:right;">Subtotal</td><td>${formatPrice(group.subtotal)}</td></tr>
+                    <tr><td colspan="3" style="text-align:right;">Discount (${group.discount_percent}%)</td><td>-${formatPrice(group.discountAmount)}</td></tr>
+                    <tr><td colspan="3" style="text-align:right;">Tax (${group.tax_percent}%)</td><td>+${formatPrice(group.taxAmount)}</td></tr>
+                    <tr style="font-weight:bold;"><td colspan="3" style="text-align:right;">Grand Total</td><td>${formatPrice(group.total)}</td></tr>
+                </tfoot>
             </table>
             <div class="total">Total Amount: ${formatPrice(group.total)}</div>
             <div class="footer"><p>Thank you for shopping with RetailX!</p><p>support@retailx.com | Alexandria, Egypt</p></div>
@@ -598,6 +703,7 @@ function printInvoiceFromGroup(group) {
     `);
     win.document.close();
 }
+
 
 window.deleteInvoice = async function(baseId) {
     if (appState.currentUser?.role !== 'administrator') return;
@@ -622,6 +728,7 @@ function populateSaleCategoryFilter() {
     const currentValue = select.value; // اختيارك الحالي (حتى لو "All")
 
     const groups = groupSales(currentSales);
+    document.getElementById('transactionCount').innerText = groups.length;
     const allCats = [];
     groups.forEach(g => {
         if (g.categoriesSet) {
@@ -629,9 +736,10 @@ function populateSaleCategoryFilter() {
         }
     });
     const cats = [...new Set(allCats)].sort();
+    const filteredCats = cats.filter(cat => cat && cat !== '__category_placeholder__');
 
     select.innerHTML = '<option value="">All</option>';
-    cats.forEach(c => {
+    filteredCats.forEach(c => {
         select.innerHTML += `<option value="${c}">${c}</option>`;
     });
 

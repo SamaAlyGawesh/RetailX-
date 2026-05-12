@@ -3,7 +3,7 @@
 const translations = {
     en: {
         logoText: "RetailX", navHomeText: "Home", navDashboardText: "Dashboard", navInventoryText: "Inventory",
-        navSalesText: "Sales", navReportsText: "Reports", navSuppliersText: "Suppliers", navSettingsText: "Settings",
+        navSalesText: "Sales", navReportsText: "Reports", navSuppliersText: "Suppliers", navSettingsText: "Settings", navCashiersText: "Cashiers",
         langText: "العربية", profileText: "My Profile", settingsLinkText: "Settings", signOutText: "Sign Out",
         welcomeTitle: "Welcome to RetailX", welcomeDesc: "Sign in to access your inventory dashboard",
         signInTabText: "Sign In", signUpTabText: "Sign Up", signInBtnText: "Sign In", createAccountText: "Create Account",
@@ -94,11 +94,19 @@ const translations = {
 		usersTitle: "User Management",
 		userListTitle: "All Users",
 		changeRoleLabel: "Change Role",
-		saveRoleBtn: "Save Role"
+		saveRoleBtn: "Save Role",
+        cashiersTitle: "Cashiers Performance",
+        cashierNameCol: "Cashier Name",
+        cashierSalesCol: "Total Sales",
+        cashierTransactionsCol: "Transactions",
+        cashierLastSaleCol: "Last Sale",
+        cashierActionsCol: "Actions",
+        viewSalesBtn: "View Sales",
+        noCashiers: "No cashiers data found."
     },
     ar: {
         logoText: "ريتيل إكس", navHomeText: "الرئيسية", navDashboardText: "لوحة التحكم", navInventoryText: "المخزون",
-        navSalesText: "المبيعات", navReportsText: "التقارير", navSuppliersText: "الموردين", navSettingsText: "الإعدادات",
+        navSalesText: "المبيعات", navReportsText: "التقارير", navSuppliersText: "الموردين", navSettingsText: "الإعدادات", navCashiersText: "الكاشيرات",
         langText: "English", profileText: "ملفي الشخصي", settingsLinkText: "الإعدادات", signOutText: "تسجيل الخروج",
         welcomeTitle: "مرحباً في ريتيل إكس", welcomeDesc: "سجل الدخول للوصول إلى لوحة تحكم المخزون",
         signInTabText: "تسجيل الدخول", signUpTabText: "إنشاء حساب", signInBtnText: "تسجيل الدخول", createAccountText: "إنشاء حساب",
@@ -189,6 +197,14 @@ const translations = {
 		usersTitle: "إدارة المستخدمين",
 		userListTitle: "جميع المستخدمين",
 		changeRoleLabel: "تغيير الدور",
-		saveRoleBtn: "حفظ الدور"
+		saveRoleBtn: "حفظ الدور",
+        cashiersTitle: "Cashiers Performance",
+        cashierNameCol: "Cashier Name",
+        cashierSalesCol: "Total Sales",
+        cashierTransactionsCol: "Transactions",
+        cashierLastSaleCol: "Last Sale",
+        cashierActionsCol: "Actions",
+        viewSalesBtn: "View Sales",
+        noCashiers: "No cashiers data found."
     }
 };

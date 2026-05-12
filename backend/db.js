@@ -95,6 +95,17 @@ function initDB() {
             time TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
+
+        CREATE TABLE IF NOT EXISTS shifts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cashier_name TEXT NOT NULL,
+            branch TEXT DEFAULT 'Main Branch',
+            department TEXT DEFAULT 'General',
+            start_time TEXT NOT NULL,
+            end_time TEXT,
+            status TEXT DEFAULT 'active',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
     `);
 
     // إنشاء حساب الأدمن الافتراضي إن لم يكن موجوداً
@@ -113,6 +124,14 @@ function initDB() {
 	if (!activityCols.includes('user_name')) {
 		db.prepare('ALTER TABLE activity ADD COLUMN user_name TEXT').run();
 	}
+    // إضافة أعمدة discount_percent و tax_percent إن لم تكن موجودة
+    const salesCols = db.pragma('table_info(sales)').map(c => c.name);
+    if (!salesCols.includes('discount_percent')) {
+        db.prepare('ALTER TABLE sales ADD COLUMN discount_percent REAL DEFAULT 0').run();
+    }
+    if (!salesCols.includes('tax_percent')) {
+        db.prepare('ALTER TABLE sales ADD COLUMN tax_percent REAL DEFAULT 0').run();
+    }
     console.log('Database initialized');
 }
 

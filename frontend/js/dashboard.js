@@ -66,7 +66,8 @@ function updateDashboardStats() {
     document.getElementById('todaySalesValue').innerText = formatPrice(todaySales);
     const monthlySales = DataStore.getSales().filter(s => new Date(s.date).getMonth() === new Date().getMonth()).reduce((s, i) => s + i.total, 0);
     document.getElementById('monthlySalesValue').innerText = formatPrice(monthlySales);
-    document.getElementById('transactionCount').innerText = DataStore.getSales().length;
+    const grouped = groupSales(DataStore.getSales());
+    document.getElementById('transactionCount').innerText = grouped.length;
 	// تحديث شارة التنبيه في القائمة
 	const badge = document.getElementById('dashboardBadge');
 	if (badge) {

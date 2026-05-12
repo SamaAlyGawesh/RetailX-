@@ -38,6 +38,14 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     });
 
+    document.querySelectorAll('.pdf-report').forEach(btn => {
+        btn.onclick = () => {
+            if (!hasPermission('reports')) return;
+            const type = btn.getAttribute('data-report');
+            generateReportPDF(type);
+        };
+    });
+
     document.getElementById('generateReport').onclick = async () => {
         if (!hasPermission('reports')) return;
         //await apiGetSales();
@@ -550,4 +558,111 @@ async function renderTopProductsChart() {
             }
         }
     });
+}
+
+function generateReportPDF(type) {
+    const doc = new jspdf.jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    let title = '';
+    const rows = [];
+
+    switch (type) {
+        case 'stock':
+            title = 'Stock Summary';
+            doc.setFontSize(16);
+            doc.text(title, 14, 20);
+            DataStore.getProducts().forEach(p => rows.push([p.name, p.sku, p.category || '', p.quantity, formatPrice(p.price), (p.price * p.quantity).toFixed(2)]));
+            doc.autoTable({
+                head: [['Name', 'SKU', 'Category', 'Qty', 'Price', 'Total Value']],
+                body: rows,
+                startY: 30
+            });
+            break;
+        case 'lowstock':
+            title = 'Low Stock Alert';
+            doc.setFontSize(16);
+            doc.text(title, 14, 20);
+            DataStore.getProducts().filter(p => p.quantity <= p.reorderLevel).forEach(p => rows.push([p.name, p.quantity, p.reorderLevel]));
+            doc.autoTable({
+                head: [['Product', 'Current', 'Reorder']],
+                body: rows,
+                startY: 30
+            });
+            break;
+        case 'sales':
+            title = 'Sales Report';
+            doc.setFontSize(16);
+            doc.text(title, 14, 20);
+            DataStore.getSales().forEach(s => rows.push([s.id, s.date, s.customer, s.items, formatPrice(s.total), s.cashier || '']));
+            doc.autoTable({
+                head: [['ID', 'Date', 'Customer', 'Items', 'Total', 'Cashier']],
+                body: rows,
+                startY: 30
+            });
+            break;
+        case 'value':
+            title = 'Inventory Value';
+            doc.setFontSize(16);
+            doc.text(title, 14, 20);
+            DataStore.getProducts().forEach(p => rows.push([p.name, p.quantity, formatPrice(p.price), (p.price * p.quantity).toFixed(2)]));
+            doc.autoTable({
+                head: [['Product', 'Qty', 'Unit Price', 'Total Value']],
+                body: rows,
+                startY: 30
+            });
+            break;
+        case 'supplier':
+            title = 'Supplier Performance';
+            doc.setFontSize(16);
+            doc.text(title, 14, 20);
+            DataStore.getSuppliers().forEach(s => rows.push([s.name, s.contact || '', s.email, s.leadTime]));
+            doc.autoTable({
+                head: [['Name', 'Contact', 'Email', 'Lead Time']],
+                body: rows,
+                startY: 30
+            });
+            break;
+        case 'topselling':
+            title = 'Top Selling Products';
+            doc.setFontSize(16);
+            doc.text(title, 14, 20);
+            // نكرر حساب المنتجات الأكثر بيعًا كما في generateReportView
+            const from = document.getElementById('topSellingDateFrom')?.value || '';
+            const to = document.getElementById('topSellingDateTo')?.value || '';
+            let filteredSales = DataStore.getSales();
+            if (from || to) {
+                filteredSales = DataStore.getSales().filter(s => {
+                    const saleDate = new Date(s.date);
+                    if (isNaN(saleDate.getTime())) return false;
+                    if (from && saleDate < new Date(from)) return false;
+                    if (to && saleDate > new Date(to + 'T23:59:59')) return false;
+                    return true;
+                });
+            }
+            const productStats = {};
+            filteredSales.forEach(s => {
+                const pid = Number(s.productId);
+                if (!pid) return;
+                if (!productStats[pid]) productStats[pid] = { qty: 0, revenue: 0 };
+                productStats[pid].qty += s.items || 0;
+                productStats[pid].revenue += s.total || 0;
+            });
+            const productList = Object.entries(productStats).map(([pid, stats]) => {
+                const product = DataStore.getProducts().find(p => p.id === Number(pid));
+                return {
+                    name: product ? product.name : 'Unknown (ID ' + pid + ')',
+                    sku: product ? product.sku : '-',
+                    qty: stats.qty,
+                    revenue: stats.revenue
+                };
+            }).sort((a, b) => b.qty - a.qty);
+            productList.forEach(p => rows.push([p.name, p.sku, p.qty, formatPrice(p.revenue)]));
+            doc.autoTable({
+                head: [['Product', 'SKU', 'Quantity Sold', 'Total Revenue']],
+                body: rows,
+                startY: 30
+            });
+            break;
+    }
+
+    doc.save(`${title.replace(/\s+/g, '_')}.pdf`);
 }

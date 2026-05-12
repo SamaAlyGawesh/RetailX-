@@ -109,8 +109,8 @@ async function apiUpdateUserRole(userId, newRole) {
     return api('PATCH', `/users/${userId}/role`, { role: newRole });
 }
 
-async function apiCreateMultiSale(customer, items, discount, paymentMethod, notes, cashier, saleDate) {
-    return api('POST', '/sales/multi', { customer, items, discount, paymentMethod, notes, cashier, saleDate });
+async function apiCreateMultiSale(customer, items, discount, tax, paymentMethod, notes, cashier, saleDate) {
+    return api('POST', '/sales/multi', { customer, items, discount, tax, paymentMethod, notes, cashier, saleDate });
 }
 
 async function apiDeleteInvoice(baseId) {
