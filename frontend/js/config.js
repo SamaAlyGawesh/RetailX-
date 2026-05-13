@@ -144,19 +144,26 @@ function updateAuthUI() {
     const sidebar = document.getElementById('sidebar');
     const hamburgerBtn = document.getElementById('hamburgerBtn');
     const shiftStatus = document.getElementById('shiftStatusText');
-
+    //const mainContent = document.querySelector('.main-content');
+    // const btnAuthEmail = document.getElementById('authEmail');
+    // const btnAuthPassword = document.getElementById('authPassword');
+    document.getElementById('authEmail').value = '';
+    document.getElementById('authPassword').value = '';
     if (appState.isAuthenticated && appState.currentUser) {
         userNameDisplay.innerText = appState.currentUser.name;
         signOutLink.innerHTML = '<i class="fas fa-sign-out-alt"></i> Sign Out';
         document.body.classList.add('logged-in');
         if (shiftStatus) shiftStatus.style.display = 'inline';
+        //mainContent.style.marginLeft = '250px';
+        
     } else {
         userNameDisplay.innerText = 'Sign In';
         signOutLink.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
         document.body.classList.remove('logged-in');
-        if (sidebar) sidebar.classList.remove('open'); // تأكيد إخفاء الموبايل
+        if (sidebar) sidebar.classList.remove('open');
         if (hamburgerBtn) hamburgerBtn.classList.remove('active');
         if (shiftStatus) shiftStatus.style.display = 'none';
+        //mainContent.style.marginLeft = '0';
     }
 }
 

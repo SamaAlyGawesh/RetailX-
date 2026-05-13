@@ -22,25 +22,40 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ========== HAMBURGER & SIDEBAR ==========
     const hamburgerBtn = document.getElementById('hamburgerBtn');
     const sidebar = document.getElementById('sidebar');
+    const mainContent = document.querySelector('.main-content');
 
     if (hamburgerBtn && sidebar) {
         hamburgerBtn.addEventListener('click', () => {
-            const isCollapsed = sidebar.classList.toggle('collapsed');
-            // تعديل الكلاس النشط للهامبرغر
-            hamburgerBtn.classList.toggle('active', isCollapsed);
-            // تحديث تمدد المحتوى
-            const mainContent = document.querySelector('.main-content');
-            if (mainContent) {
-                mainContent.classList.toggle('expanded', isCollapsed);
+            const isMobile = window.innerWidth <= 768;
+
+            if (isMobile) {
+                // وضع الموبايل: فتح/قفل Overlay
+                sidebar.classList.toggle('open');
+                hamburgerBtn.classList.toggle('active', sidebar.classList.contains('open'));
+            } else {
+                // وضع الديسكتوب: توسيع/طيّ الشريط الجانبي
+                sidebar.classList.toggle('collapsed');
+                hamburgerBtn.classList.toggle('active', sidebar.classList.contains('collapsed'));
             }
         });
+    }
 
-        // sidebar.querySelectorAll('.sidebar-item').forEach(link => {
-        //     link.addEventListener('click', () => {
-        //         sidebar.classList.remove('open');
-        //         hamburgerBtn.classList.remove('active');
-        //     });
-        // });
+    // ========== USER DROPDOWN TOGGLE ==========
+    const userBtn = document.querySelector('.user-btn');
+    const userDropdown = document.getElementById('userDropdown');
+
+    if (userBtn && userDropdown) {
+        userBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // يمنع انتشار الحدث للـ document
+            userDropdown.classList.toggle('active');
+        });
+
+        // إغلاق الـ Dropdown عند الضغط على أي مكان براه
+        document.addEventListener('click', (e) => {
+            if (!userDropdown.contains(e.target)) {
+                userDropdown.classList.remove('active');
+            }
+        });
     }
 
     // ---- أهم شيء: إغلاق المودالات دائماً ----
@@ -74,6 +89,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             fetchAndDisplayShiftStatus(); // أول مرة
             // تحديث الحالة كل دقيقة لو حابب (اختياري)
             setInterval(fetchAndDisplayShiftStatus, 60000);
+            //mainContent.style.marginLeft = '250px';
         } catch (err) {
             console.log('Backend not available – clearing auth');
             appState.isAuthenticated = false;
@@ -82,8 +98,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             clearAuthState();
             updateAuthUI();
             applyRoleBasedAccess();
+            //mainContent.style.marginLeft = '0';
         }
+    }else{
+        //mainContent.style.marginLeft = '0';
     }
+    
 
     // ========== NAVIGATION (روابط أساسية فقط) ==========
     safeBind('homeLink', (e) => { e.preventDefault(); navigateToPage('homePage'); });

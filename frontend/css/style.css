@@ -28,8 +28,12 @@ body {
     line-height: 1.6;
     overflow-x: hidden;
     transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    padding-top: 70px;
 }
-.container { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+.container { width: 100%; margin: 0 auto; padding: 0 20px; }
 
 /* ========== HEADER (شريط علوي بعرض كامل) ========== */
 header {
@@ -52,14 +56,30 @@ header {
 }
 .logo:hover .logo-icon { transform: rotate(-5deg); }
 
+/* ========== content-area ========== */
+.content-area {
+    display: flex;
+    flex: 1 0 auto;
+    position: relative;
+    align-items: flex-start; 
+}
 /* ========== SIDEBAR NAVIGATION ========== */
 .sidebar {
     display: none;
-    position: fixed; top: 70px; left: 0; width: 250px;
-    height: calc(100vh - 70px); background: var(--dark-card);
-    z-index: 998; overflow-y: auto; padding: 20px 0;
-    flex-direction: column; gap: 5px; border-right: 1px solid var(--dark-border);
-    transition: transform 0.3s ease; transform: translateX(0);
+    width: 250px;
+    flex-shrink: 0;
+    background: var(--dark-card);
+    overflow-y: auto;
+    padding: 20px 0;
+    flex-direction: column;
+    gap: 5px;
+    border-right: 1px solid var(--dark-border);
+    transition: width 0.3s ease, padding 0.3s ease;
+
+    position: sticky;
+    top: 70px;
+    height: fit-content;
+    max-height: calc(100vh - 70px);
 }
 .sidebar-item {
     display: flex; align-items: center; gap: 12px; padding: 12px 20px;
@@ -74,11 +94,12 @@ body.logged-in .sidebar {
 
 /* ========== MAIN CONTENT AREA ========== */
 .main-content {
-    margin-left: 0; margin-top: 70px; padding: 30px 20px;
-    min-height: calc(100vh - 70px); transition: margin-left 0.3s ease;
+    flex: 1;                      /* يملأ كل المساحة المتبقية */
+    padding: 30px 20px;
+    overflow-y: auto;             /* تمرير المحتوى لوحده */
+    transition: none;             /* JavaScript سيتولى التأثيرات */
 }
 
-body.logged-in .main-content { margin-left: 250px; }
 
 /* ========== PAGES ========== */
 .page { display: none; }
@@ -101,33 +122,47 @@ body.logged-in .hamburger {
 
 /* لما الـ Sidebar يُقفل (نضيف كلاس collapsed) */
 .sidebar.collapsed {
-    transform: translateX(-100%); /* رجعه بره الشاشة */
-}
-.main-content.expanded {
-    margin-left: 0; /* خلي المحتوى ياخد كامل العرض */
+    width: 0 !important;
+    padding: 0 !important;
+    border: none;
+    overflow: hidden;
 }
 
 /* ========== RESPONSIVE ========== */
 @media (max-width: 768px) {
-    .main-content {
-        margin-left: 0 !important; /* المحتوى ياخد كامل العرض دائمًا */
+    .content-area {
+        position: relative;
     }
-    body.logged-in .main-content {
-        margin-left: 0;
+    .main-content {
+        margin-left: 0 !important;
     }
     .sidebar {
+        position: fixed;
+        top: 70px;          /* تحت الهيدر */
+        left: 0;
+        bottom: 0;
+        width: 250px;
+        z-index: 100;
         transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        /* نلغي الخصائص التي تؤثر على التدفق */
+        height: auto;
+        padding: 20px 0;
+        flex-direction: column;
+        overflow-y: auto;
     }
     .sidebar.open {
         transform: translateX(0);
     }
     .sidebar.collapsed {
+        /* نخفيها بنفس طريقة الإخفاء */
         transform: translateX(-100%);
-    }
-    .main-content {
-        margin-left: 0;
+        /* لا نغير العرض لأنه fixed */
     }
     .hamburger {
+        display: none;
+    }
+    body.logged-in .hamburger {
         display: flex;
     }
     
@@ -316,7 +351,7 @@ body.logged-in .hamburger {
 .chatbot-input button:hover { transform: scale(1.1); }
 
 /* ========== FOOTER ========== */
-footer { background: rgba(15, 23, 42, 0.9); border-top: 1px solid var(--dark-border); padding: 40px 0; margin-top: 60px; text-align: center; }
+footer { background: rgba(15, 23, 42, 0.9); border-top: 1px solid var(--dark-border); padding: 40px 0; margin-top: auto; text-align: center; }
 .social-icon { color: var(--dark-text); transition: 0.3s; }
 .social-icon:hover { color: var(--primary-light) !important; }
 
