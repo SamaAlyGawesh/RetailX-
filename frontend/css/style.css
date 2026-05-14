@@ -711,3 +711,70 @@ body.light-theme .user-btn:hover {
     background: rgba(109, 40, 217, 0.1);
     border-color: var(--primary);
 }
+
+/* ========== LIGHT THEME - LIVE CASHIER CARDS ========== */
+body.light-theme .live-cashier-card {
+    background: #ffffff;
+    border: 1px solid var(--light-border);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+body.light-theme .live-cashier-card h5 {
+    color: #111827;
+}
+
+body.light-theme .live-cashier-card p {
+    color: #4b5563;
+}
+
+body.light-theme .live-cashier-card div[style*="text-align:left"] div {
+    color: #374151;
+}
+
+body.light-theme .live-cashier-card .badge {
+    background: #10b981;
+    color: white;
+}
+
+/* ========== LIGHT THEME - MULTI-SELECT CONTAINER ========== */
+body.light-theme .multi-select-container {
+    background: #ffffff;
+    border: 1px solid var(--light-border);
+}
+
+body.light-theme .multi-select-search {
+    background: #ffffff !important;
+    color: #111827 !important;
+    border-bottom: 1px solid var(--light-border) !important;
+}
+
+body.light-theme .multi-select-search::placeholder {
+    color: #9ca3af;
+}
+
+body.light-theme .multi-select-options {
+    background: #ffffff;
+}
+
+body.light-theme .multi-select-item {
+    color: #111827;
+}
+
+body.light-theme .multi-select-item:hover {
+    background: rgba(109, 40, 217, 0.05);
+}
+
+body.light-theme #newCategoryInput {
+    background: #ffffff !important;
+    color: #111827 !important;
+    border: 1px solid var(--light-border) !important;
+}
+
+body.light-theme #newCategoryInput::placeholder {
+    color: #9ca3af;
+}
+
+/* Light Theme - Small hints */
+body.light-theme small[style*="color:#94a3b8"] {
+    color: #6b7280 !important;
+}

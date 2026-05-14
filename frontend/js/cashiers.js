@@ -163,20 +163,24 @@ function renderCashierCards(shifts) {
     const container = document.getElementById('liveCashiersContainer');
     if (!container) return;
     if (shifts.length === 0) {
-        container.innerHTML = '<p>No active cashiers at the moment.</p>';
+        container.innerHTML = `<p data-translate="noActiveCashiers">No active cashiers at the moment.</p>`;
+        // ترجمة فورية
+        const langObj = translations[currentLang] || translations['en'];
+        const el = container.querySelector('[data-translate]');
+        if (el && langObj[el.getAttribute('data-translate')]) {
+            el.innerText = langObj[el.getAttribute('data-translate')];
+        }
         return;
     }
 
     const allSales = DataStore.getSales();
-    const now = new Date();
+    const langObj = translations[currentLang] || translations['en'];
 
-    // تجميع حسب القسم/الفرع
     const grouped = {};
     shifts.forEach(s => {
         const key = `${s.branch} - ${s.department}`;
         if (!grouped[key]) grouped[key] = [];
         
-        // حساب إحصائيات الوردية الحالية
         const shiftStart = new Date(s.start_time);
         const cashierSales = allSales.filter(sale => {
             return sale.cashier === s.cashier_name && new Date(sale.date) >= shiftStart;
@@ -186,7 +190,6 @@ function renderCashierCards(shifts) {
         const totalInvoices = cashierSales.length;
         const totalItemsSold = cashierSales.reduce((sum, sale) => sum + (sale.items || 0), 0);
         
-        // نضيف البيانات للكائن
         s.stats = {
             totalSales: formatPrice(totalSalesAmount),
             invoices: totalInvoices,
@@ -204,21 +207,28 @@ function renderCashierCards(shifts) {
                 <div class="live-cashier-card">
                     <div class="card-icon"><i class="fas fa-user-circle"></i></div>
                     <h5>${s.cashier_name}</h5>
-                    <p>Started: ${s.start_time}</p>
+                    <p><span data-translate="startedLabel">Started</span>: ${s.start_time}</p>
                     <div style="text-align:left; margin:10px 0;">
-                        <div><strong>Sales:</strong> ${s.stats.totalSales}</div>
-                        <div><strong>Invoices:</strong> ${s.stats.invoices}</div>
-                        <div><strong>Items sold:</strong> ${s.stats.itemsSold}</div>
+                        <div><strong data-translate="salesLabel">Sales</strong>: ${s.stats.totalSales}</div>
+                        <div><strong data-translate="invoicesLabel">Invoices</strong>: ${s.stats.invoices}</div>
+                        <div><strong data-translate="itemsSoldLabel">Items sold</strong>: ${s.stats.itemsSold}</div>
                     </div>
-                    <span class="badge">Active</span>
+                    <span class="badge" data-translate="activeBadge">Active</span>
                 </div>
             `;
         });
         html += '</div>';
     }
     container.innerHTML = html;
-}
 
+    // ترجمة فورية للكروت
+    container.querySelectorAll('[data-translate]').forEach(el => {
+        const key = el.getAttribute('data-translate');
+        if (langObj[key]) {
+            el.innerText = langObj[key];
+        }
+    });
+}
 // ننشئ حاوية الـ live cashiers في صفحة cashiersPage
 // ونداء دوري
 // if (document.getElementById('cashiersPage')) {

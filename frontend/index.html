@@ -608,213 +608,200 @@
 	<!-- ========== END CONTENT AREA ========== -->
 
     <!-- ========== START MODALS ========== -->
-	 <!-- Add Supplier Modal  -->
-	<div class="modal" id="addSupplierModal">
-		<div class="modal-content" style="max-width: 1000px; max-height: 85vh; overflow-y: auto;">
-			<div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-				<h3><i class="fas fa-truck"></i> <span id="supplierModalTitle">Add New Supplier</span></h3>
-				<button class="close-modal" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button>
-			</div>
-			<div class="form-group"><label>Supplier Name *</label><input type="text" id="supplierNameInput" class="form-control" placeholder="ABC Electronics"></div>
-			<div class="form-group"><label>Supplier Code</label><input type="text" id="supplierCodeDisplay" class="form-control" readonly></div>
-			<div class="form-group"><label>Contact Person</label><input type="text" id="supplierContactInput" class="form-control" placeholder="John Doe"></div>
-			<div class="form-group"><label>Email *</label><input type="email" id="supplierEmailInput" class="form-control" placeholder="contact@example.com"></div>
-			<div class="form-group"><label>Phone *</label><input type="text" id="supplierPhoneInput" class="form-control" placeholder="+1 555 123-4567"></div>
-			<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-				<div class="form-group"><label>Address 1</label><input type="text" id="supplierAddress1" class="form-control" placeholder="Street address"></div>
-				<div class="form-group"><label>Address 2</label><input type="text" id="supplierAddress2" class="form-control" placeholder="City, State, ZIP"></div>
-			</div>
-			<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-				<div class="form-group"><label>Website</label><input type="url" id="supplierWebsite" class="form-control" placeholder="https://..."></div>
-				<div class="form-group"><label>Payment Terms</label><input type="text" id="supplierPaymentTerms" class="form-control" placeholder="Net 30 days"></div>
-			</div>
-			<div class="form-group">
-				<label>Categories Supplied</label>
-				<div style="display:flex; gap:8px; margin-top:6px;">
-					<input type="text" id="newCategoryInput" class="form-control" placeholder="Add new category..." style="flex:1;">
-					<button type="button" class="btn btn-sm btn-outline" id="addNewCategoryBtn"><i class="fas fa-plus"></i></button>
+		<!-- Add Supplier Modal  -->
+		<div class="modal" id="addSupplierModal">
+			<div class="modal-content" style="max-width: 1000px; max-height: 85vh; overflow-y: auto;">
+				<div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+					<h3><i class="fas fa-truck"></i> <span id="supplierModalTitle">Add New Supplier</span></h3>
+					<button class="close-modal" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button>
 				</div>
-				<div class="multi-select-container" id="categoriesSuppliedContainer">
-					<input type="text" class="form-control multi-select-search" placeholder="Search categories...">
-					<div class="multi-select-options" id="categoriesSuppliedOptions"></div>
+				<div class="form-group"><label id="supplierNameLabel">Supplier Name *</label><input type="text" id="supplierNameInput" class="form-control" placeholder="ABC Electronics"></div>
+				<div class="form-group"><label id="supplierCodeLabel">Supplier Code</label><input type="text" id="supplierCodeDisplay" class="form-control" readonly></div>
+				<div class="form-group"><label id="supplierContactLabel">Contact Person</label><input type="text" id="supplierContactInput" class="form-control" placeholder="John Doe"></div>
+				<div class="form-group"><label id="supplierEmailLabel">Email *</label><input type="email" id="supplierEmailInput" class="form-control" placeholder="contact@example.com"></div>
+				<div class="form-group"><label id="supplierPhoneLabel">Phone *</label><input type="text" id="supplierPhoneInput" class="form-control" placeholder="+1 555 123-4567"></div>
+				<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+					<div class="form-group"><label id="address1Label">Address 1</label><input type="text" id="supplierAddress1" class="form-control" placeholder="Street address"></div>
+					<div class="form-group"><label id="address2Label">Address 2</label><input type="text" id="supplierAddress2" class="form-control" placeholder="City, State, ZIP"></div>
 				</div>
-				<small style="color:#94a3b8;">Click to select/deselect</small>
+				<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+					<div class="form-group"><label id="websiteLabel">Website</label><input type="url" id="supplierWebsite" class="form-control" placeholder="https://..."></div>
+					<div class="form-group"><label id="paymentTermsLabel">Payment Terms</label><input type="text" id="supplierPaymentTerms" class="form-control" placeholder="Net 30 days"></div>
+				</div>
+				<div class="form-group">
+					<label id="categoriesSuppliedLabel">Categories Supplied</label>
+					<div style="display:flex; gap:8px; margin-top:6px;">
+						<input type="text" id="newCategoryInput" class="form-control" placeholder="Add new category..." style="flex:1;">
+						<button type="button" class="btn btn-sm btn-outline" id="addNewCategoryBtn"><i class="fas fa-plus"></i></button>
+					</div>
+					<div class="multi-select-container" id="categoriesSuppliedContainer">
+						<input type="text" class="form-control multi-select-search" placeholder="Search categories...">
+						<div class="multi-select-options" id="categoriesSuppliedOptions"></div>
+					</div>
+					<small style="color:#94a3b8;"><span id="clickSelectHint">Click to select/deselect</span></small>
+				</div>
+				<div class="form-group">
+					<label id="supplierDocsLabel">Supplier Documents</label>
+					<table class="sale-items-table" id="supplierDocsTable">
+						<thead>
+							<tr>
+								<th id="docTypeCol">Document Type</th>
+								<th id="docNumberCol">Document Number</th>
+								<th id="issueDateCol">Issue Date</th>
+								<th id="expiryDateCol">Expiry Date</th>
+								<th id="fileCol">File</th>
+								<th></th>
+							</tr>
+						</thead>
+						<tbody id="supplierDocsBody"></tbody>
+					</table>
+					<button class="btn btn-sm btn-outline" id="addDocRowBtn" style="margin-top:6px;"><i class="fas fa-plus"></i> <span id="addDocBtn">Add Document</span></button>
+					<small style="color:#94a3b8;"><span id="docAcceptedHint">Accepted: images, PDF. Max 5MB.</span></small>
+				</div>
+				<div class="form-group"><label id="leadTimeLabel">Lead Time (days)</label><input type="number" id="supplierLeadTimeInput" class="form-control" value="5" min="1"></div>
+				<div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+					<button class="btn btn-outline close-modal"><span data-translate="cancelBtnText">Cancel</span></button>
+					<button class="btn btn-success" id="submitSupplier"><span id="saveSupplierBtnText">Save Supplier</span></button>
+				</div>
 			</div>
-			<div class="form-group">
-				<label>Supplier Documents</label>
-				<table class="sale-items-table" id="supplierDocsTable">
+		</div>
+		<!-- Add Product Modal -->
+		<div class="modal" id="addProductModal">
+			<div class="modal-content" style="max-width: 700px; max-height: 85vh; overflow-y: auto;">
+				<div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+					<h3 id="addProductModalTitle">Add New Product</h3>
+					<button class="close-modal" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button>
+				</div>
+				<div class="form-group"><label id="productNameLabel">Product Name *</label><input type="text" id="productName" class="form-control"></div>
+				<div class="form-group"><label id="productSkuLabel">SKU *</label><input type="text" id="productSKU" class="form-control"></div>
+				<div class="form-group"><label id="productCategoryLabel">Category</label><select id="productCategory" class="form-control"></select></div>
+				<div class="form-group"><label id="productSupplierLabel">Supplier</label><select id="productSupplier" class="form-control"></select></div>
+				<div class="form-group"><label id="productQuantityLabel">Initial Quantity *</label><input type="number" id="productQuantity" class="form-control" value="10" min="0"></div>
+				<div class="form-group"><label id="productReorderLabel">Reorder Level *</label><input type="number" id="reorderLevel" class="form-control" value="5" min="1"></div>
+				<div class="form-group"><label id="productPriceLabel">Price *</label><input type="number" id="productPrice" class="form-control" step="0.01" value="15.00" min="0"></div>
+				<div class="form-group"><label id="descriptionLabel">Description</label><textarea id="productDescription" class="form-control" rows="2"></textarea></div>
+				<div class="form-group"><label id="imageLabel">Image</label><input type="file" id="productImage" class="form-control" accept="image/*"></div>
+				<div class="form-group"><label id="locationLabel">Location</label><input type="text" id="productLocation" class="form-control"></div>
+				<div class="form-group"><label id="receivedDateLabel">Received Date</label><input type="date" id="productReceivedDate" class="form-control"></div>
+				<div class="form-group"><label id="expiryDateLabel">Expiry Date</label><input type="date" id="productExpiryDate" class="form-control"></div>
+				<div class="form-group"><label><input type="checkbox" id="productActive" checked> <span id="activeLabel">Active</span></label></div>
+				<div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+					<button class="btn btn-outline close-modal"><span data-translate="cancelBtnText">Cancel</span></button>
+					<button class="btn btn-success" id="submitProduct"><span id="addProductBtnModalText">Add Product</span></button>
+				</div>
+			</div>
+		</div>
+		<!-- Edit Product Modal (Full Edit) -->
+		<div class="modal" id="editProductModal">
+			<div class="modal-content" style="max-width: 700px; max-height: 85vh; overflow-y: auto;">
+				<div style="display: flex; justify-content: space-between; margin-bottom: 20px; position: sticky; top: 0; background: var(--dark-card); z-index: 10;">
+					<h3><i class="fas fa-edit"></i> <span id="editProductModalTitle">Edit Product</span></h3>
+					<button class="close-modal" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button>
+				</div>
+				<input type="hidden" id="editProductId">
+				<div class="form-group"><label id="productNameLabel2">Product Name *</label><input type="text" id="editProductName" class="form-control"></div>
+				<div class="form-group"><label id="productSkuLabel2">SKU *</label><input type="text" id="editProductSKU" class="form-control"></div>
+				<div class="form-group"><label id="productCategoryLabel2">Category</label><select id="editProductCategory" class="form-control"></select></div>
+				<div class="form-group"><label id="productSupplierLabel2">Supplier</label><select id="editProductSupplier" class="form-control"></select></div>
+				<div class="form-group"><label id="productPriceLabel2">Price *</label><input type="number" id="editProductPrice" class="form-control" step="0.01" min="0"></div>
+				<div class="form-group"><label id="unitCostLabel">Unit Cost</label><input type="number" id="editUnitCost" class="form-control" step="0.01" min="0"></div>
+				<div class="form-group"><label id="productReorderLabel2">Reorder Level *</label><input type="number" id="editReorderLevel" class="form-control" min="1"></div>
+				<div class="form-group"><label id="currentStockLabel">Current Stock</label><input type="number" id="editCurrentStock" class="form-control" readonly></div>
+				<div class="form-group"><label id="newStockLabel">New Stock Quantity</label><input type="number" id="editNewStock" class="form-control" value="0" min="0"></div>
+				<div class="form-group"><label id="descriptionLabel2">Description</label><textarea id="editProductDescription" class="form-control" rows="2"></textarea></div>
+				<div class="form-group"><label id="locationLabel2">Location</label><input type="text" id="editProductLocation" class="form-control"></div>
+				<div class="form-group"><label id="receivedDateLabel2">Received Date</label><input type="date" id="editProductReceivedDate" class="form-control"></div>
+				<div class="form-group"><label id="expiryDateLabel2">Expiry Date</label><input type="date" id="editProductExpiryDate" class="form-control"></div>
+				<div class="form-group"><label><input type="checkbox" id="editProductActive"> <span id="activeLabel2">Active</span></label></div>
+				<div class="form-group"><label id="imageLabel2">Image</label><input type="file" id="editProductImage" class="form-control" accept="image/*"></div>
+				<div class="form-group" style="text-align: center; margin-top: 15px;">
+					<div id="editStockStatus" style="font-size: 1.2rem; padding: 8px; border-radius: 6px; background: var(--dark-bg); color: var(--primary);">—</div>
+				</div>
+				<div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+					<button class="btn btn-outline close-modal"><span data-translate="cancelBtnText">Cancel</span></button>
+					<button class="btn btn-success" id="saveProductChanges"><span id="saveChangesBtnText">Save Changes</span></button>
+				</div>
+			</div>
+		</div>
+		<!-- Invoice details model -->
+		<div class="modal" id="invoiceDetailModal">
+			<div class="modal-content" style="max-width: 950px; max-height: 80vh; overflow-y: auto;">
+				<div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--primary); padding-bottom: 15px; margin-bottom: 20px;">
+					<h2 style="margin:0;"><span id="invoiceDetailTitle">Invoice Details</span></h2>
+					<button class="close-modal" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button>
+				</div>
+				<div id="invoiceDetailContent"></div>
+				<div style="text-align: right; margin-top: 20px;">
+					<button class="btn btn-primary" id="printInvoiceBtn"><i class="fas fa-print"></i> <span id="printInvoiceBtnText">Print Invoice</span></button>
+					<button class="btn btn-danger" id="pdfInvoiceBtn"><i class="fas fa-file-pdf"></i> <span id="downloadPdfBtnText">Download PDF</span></button>
+					<button class="btn btn-outline close-modal"><span data-translate="closeBtnText">Close</span></button>
+				</div>
+			</div>
+		</div>
+		<!-- Cashier Sales Details Modal -->
+		<div class="modal" id="cashierSalesModal">
+			<div class="modal-content" style="max-width: 950px; max-height: 80vh; overflow-y: auto;">
+				<div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--primary); padding-bottom: 15px; margin-bottom: 20px;">
+					<h2 id="cashierSalesModalTitle">Sales of Cashier</h2>
+					<button class="close-modal" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button>
+				</div>
+				<div id="cashierSalesContent"></div>
+				<div style="text-align: right; margin-top: 20px;">
+					<button class="btn btn-outline close-modal"><span data-translate="closeBtnText">Close</span></button>
+				</div>
+			</div>
+		</div>
+		<!-- New Sale Modal (Multi-Product) -->
+		<div class="modal" id="newSaleModal">
+			<div class="modal-content" style="max-width: 850px; max-height: 85vh; overflow-y: auto;">
+				<div style="display: flex; justify-content: space-between; margin-bottom: 20px; position: sticky; top: 0; background: var(--dark-card); z-index: 10;">
+					<h3 id="newSaleModalTitle">Create New Sale</h3>
+					<button class="close-modal" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button>
+				</div>
+				<div class="form-group"><label id="customerNameLabel">Customer Name</label><input type="text" id="saleCustomer" class="form-control" value="Walk-in Customer"></div>
+				<div class="form-group" style="display:flex; align-items:center; gap:10px;">
+					<label style="margin:0; white-space:nowrap;" id="dateLabel">Date</label>
+					<input type="datetime-local" id="saleDate" class="form-control" style="flex:1;">
+					<button type="button" class="btn btn-sm btn-outline" id="fillTodayBtn"><span id="todayBtnText">Today</span></button>
+				</div>
+				<table class="sale-items-table" id="saleItemsTable">
 					<thead>
 						<tr>
-							<th>Document Type</th>
-							<th>Document Number</th>
-							<th>Issue Date</th>
-							<th>Expiry Date</th>
-							<th>File</th>
-							<th></th>
+							<th style="width:30%;"><span data-translate="productCol">Product</span></th>
+							<th style="width:14%;"><span data-translate="categoryCol">Category</span></th>
+							<th style="width:8%;"><span data-translate="stockCol">Stock</span></th>
+							<th style="width:8%;"><span data-translate="qtyCol">Qty</span></th>
+							<th style="width:12%;"><span data-translate="unitPriceCol">Unit Price</span></th>
+							<th style="width:12%;"><span data-translate="totalCol">Total</span></th>
+							<th style="width:16%;"></th>
 						</tr>
 					</thead>
-					<tbody id="supplierDocsBody"></tbody>
+					<tbody id="saleItemsBody"></tbody>
 				</table>
-				<button class="btn btn-sm btn-outline" id="addDocRowBtn" style="margin-top:6px;"><i class="fas fa-plus"></i> Add Document</button>
-				<small style="color:#94a3b8;">Accepted: images, PDF. Max 5MB.</small>
-			</div>
-			<div class="form-group"><label>Lead Time (days)</label><input type="number" id="supplierLeadTimeInput" class="form-control" value="5" min="1"></div>
-			<div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
-				<button class="btn btn-outline close-modal">Cancel</button>
-				<button class="btn btn-success" id="submitSupplier">Save Supplier</button>
-			</div>
-		</div>
-	</div>
-	<!-- Add Product Modal -->
-	<div class="modal" id="addProductModal">
-		<div class="modal-content" style="max-width: 700px; max-height: 85vh; overflow-y: auto;">
-			<div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-				<h3 id="addProductModalTitle">Add New Product</h3>
-				<button class="close-modal" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button>
-			</div>
-			<div class="form-group"><label>Product Name *</label><input type="text" id="productName" class="form-control"></div>
-			<div class="form-group"><label>SKU *</label><input type="text" id="productSKU" class="form-control"></div>
-			<div class="form-group">
-				<label>Category</label>
-				<select id="productCategory" class="form-control"></select>
-			</div>
-			<div class="form-group">
-				<label>Supplier</label>
-				<select id="productSupplier" class="form-control"></select>
-			</div>
-			<div class="form-group"><label>Initial Quantity *</label><input type="number" id="productQuantity" class="form-control" value="10" min="0"></div>
-			<div class="form-group"><label>Reorder Level *</label><input type="number" id="reorderLevel" class="form-control" value="5" min="1"></div>
-			<div class="form-group"><label>Price *</label><input type="number" id="productPrice" class="form-control" step="0.01" value="15.00" min="0"></div>
-			<div class="form-group"><label>Description</label><textarea id="productDescription" class="form-control" rows="2"></textarea></div>
-			<div class="form-group"><label>Image</label><input type="file" id="productImage" class="form-control" accept="image/*"></div>
-			<div class="form-group"><label>Location</label><input type="text" id="productLocation" class="form-control"></div>
-			<div class="form-group"><label>Received Date</label><input type="date" id="productReceivedDate" class="form-control"></div>
-			<div class="form-group"><label>Expiry Date</label><input type="date" id="productExpiryDate" class="form-control"></div>
-			<div class="form-group"><label><input type="checkbox" id="productActive" checked> Active</label></div>
-			<div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
-				<button class="btn btn-outline close-modal">Cancel</button>
-				<button class="btn btn-success" id="submitProduct">Add Product</button>
+				<button class="btn btn-sm btn-outline" id="addSaleItemBtn" style="margin-bottom:15px;"><i class="fas fa-plus"></i> <span id="addProductBtn">Add Product</span></button>
+				<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:15px;">
+					<div class="form-group"><label id="taxLabel">Tax (%)</label><input type="number" id="saleTax" class="form-control" value="0" min="0" max="100" oninput="updateSaleTotal()"></div>
+					<div class="form-group"><label id="discountLabel">Discount (%)</label><input type="number" id="saleDiscount" class="form-control" value="0" min="0" max="100" oninput="updateSaleTotal()"></div>
+					<div class="form-group"><label id="paymentMethodLabel">Payment Method</label><select id="salePaymentMethod" class="form-control"><option id="cashOption">Cash</option><option id="cardOption">Card</option><option id="creditOption">Credit</option></select></div>
+				</div>
+				<div class="form-group"><label id="notesLabel">Notes</label><input type="text" id="saleNotes" class="form-control" placeholder="Any notes..."></div>
+				<div style="text-align:right; font-size:18px; margin-bottom:15px;">
+					<span id="totalLabel">Total:</span> <strong id="saleGrandTotal">$0.00</strong>
+				</div>
+				<div style="display: flex; gap: 10px; justify-content: flex-end; position: sticky; bottom: 0; background: var(--dark-card); padding-top: 10px; z-index: 10;">
+					<button class="btn btn-outline close-modal"><span data-translate="cancelBtnText">Cancel</span></button>
+					<button class="btn btn-success" id="processSale"><span id="processSaleBtnText">Process Sale</span></button>
+				</div>
 			</div>
 		</div>
-	</div>
-	<!-- Edit Product Modal (Full Edit) -->
-	<div class="modal" id="editProductModal">
-		<div class="modal-content" style="max-width: 700px; max-height: 85vh; overflow-y: auto;">
-			<div style="display: flex; justify-content: space-between; margin-bottom: 20px; position: sticky; top: 0; background: var(--dark-card); z-index: 10;">
-				<h3><i class="fas fa-edit"></i> <span id="editProductModalTitle">Edit Product</span></h3>
-				<button class="close-modal" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button>
-			</div>
-			<input type="hidden" id="editProductId">
-			
-			<div class="form-group"><label>Product Name *</label><input type="text" id="editProductName" class="form-control"></div>
-			<div class="form-group"><label>SKU *</label><input type="text" id="editProductSKU" class="form-control"></div>
-			<div class="form-group"><label>Category</label><select id="editProductCategory" class="form-control"></select></div>
-			<div class="form-group"><label>Supplier</label><select id="editProductSupplier" class="form-control"></select></div>
-			<div class="form-group"><label>Price *</label><input type="number" id="editProductPrice" class="form-control" step="0.01" min="0"></div>
-			<div class="form-group"><label>Unit Cost</label><input type="number" id="editUnitCost" class="form-control" step="0.01" min="0"></div>
-			<div class="form-group"><label>Reorder Level *</label><input type="number" id="editReorderLevel" class="form-control" min="1"></div>
-			<div class="form-group"><label>Current Stock</label><input type="number" id="editCurrentStock" class="form-control" readonly></div>
-			<div class="form-group"><label>New Stock Quantity</label><input type="number" id="editNewStock" class="form-control" value="0" min="0"></div>
-			<div class="form-group"><label>Description</label><textarea id="editProductDescription" class="form-control" rows="2"></textarea></div>
-			<div class="form-group"><label>Location</label><input type="text" id="editProductLocation" class="form-control"></div>
-			<div class="form-group"><label>Received Date</label><input type="date" id="editProductReceivedDate" class="form-control"></div>
-			<div class="form-group"><label>Expiry Date</label><input type="date" id="editProductExpiryDate" class="form-control"></div>
-			<div class="form-group"><label><input type="checkbox" id="editProductActive"> Active</label></div>
-			<div class="form-group"><label>Image</label><input type="file" id="editProductImage" class="form-control" accept="image/*"></div>
-			
-			<!-- Stock Status -->
-			<div class="form-group" style="text-align: center; margin-top: 15px;">
-				<div id="editStockStatus" style="font-size: 1.2rem; padding: 8px; border-radius: 6px; background: var(--dark-bg); color: var(--primary);">—</div>
-			</div>
-
-			<div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
-				<button class="btn btn-outline close-modal">Cancel</button>
-				<button class="btn btn-success" id="saveProductChanges">Save Changes</button>
+		<!-- Report View Modal -->
+		<div class="modal" id="reportViewModal">
+			<div class="modal-content">
+				<div style="display: flex; justify-content: space-between; margin-bottom: 20px;"><h3 id="reportTitle">Report</h3><button class="close-modal" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button></div>
+				<div id="reportContent"></div>
+				<div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;"><button class="btn btn-primary" id="exportReportBtn"><span id="exportReportText">Export to CSV</span></button><button class="btn btn-outline close-modal"><span id="closeBtnText">Close</span></button></div>
 			</div>
 		</div>
-	</div>
-	<!-- Invoice details model -->
-	<div class="modal" id="invoiceDetailModal">
-		<div class="modal-content" style="max-width: 950px; max-height: 80vh; overflow-y: auto;">
-			<div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--primary); padding-bottom: 15px; margin-bottom: 20px;">
-				<h2 style="margin:0;"><span id="invoiceDetailTitle">Invoice Details</span></h2>
-				<button class="close-modal" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button>
-			</div>
-			<div id="invoiceDetailContent"></div>
-			<div style="text-align: right; margin-top: 20px;">
-				<button class="btn btn-primary" id="printInvoiceBtn"><i class="fas fa-print"></i> <span id="printInvoiceBtn">Print Invoice</span></button>
-				<button class="btn btn-danger" id="pdfInvoiceBtn"><i class="fas fa-file-pdf"></i> <span id="downloadPdfBtn">Download PDF</span></button>
-				<button class="btn btn-outline close-modal">Close</button>
-			</div>
-		</div>
-	</div>
-	<!-- Cashier Sales Details Modal -->
-	<div class="modal" id="cashierSalesModal">
-		<div class="modal-content" style="max-width: 950px; max-height: 80vh; overflow-y: auto;">
-			<div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--primary); padding-bottom: 15px; margin-bottom: 20px;">
-				<h2 id="cashierSalesModalTitle">Sales of Cashier</h2>
-				<button class="close-modal" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button>
-			</div>
-			<div id="cashierSalesContent"></div>
-			<div style="text-align: right; margin-top: 20px;">
-				<button class="btn btn-outline close-modal">Close</button>
-			</div>
-		</div>
-	</div>
-    <!-- New Sale Modal (Multi-Product) -->
-	<div class="modal" id="newSaleModal">
-		<div class="modal-content" style="max-width: 850px; max-height: 85vh; overflow-y: auto;">
-			<div style="display: flex; justify-content: space-between; margin-bottom: 20px; position: sticky; top: 0; background: var(--dark-card); z-index: 10;">
-				<h3 id="newSaleModalTitle">Create New Sale</h3>
-				<button class="close-modal" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button>
-			</div>
-			<div class="form-group"><label>Customer Name</label><input type="text" id="saleCustomer" class="form-control" value="Walk-in Customer"></div>
-			<div class="form-group" style="display:flex; align-items:center; gap:10px;">
-				<label style="margin:0; white-space:nowrap;">Date</label>
-				<input type="datetime-local" id="saleDate" class="form-control" style="flex:1;">
-				<button type="button" class="btn btn-sm btn-outline" id="fillTodayBtn">Today</button>
-			</div>
-
-			<!-- جدول المنتجات -->
-			<table class="sale-items-table" id="saleItemsTable">
-				<thead>
-					<tr>
-						<th style="width:30%;">Product</th>
-						<th style="width:14%;">Category</th>
-						<th style="width:8%;">Stock</th>
-						<th style="width:8%;">Qty</th>
-						<th style="width:12%;">Unit Price</th>
-						<th style="width:12%;">Total</th>
-						<th style="width:16%;"></th>
-					</tr>
-				</thead>
-				<tbody id="saleItemsBody"></tbody>
-			</table>
-			<button class="btn btn-sm btn-outline" id="addSaleItemBtn" style="margin-bottom:15px;"><i class="fas fa-plus"></i> Add Product</button>
-
-			<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:15px;">
-				<div class="form-group"><label>Tax (%)</label><input type="number" id="saleTax" class="form-control" value="0" min="0" max="100" oninput="updateSaleTotal()"></div>
-				<div class="form-group"><label>Discount (%)</label><input type="number" id="saleDiscount" class="form-control" value="0" min="0" max="100" oninput="updateSaleTotal()"></div>
-				<div class="form-group"><label>Payment Method</label><select id="salePaymentMethod" class="form-control"><option>Cash</option><option>Card</option><option>Credit</option></select></div>
-			</div>
-			<div class="form-group"><label>Notes</label><input type="text" id="saleNotes" class="form-control" placeholder="Any notes..."></div>
-			<div style="text-align:right; font-size:18px; margin-bottom:15px;">
-				Total: <strong id="saleGrandTotal">$0.00</strong>
-			</div>
-			<div style="display: flex; gap: 10px; justify-content: flex-end; position: sticky; bottom: 0; background: var(--dark-card); padding-top: 10px; z-index: 10;">
-				<button class="btn btn-outline close-modal">Cancel</button>
-				<button class="btn btn-success" id="processSale">Process Sale</button>
-			</div>
-		</div>
-	</div>
-    <!-- Report View Modal -->
-    <div class="modal" id="reportViewModal">
-        <div class="modal-content">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 20px;"><h3 id="reportTitle">Report</h3><button class="close-modal" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button></div>
-            <div id="reportContent"></div>
-            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;"><button class="btn btn-primary" id="exportReportBtn"><span id="exportReportText">Export to CSV</span></button><button class="btn btn-outline close-modal"><span id="closeBtnText">Close</span></button></div>
-        </div>
-    </div>
 	<!-- ========== END MODALS ========== -->
 
     <!-- ========== CHATBOT ========== -->

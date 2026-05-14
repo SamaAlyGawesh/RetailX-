@@ -128,6 +128,12 @@ const translations = {
         noCashiers: "No cashiers data found.",
         cashierSalesModalTitle: "Sales of Cashier",
         closeBtnText: "Close",
+        noActiveCashiers: "No active cashiers at the moment.",
+        startedLabel: "Started",
+        salesLabel: "Sales",
+        invoicesLabel: "Invoices",
+        itemsSoldLabel: "Items sold",
+        activeBadge: "Active",
         
         // Reports
         reportsTitle: "Reports & Analytics",
@@ -344,7 +350,85 @@ const translations = {
         changeRoleCol: "Change Role",
         createdAtCol: "Created At",
         lastLoginCol: "Last Login",
-        branchCol: "Branch"
+        branchCol: "Branch",
+
+        // Supplier Modal
+        supplierNameLabel: "Supplier Name *",
+        supplierCodeLabel: "Supplier Code",
+        supplierContactLabel: "Contact Person",
+        supplierEmailLabel: "Email *",
+        supplierPhoneLabel: "Phone *",
+        address1Label: "Address 1",
+        address2Label: "Address 2",
+        websiteLabel: "Website",
+        paymentTermsLabel: "Payment Terms",
+        categoriesSuppliedLabel: "Categories Supplied",
+        clickSelectHint: "Click to select/deselect",
+        supplierDocsLabel: "Supplier Documents",
+        docTypeCol: "Document Type",
+        docNumberCol: "Document Number",
+        issueDateCol: "Issue Date",
+        expiryDateCol: "Expiry Date",
+        fileCol: "File",
+        addDocBtn: "Add Document",
+        docAcceptedHint: "Accepted: images, PDF. Max 5MB.",
+        leadTimeLabel: "Lead Time (days)",
+        saveSupplierBtnText: "Save Supplier",
+        
+        // Product Modal
+        productNameLabel: "Product Name *",
+        productSkuLabel: "SKU *",
+        productCategoryLabel: "Category",
+        productSupplierLabel: "Supplier",
+        productQuantityLabel: "Initial Quantity *",
+        productReorderLabel: "Reorder Level *",
+        productPriceLabel: "Price *",
+        descriptionLabel: "Description",
+        imageLabel: "Image",
+        locationLabel: "Location",
+        receivedDateLabel: "Received Date",
+        expiryDateLabel: "Expiry Date",
+        activeLabel: "Active",
+        addProductBtnModalText: "Add Product",
+        
+        // Edit Product Modal
+        unitCostLabel: "Unit Cost",
+        currentStockLabel: "Current Stock",
+        newStockLabel: "New Stock Quantity",
+        saveChangesBtnText: "Save Changes",
+        
+        // Invoice Modal
+        invoiceDetailTitle: "Invoice Details",
+        printInvoiceBtnText: "Print Invoice",
+        downloadPdfBtnText: "Download PDF",
+        
+        // New Sale Modal
+        customerNameLabel: "Customer Name",
+        dateLabel: "Date",
+        todayBtnText: "Today",
+        productCol: "Product",
+        categoryCol: "Category",
+        stockCol: "Stock",
+        qtyCol: "Qty",
+        unitPriceCol: "Unit Price",
+        totalCol: "Total",
+        addProductBtn: "Add Product",
+        taxLabel: "Tax (%)",
+        discountLabel: "Discount (%)",
+        paymentMethodLabel: "Payment Method",
+        cashOption: "Cash",
+        cardOption: "Card",
+        creditOption: "Credit",
+        notesLabel: "Notes",
+        totalLabel: "Total:",
+        processSaleBtnText: "Process Sale",
+        
+        // Cashier Sales Modal
+        cashierSalesModalTitle: "Sales of Cashier",
+        
+        // Report Modal
+        reportTitle: "Report",
+        exportReportText: "Export to CSV",
     },
     
     ar: {
@@ -420,7 +504,7 @@ const translations = {
         navInventoryText: "المخزون",
         navSalesText: "المبيعات",
         navPOSText: "نقطة البيع",
-        navCashiersText: "الكاشيرات",
+        navCashiersText: "الكاشير",
         navReportsText: "التقارير",
         navUsersText: "المستخدمين",
         
@@ -474,7 +558,13 @@ const translations = {
         noCashiers: "لا توجد بيانات كاشيرات.",
         cashierSalesModalTitle: "مبيعات الكاشير",
         closeBtnText: "إغلاق",
-        
+        noActiveCashiers: "لا يوجد كاشيرات نشطة حالياً.",
+        startedLabel: "بدأت",
+        salesLabel: "المبيعات",
+        invoicesLabel: "الفواتير",
+        itemsSoldLabel: "المنتجات المباعة",
+        activeBadge: "نشط",
+
         // Reports
         reportsTitle: "التقارير والتحليلات",
         generateText: "إنشاء تقرير",
@@ -690,6 +780,84 @@ const translations = {
         changeRoleCol: "تغيير الدور",
         createdAtCol: "تاريخ الإنشاء",
         lastLoginCol: "آخر تسجيل دخول",
-        branchCol: "الفرع"
+        branchCol: "الفرع",
+
+        // Supplier Modal
+        supplierNameLabel: "اسم المورد *",
+        supplierCodeLabel: "كود المورد",
+        supplierContactLabel: "جهة الاتصال",
+        supplierEmailLabel: "البريد الإلكتروني *",
+        supplierPhoneLabel: "الهاتف *",
+        address1Label: "العنوان ١",
+        address2Label: "العنوان ٢",
+        websiteLabel: "الموقع الإلكتروني",
+        paymentTermsLabel: "شروط الدفع",
+        categoriesSuppliedLabel: "الفئات الموردة",
+        clickSelectHint: "انقر للتحديد/إلغاء التحديد",
+        supplierDocsLabel: "مستندات المورد",
+        docTypeCol: "نوع المستند",
+        docNumberCol: "رقم المستند",
+        issueDateCol: "تاريخ الإصدار",
+        expiryDateCol: "تاريخ الانتهاء",
+        fileCol: "ملف",
+        addDocBtn: "إضافة مستند",
+        docAcceptedHint: "مقبول: صور، PDF. الحد الأقصى ٥ ميجابايت.",
+        leadTimeLabel: "وقت التسليم (أيام)",
+        saveSupplierBtnText: "حفظ المورد",
+        
+        // Product Modal
+        productNameLabel: "اسم المنتج *",
+        productSkuLabel: "الرمز *",
+        productCategoryLabel: "الفئة",
+        productSupplierLabel: "المورد",
+        productQuantityLabel: "الكمية الأولية *",
+        productReorderLabel: "حد إعادة الطلب *",
+        productPriceLabel: "السعر *",
+        descriptionLabel: "الوصف",
+        imageLabel: "صورة",
+        locationLabel: "الموقع",
+        receivedDateLabel: "تاريخ الاستلام",
+        expiryDateLabel: "تاريخ الانتهاء",
+        activeLabel: "نشط",
+        addProductBtnModalText: "إضافة منتج",
+        
+        // Edit Product Modal
+        unitCostLabel: "تكلفة الوحدة",
+        currentStockLabel: "المخزون الحالي",
+        newStockLabel: "الكمية الجديدة",
+        saveChangesBtnText: "حفظ التغييرات",
+        
+        // Invoice Modal
+        invoiceDetailTitle: "تفاصيل الفاتورة",
+        printInvoiceBtnText: "طباعة الفاتورة",
+        downloadPdfBtnText: "تحميل PDF",
+        
+        // New Sale Modal
+        customerNameLabel: "اسم العميل",
+        dateLabel: "التاريخ",
+        todayBtnText: "اليوم",
+        productCol: "المنتج",
+        categoryCol: "الفئة",
+        stockCol: "المخزون",
+        qtyCol: "الكمية",
+        unitPriceCol: "سعر الوحدة",
+        totalCol: "الإجمالي",
+        addProductBtn: "إضافة منتج",
+        taxLabel: "الضريبة (%)",
+        discountLabel: "الخصم (%)",
+        paymentMethodLabel: "طريقة الدفع",
+        cashOption: "نقدي",
+        cardOption: "بطاقة",
+        creditOption: "ائتمان",
+        notesLabel: "ملاحظات",
+        totalLabel: "الإجمالي:",
+        processSaleBtnText: "معالجة البيع",
+        
+        // Cashier Sales Modal
+        cashierSalesModalTitle: "مبيعات الكاشير",
+        
+        // Report Modal
+        reportTitle: "تقرير",
+        exportReportText: "تصدير إلى CSV",
     }
 };
