@@ -128,6 +128,48 @@ body.logged-in .hamburger {
     overflow: hidden;
 }
 
+/* ========== LANGUAGE & THEME TOGGLES ========== */
+.language-toggle, .theme-toggle {
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid var(--dark-border);
+    border-radius: 8px;
+    padding: 8px 15px;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.language-toggle:hover, .theme-toggle:hover {
+    background: rgba(109, 40, 217, 0.2);
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+.language-toggle i, .theme-toggle i {
+    font-size: 16px;
+}
+
+/* في حالة الثيم الفاتح */
+body.light-theme .language-toggle,
+body.light-theme .theme-toggle {
+    background: #f3f4f6;
+    color: #111827;
+    border-color: var(--light-border);
+}
+
+body.light-theme .language-toggle:hover,
+body.light-theme .theme-toggle:hover {
+    background: rgba(109, 40, 217, 0.1);
+    border-color: var(--primary);
+}
+
+
 /* ========== RESPONSIVE ========== */
 @media (max-width: 768px) {
     .content-area {
@@ -165,6 +207,12 @@ body.logged-in .hamburger {
     body.logged-in .hamburger {
         display: flex;
     }
+
+    div:has(> table.sticky-header) {
+        overflow-y: auto;
+        scroll-padding-top: 80px;   /* ارتفاع الرأسين المثبّتين */
+        max-height: 70vh;           /* حد أقصى اختياري للارتفاع (حسب رغبتك) */
+    }
     
     /* تحسينات عامة للموبايل */
     .quick-links-grid { grid-template-columns: repeat(2, 1fr); }
@@ -191,6 +239,11 @@ body.logged-in .hamburger {
 }
 
 @media (max-width: 480px) {
+    div:has(> table.sticky-header) {
+        overflow-y: auto;
+        scroll-padding-top: 80px;   /* ارتفاع الرأسين المثبّتين */
+        max-height: 70vh;           /* حد أقصى اختياري للارتفاع (حسب رغبتك) */
+    }
     .container { padding: 0 15px; }
     .stat-card .value { font-size: 1.5rem; }
     .btn { padding: 6px 12px; font-size: 12px; }

@@ -2,7 +2,38 @@
 
 let posShift = null;
 let posSales = [];
-
+window.checkShift = async function() {
+    try {
+        const res = await fetch(`${API_BASE}/shifts/my-shift`, {
+            headers: { 'Authorization': `Bearer ${appState.token}` }
+        });
+        if (!res.ok) return;
+        const shift = await res.json();
+        posShift = shift;
+        const startBtn = document.getElementById('posStartShift');
+        const endBtn = document.getElementById('posEndShift');
+        const statusSpan = document.getElementById('posShiftStatus');
+        
+        if (shift) {
+            if(startBtn) startBtn.style.display = 'none';
+            if(endBtn) endBtn.style.display = 'inline-flex';
+            if(statusSpan) statusSpan.innerHTML = `<i class="fas fa-circle" style="color:#10b981;"></i> Shift active • ${shift.start_time}`;
+            if (typeof window.refreshLiveCashiers === 'function') {
+                window.refreshLiveCashiers();
+            }
+            loadPOSData();
+            window.updateShiftStatus(shift);
+        } else {
+            if(startBtn) startBtn.style.display = 'inline-flex';
+            if(endBtn) endBtn.style.display = 'none';
+            if(statusSpan) statusSpan.innerText = '';
+            clearPOSTable();
+            window.updateShiftStatus(null);
+        }
+    } catch (e) {
+        console.error('Shift check failed', e);
+    }
+};
 document.addEventListener('DOMContentLoaded', () => {
     // عناصر الـ DOM
     const startBtn = document.getElementById('posStartShift');
@@ -10,37 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusSpan = document.getElementById('posShiftStatus');
     const newSaleBtn = document.getElementById('posNewSale');
 
-    // دالة فحص حالة الشيفت
-    async function checkShift() {
-        try {
-            const res = await fetch(`${API_BASE}/shifts/my-shift`, {
-                headers: { 'Authorization': `Bearer ${appState.token}` }
-            });
-            if (!res.ok) return;
-            const shift = await res.json();
-            posShift = shift;
-            if (shift) {
-                if(startBtn) startBtn.style.display = 'none';
-                if(endBtn) endBtn.style.display = 'inline-flex';
-                if(statusSpan) statusSpan.innerHTML = `<i class="fas fa-circle" style="color:#10b981;"></i> Shift active • ${shift.start_time}`;
-                if (typeof window.refreshLiveCashiers === 'function') {
-                    window.refreshLiveCashiers();
-                }
-                loadPOSData();
-                updateShiftStatus(shift);
-            } else {
-                if(startBtn) startBtn.style.display = 'inline-flex';
-                if(endBtn) endBtn.style.display = 'none';
-                if(statusSpan) statusSpan.innerText = '';
-                clearPOSTable();
-                updateShiftStatus(null);
-            }
-        } catch (e) {
-            console.error('Shift check failed', e);
-        }
-    }
-
-    window.checkShift = checkShift; // عشان نستدعيها من بره
+    
 
     if (startBtn) {
         startBtn.onclick = async () => {
@@ -82,7 +83,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // أول ما تفتح الصفحة افحص الشيفت
-    if (appState.isAuthenticated) checkShift();
+    if (appState.isAuthenticated) window.checkShift();
+
+    // استمع لحدث "salesDataReady" لتحديث POS فقط عندما تكون البيانات جاهزة
+    document.addEventListener('salesDataReady', () => {
+        window.checkShift();
+    });
+
+    // احتياط: لو البيانات جاهزة بالفعل (عند تنفيذ pos.js متأخراً)
+    if (typeof window.checkShift === 'function' && DataStore.getSales().length > 0) {
+        window.checkShift();
+    }
 });
 
 // تحميل وعرض فواتير الشيفت الحالي
@@ -120,6 +131,8 @@ function loadPOSData() {
         </tr>
     `).join('');
 }
+// تصدير الدالة لاستخدامها من sales.js
+window.loadPOSData = loadPOSData;
 
 function clearPOSTable() {
     document.getElementById('posTotalSales').innerText = '$0.00';

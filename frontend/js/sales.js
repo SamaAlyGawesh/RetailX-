@@ -143,6 +143,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!appState.isAuthenticated || !hasPermission('sales')) return;
         // تأكد من أن الكاشير لديه وردية نشطة
         try {
+            // await loadSalesPage(currentSalesPage);
+            // تحديث فوري لجدول POS (لو الشيفت نشط)
+            // if (typeof window.loadPOSData === 'function') {
+            //     window.loadPOSData();
+            // }
             const res = await fetch(`${API_BASE}/shifts/my-shift`, {
                 headers: { 'Authorization': `Bearer ${appState.token}` }
             });
@@ -207,6 +212,9 @@ document.addEventListener('DOMContentLoaded', () => {
 			const prodsData = await apiGetProducts(1, 9999);
 			DataStore.setProducts(prodsData.products);
             await loadSalesPage(currentSalesPage);
+            if (typeof window.loadPOSData === 'function') {
+                window.loadPOSData();
+            }
             renderInventoryTable();
             renderDashboardInventory();
             updateDashboardStats();
@@ -222,8 +230,8 @@ document.addEventListener('DOMContentLoaded', () => {
             isProcessingSale = false;
             btn.disabled = false;
             btn.innerHTML = 'Process Sale';
-            if (typeof window.refreshPOS === 'function') {
-                window.refreshPOS();
+            if (typeof window.checkShift === 'function') {
+                window.checkShift();
             }
         }
     };

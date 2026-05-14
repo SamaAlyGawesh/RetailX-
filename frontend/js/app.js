@@ -84,11 +84,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             DataStore.setSales(allSales.sales);
             DataStore.setSuppliers(allSuppliersRes.suppliers);
             
+            document.dispatchEvent(new CustomEvent('salesDataReady'));
+
             const activity = await apiGetActivity();
             DataStore.setActivity(activity);
             fetchAndDisplayShiftStatus(); // أول مرة
             // تحديث الحالة كل دقيقة لو حابب (اختياري)
-            setInterval(fetchAndDisplayShiftStatus, 60000);
+            // setInterval(fetchAndDisplayShiftStatus, 60000);
+            // ✅ تحديث واجهة POS الآن بعد توفر بيانات المبيعات
+            if (typeof window.checkShift === 'function') {
+                window.checkShift();
+            }
             //mainContent.style.marginLeft = '250px';
         } catch (err) {
             console.log('Backend not available – clearing auth');
@@ -164,13 +170,55 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
     }
 
-    applyLanguage();
     updateDashboardStats();
     renderDashboardInventory();
     renderRecentActivity();
+    // استعادة اللغة من localStorage
+    const savedLang = localStorage.getItem('retailx_lang');
+    if (savedLang && (savedLang === 'en' || savedLang === 'ar')) {
+        currentLang = savedLang;
+    } else {
+        // لو مفيش لغة محفوظة، استخدم الافتراضية
+        currentLang = 'en';
+    }
+    applyLanguage();
 
     console.log('RetailX frontend initialized');
     applyRoleBasedAccess();
+    // ========== LANGUAGE TOGGLE ==========
+    const languageToggle = document.getElementById('languageToggle');
+    if (languageToggle) {
+        languageToggle.onclick = () => {
+            currentLang = currentLang === 'en' ? 'ar' : 'en';
+            applyLanguage();
+            localStorage.setItem('retailx_lang', currentLang);
+        };
+    }
+
+    // ========== THEME TOGGLE ==========
+    const themeToggleBtn = document.getElementById('themeToggle');
+    if (themeToggleBtn) {
+        // استعادة الثيم
+        const savedTheme = localStorage.getItem('retailx_theme');
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-theme');
+            const icon = themeToggleBtn.querySelector('i');
+            if (icon) icon.className = 'fas fa-sun';
+        }
+
+        themeToggleBtn.onclick = () => {
+            document.body.classList.toggle('light-theme');
+            const icon = themeToggleBtn.querySelector('i');
+            if (icon) {
+                icon.className = document.body.classList.contains('light-theme') ? 'fas fa-sun' : 'fas fa-moon';
+            }
+            localStorage.setItem('retailx_theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
+        };
+    }
+
+    // if (typeof window.loadPOSData === 'function' && typeof posShift !== 'undefined' && posShift) {
+    //     window.loadPOSData();
+    // }
 });
 
 function navigateToPage(pageId) {
@@ -200,12 +248,16 @@ function navigateToPage(pageId) {
     if (pageId === 'usersPage') {
         if (typeof loadUserPage === 'function') loadUserPage(1);
     }
-    if (pageId === 'posPage') {
-        // نتأكد إن بيانات المبيعات محملة
-        if (typeof checkShift === 'function') {
-            checkShift(); // استدعاء الدالة من pos.js مباشرة
-        }
-    }
+    // if (pageId === 'posPage') {
+    // if (typeof window.checkShift === 'function') {
+    //     window.checkShift();
+    //     } else {
+    //         // احتياط: جرب بعد 100ms لو لسه مش متعرفة
+    //         setTimeout(() => {
+    //             if (typeof window.checkShift === 'function') window.checkShift();
+    //         }, 100);
+    //     }
+    // }   
     if (pageId === 'cashiersPage') {
         if (typeof loadCashiersPage === 'function') loadCashiersPage();
         if (typeof loadLiveCashiers === 'function') loadLiveCashiers();
