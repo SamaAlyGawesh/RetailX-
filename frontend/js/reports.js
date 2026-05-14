@@ -162,20 +162,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function generateReportView(type, extra) {
     let title = '', html = '';
+    const langObj = translations[currentLang] || translations['en'];
 
     if (type === 'stock') {
         let filteredData = DataStore.getProducts();
         let categoryFilter = extra?.category || document.getElementById('stockCategoryFilter')?.value || '';
         if (categoryFilter) {
             filteredData = DataStore.getProducts().filter(p => p.category === categoryFilter);
-            title = 'Stock Summary – ' + categoryFilter;
+            title = (langObj.report1Title || 'Stock Summary') + ' – ' + categoryFilter;
         } else {
-            title = 'Stock Summary – All Categories';
+            title = (langObj.report1Title || 'Stock Summary') + ' – ' + (langObj.allCategoriesText || 'All Categories');
         }
 
         const grouped = {};
         filteredData.forEach(p => {
-            const cat = p.category || 'Uncategorized';
+            const cat = p.category || (langObj.uncategorizedText || 'Uncategorized');
             if (!grouped[cat]) grouped[cat] = [];
             grouped[cat].push(p);
         });
@@ -183,13 +184,18 @@ function generateReportView(type, extra) {
 
         html = `<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%;font-size:14px;">
             <thead><tr style="background:#6d28d9;color:white;">
-                <th>Product</th><th>SKU</th><th>Category</th><th>Qty</th><th>Price</th><th>Total Value</th>
+                <th>${langObj.reportProductCol || 'Product'}</th>
+                <th>${langObj.reportSKUCol || 'SKU'}</th>
+                <th>${langObj.reportCategoryCol || 'Category'}</th>
+                <th>${langObj.reportQtyCol || 'Qty'}</th>
+                <th>${langObj.reportPriceCol || 'Price'}</th>
+                <th>${langObj.reportTotalValueCol || 'Total Value'}</th>
             </tr></thead><tbody>`;
 
         let grandQty = 0, grandValue = 0;
         categories.forEach(cat => {
             const products = grouped[cat];
-            html += `<tr style="background:#2d3748;color:#e2e8f0;"><td colspan="6"><strong>${cat}</strong> (${products.length} products)</td></tr>`;
+            html += `<tr style="background:#2d3748;color:#e2e8f0;"><td colspan="6"><strong>${cat}</strong> (${products.length} ${langObj.productsText || 'products'})</td></tr>`;
             let catQty = 0, catValue = 0;
             products.forEach(p => {
                 const total = p.price * p.quantity;
@@ -197,27 +203,24 @@ function generateReportView(type, extra) {
                 catQty += p.quantity;
                 catValue += total;
             });
-            html += `<tr style="background:#1a202c;color:#cbd5e0;font-weight:bold;"><td colspan="3">Subtotal – ${cat}</td><td>${catQty}</td><td></td><td>${formatPrice(catValue)}</td></tr>`;
+            html += `<tr style="background:#1a202c;color:#cbd5e0;font-weight:bold;"><td colspan="3">${langObj.reportSubtotalLabel || 'Subtotal'} – ${cat}</td><td>${catQty}</td><td></td><td>${formatPrice(catValue)}</td></tr>`;
             grandQty += catQty;
             grandValue += catValue;
         });
-        html += `<tr style="background:#6d28d9;color:white;font-weight:bold;"><td colspan="3">Grand Total</td><td>${grandQty}</td><td></td><td>${formatPrice(grandValue)}</td></tr>`;
+        html += `<tr style="background:#6d28d9;color:white;font-weight:bold;"><td colspan="3">${langObj.reportGrandTotalLabel || 'Grand Total'}</td><td>${grandQty}</td><td></td><td>${formatPrice(grandValue)}</td></tr>`;
         html += '</tbody></table>';
 
-        // تخزين للتصدير
         lastReportData = { type: 'stock', data: filteredData };
 
     } else if (type === 'lowstock') {
-        title = 'Low Stock Alert';
-        html = '<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%"><tr style="background:#6d28d9;color:white"><th>Product</th><th>Current</th><th>Reorder</th></tr>';
+        title = langObj.report2Title || 'Low Stock Alert';
+        html = `<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%"><tr style="background:#6d28d9;color:white"><th>${langObj.reportProductCol || 'Product'}</th><th>${langObj.reportCurrentCol || 'Current'}</th><th>${langObj.reportReorderCol || 'Reorder'}</th></tr>`;
         DataStore.getProducts().filter(p => p.quantity <= p.reorderLevel).forEach(p => html += `<tr><td>${p.name}</td><td>${p.quantity}</td><td>${p.reorderLevel}</td></tr>`);
         html += '</table>';
 
-        // تخزين للتصدير
         const items = DataStore.getProducts().filter(p => p.quantity <= p.reorderLevel);
         lastReportData = { type: 'lowstock', data: items };
 
-    
     } else if (type === 'sales') {
         let filteredSales = DataStore.getSales();
         const from = extra?.from || document.getElementById('salesDateFrom')?.value || '';
@@ -231,11 +234,11 @@ function generateReportView(type, extra) {
                 if (to && saleDate > new Date(to + 'T23:59:59')) return false;
                 return true;
             });
-            title = 'Sales Report';
-            if (from) title += ` from ${from}`;
-            if (to) title += ` to ${to}`;
+            title = langObj.report3Title || 'Sales Report';
+            if (from) title += ` ${langObj.reportFromLabel || 'from'} ${from}`;
+            if (to) title += ` ${langObj.reportToLabel || 'to'} ${to}`;
         } else {
-            title = 'Sales Report (All Time)';
+            title = (langObj.report3Title || 'Sales Report') + ' (' + (langObj.allTimeText || 'All Time') + ')';
         }
 
         const grouped = groupSales(filteredSales);
@@ -251,31 +254,36 @@ function generateReportView(type, extra) {
                 <td>${g.customer}</td>
                 <td>${g.items}</td>
                 <td>${formatPrice(g.total)}</td>
-                <td>${g.cashier || '—'}</td>   <!-- ✅ عمود الكاشير -->
+                <td>${g.cashier || '—'}</td>
             </tr>`;
         });
 
         html = `<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%">
             <thead><tr style="background:#6d28d9;color:white">
-                <th>ID</th><th>Date</th><th>Customer</th><th>Items</th><th>Total</th><th>Cashier</th>   <!-- ✅ رأس العمود -->
+                <th>${langObj.reportIDCol || 'ID'}</th>
+                <th>${langObj.reportDateCol || 'Date'}</th>
+                <th>${langObj.reportCustomerCol || 'Customer'}</th>
+                <th>${langObj.reportItemsCol || 'Items'}</th>
+                <th>${langObj.reportTotalCol || 'Total'}</th>
+                <th>${langObj.reportCashierCol || 'Cashier'}</th>
             </tr></thead>
             <tbody>${rows}</tbody>
             <tfoot><tr style="background:#1a202c;color:#cbd5e0;font-weight:bold;">
-                <td colspan="3">Grand Total</td>
+                <td colspan="3">${langObj.reportGrandTotalLabel || 'Grand Total'}</td>
                 <td>${totalItems}</td>
                 <td>${formatPrice(grandTotal)}</td>
                 <td></td>
             </tr></tfoot></table>`;
 
-        // تخزين للتصدير (نمرر grouped)
         lastReportData = { type: 'sales', data: grouped };
+
     } else if (type === 'value') {
-        title = 'Inventory Value';
+        title = langObj.report4Title || 'Inventory Value';
         let totalQty = 0;
         let totalValue = 0;
 
-        html = '<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%">' +
-               '<tr style="background:#6d28d9;color:white"><th>Product</th><th>Qty</th><th>Unit Price</th><th>Total Value</th></tr>';
+        html = `<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%">
+            <tr style="background:#6d28d9;color:white"><th>${langObj.reportProductCol || 'Product'}</th><th>${langObj.reportQtyCol || 'Qty'}</th><th>${langObj.reportUnitPriceCol || 'Unit Price'}</th><th>${langObj.reportTotalValueCol || 'Total Value'}</th></tr>`;
 
         DataStore.getProducts().forEach(p => {
             const val = p.price * p.quantity;
@@ -284,33 +292,27 @@ function generateReportView(type, extra) {
             html += `<tr><td>${p.name}</td><td>${p.quantity}</td><td>${formatPrice(p.price)}</td><td>${formatPrice(val)}</td></tr>`;
         });
 
-        // صف الإجمالي
         html += `<tr style="background:#1a202c;color:#cbd5e0;font-weight:bold;">
-                    <td>Grand Total</td>
-                    <td>${totalQty}</td>
-                    <td></td>
-                    <td>${formatPrice(totalValue)}</td>
-                 </tr>`;
+            <td>${langObj.reportGrandTotalLabel || 'Grand Total'}</td>
+            <td>${totalQty}</td>
+            <td></td>
+            <td>${formatPrice(totalValue)}</td></tr>`;
         html += '</table>';
 
-        // تخزين للتصدير
         lastReportData = { type: 'value', data: DataStore.getProducts() };
 
     } else if (type === 'supplier') {
-        title = 'Supplier Performance';
-        html = '<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%"><tr style="background:#6d28d9;color:white"><th>Name</th><th>Contact</th><th>Email</th><th>Lead Time</th></tr>';
-        DataStore.getSuppliers().forEach(s => html += `<tr><td>${s.name}</td><td>${s.contact||'-'}</td><td>${s.email}</td><td>${s.leadTime} days</td></tr>`);
+        title = langObj.report6Title || 'Supplier Performance';
+        html = `<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%"><tr style="background:#6d28d9;color:white"><th>${langObj.reportNameCol || 'Name'}</th><th>${langObj.reportContactCol || 'Contact'}</th><th>${langObj.reportEmailCol || 'Email'}</th><th>${langObj.reportLeadTimeCol || 'Lead Time'}</th></tr>`;
+        DataStore.getSuppliers().forEach(s => html += `<tr><td>${s.name}</td><td>${s.contact||'-'}</td><td>${s.email}</td><td>${s.leadTime} ${langObj.daysText || 'days'}</td></tr>`);
         html += '</table>';
 
-        // تخزين للتصدير
         lastReportData = { type: 'supplier', data: DataStore.getSuppliers() };
 
     } else if (type === 'topselling') {
-        // قراءة الفترة من extra
         const from = extra?.from || document.getElementById('topSellingDateFrom')?.value || '';
         const to = extra?.to || document.getElementById('topSellingDateTo')?.value || '';
 
-        // فلترة المبيعات
         let filteredSales = DataStore.getSales();
         if (from || to) {
             filteredSales = DataStore.getSales().filter(s => {
@@ -320,14 +322,13 @@ function generateReportView(type, extra) {
                 if (to && saleDate > new Date(to + 'T23:59:59')) return false;
                 return true;
             });
-            title = 'Top Selling Products';
-            if (from) title += ` from ${from}`;
-            if (to) title += ` to ${to}`;
+            title = langObj.report5Title || 'Top Selling Products';
+            if (from) title += ` ${langObj.reportFromLabel || 'from'} ${from}`;
+            if (to) title += ` ${langObj.reportToLabel || 'to'} ${to}`;
         } else {
-            title = 'Top Selling Products (All Time)';
+            title = (langObj.report5Title || 'Top Selling Products') + ' (' + (langObj.allTimeText || 'All Time') + ')';
         }
 
-        // حساب الكميات والإيرادات لكل منتج
         const productStats = {};
         filteredSales.forEach(s => {
             const pid = Number(s.productId);
@@ -340,14 +341,13 @@ function generateReportView(type, extra) {
         const productList = Object.entries(productStats).map(([pid, stats]) => {
             const product = DataStore.getProducts().find(p => p.id === Number(pid));
             return {
-                name: product ? product.name : 'Unknown (ID ' + pid + ')',
+                name: product ? product.name : ('Unknown (ID ' + pid + ')'),
                 sku: product ? product.sku : '-',
                 qty: stats.qty,
                 revenue: stats.revenue
             };
         }).sort((a, b) => b.qty - a.qty);
 
-        // حساب الإجمالي
         let totalQty = 0, totalRevenue = 0;
         let rows = '';
         productList.forEach(p => {
@@ -359,18 +359,20 @@ function generateReportView(type, extra) {
         html = `<div style="max-height: 60vh; overflow-y: auto;">
             <table border="1" cellpadding="8" style="border-collapse:collapse;width:100%;font-size:14px;">
                 <thead><tr style="background:#6d28d9;color:white;position:sticky;top:0;">
-                    <th>Product</th><th>SKU</th><th>Quantity Sold</th><th>Total Revenue</th>
+                    <th>${langObj.reportProductCol || 'Product'}</th>
+                    <th>${langObj.reportSKUCol || 'SKU'}</th>
+                    <th>${langObj.reportQtySoldCol || 'Quantity Sold'}</th>
+                    <th>${langObj.reportTotalRevenueCol || 'Total Revenue'}</th>
                 </tr></thead>
                 <tbody>${rows}</tbody>
                 <tfoot><tr style="background:#1a202c;color:#cbd5e0;font-weight:bold;position:sticky;bottom:0;">
-                    <td colspan="2">Grand Total</td>
+                    <td colspan="2">${langObj.reportGrandTotalLabel || 'Grand Total'}</td>
                     <td>${totalQty}</td>
                     <td>${formatPrice(totalRevenue)}</td>
                 </tr></tfoot>
             </table>
         </div>`;
 
-        // تخزين للتصدير
         lastReportData = { type: 'topselling', data: productList };
     }
 
