@@ -351,40 +351,42 @@ function renderInventoryTableHTML(products) {
     const tbody = document.getElementById('inventoryTable');
     if (!tbody) return;
     const startNumber = (currentInventoryPage - 1) * inventoryLimit + 1;
+    const langObj = translations[currentLang] || translations['en'];
 
     tbody.innerHTML = products.map((p, index) => {
-        const statusText = p.quantity === 0 ? 'Out of Stock' : (p.quantity <= p.reorderLevel ? 'Low Stock' : 'In Stock');
+        const statusText = p.quantity === 0 ? (langObj.outOfStockText || 'Out of Stock') : (p.quantity <= p.reorderLevel ? (langObj.lowStockText || 'Low Stock') : (langObj.inStockText || 'In Stock'));
         const statusClass = p.quantity === 0 ? 'stock-out' : (p.quantity <= p.reorderLevel ? 'stock-low' : 'stock-in');
         let actions = '';
-		if (hasPermission('editProduct')) {
-			actions += `<button class="btn btn-sm btn-warning" onclick="updateStock(${p.id})"><i class="fas fa-edit"></i></button> `;
-		}
-		if (hasPermission('deleteProduct')) {
-			actions += `<button class="btn btn-sm btn-danger" onclick="deleteProduct(${p.id})"><i class="fas fa-trash"></i></button>`;
-		}
+        if (hasPermission('editProduct')) {
+            actions += `<button class="btn btn-sm btn-warning" onclick="updateStock(${p.id})"><i class="fas fa-edit"></i></button> `;
+        }
+        if (hasPermission('deleteProduct')) {
+            actions += `<button class="btn btn-sm btn-danger" onclick="deleteProduct(${p.id})"><i class="fas fa-trash"></i></button>`;
+        }
         const imgSrc = p.image ? `/uploads/${p.image}` : null;
-		const isActive = p.active == 1;
-		const avgCost = p.quantity > 0 ? (p.total_cost / p.quantity).toFixed(2) : '0.00';
-		const totalValue = (p.total_cost || 0).toFixed(2);
-		return `<tr>
-					<td>${startNumber + index}</td>
-					<td>${imgSrc ? `<img src="${imgSrc}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;">` : '—'}</td>
-					<td>${p.name}</td>
-					<td style="font-family:monospace;">${p.supplier_code || '—'}</td>   <!-- خلية Supplier Code -->
-					<td>${p.sku}</td>
-					<td>${p.category}</td>
-					<td>${p.quantity}</td>
-					<td>${p.reorderLevel}</td>
-					<td>${formatPrice(p.price)}</td>
-					<td>${formatPrice(avgCost)}</td>
-					<td>${formatPrice(totalValue)}</td>
-					<td>${p.location || '—'}</td>
-					<td>${p.received_date || '—'}</td>
-					<td>${p.expiry_date || '—'}</td>
-					<td><span class="stock-status ${statusClass}">${statusText}</span></td>
-					<td>${isActive ? '<span style="color:var(--secondary)">Active</span>' : '<span style="color:var(--danger)">Inactive</span>'}</td>
-					<td>${actions}</td>
-				</tr>`;
+        const isActive = p.active == 1;
+		//const activeText = isActive ? (langObj.activeText || 'Active') : (langObj.inactiveText || 'Inactive');
+        const avgCost = p.quantity > 0 ? (p.total_cost / p.quantity).toFixed(2) : '0.00';
+        const totalValue = (p.total_cost || 0).toFixed(2);
+        return `<tr>
+            <td>${startNumber + index}</td>
+            <td>${imgSrc ? `<img src="${imgSrc}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;">` : '—'}</td>
+            <td>${p.name}</td>
+            <td style="font-family:monospace;">${p.supplier_code || '—'}</td>
+            <td>${p.sku}</td>
+            <td>${p.category}</td>
+            <td>${p.quantity}</td>
+            <td>${p.reorderLevel}</td>
+            <td>${formatPrice(p.price)}</td>
+            <td>${formatPrice(avgCost)}</td>
+            <td>${formatPrice(totalValue)}</td>
+            <td>${p.location || '—'}</td>
+            <td>${p.received_date || '—'}</td>
+            <td>${p.expiry_date || '—'}</td>
+            <td><span class="stock-status ${statusClass}">${statusText}</span></td>
+            <td>${isActive ? `<span style="color:var(--secondary)">${langObj.activeText || 'Active'}</span>` : `<span style="color:var(--danger)">${langObj.inactiveText || 'Inactive'}</span>`}</td>
+            <td>${actions}</td>
+        </tr>`;
     }).join('');
 }
 
@@ -400,12 +402,11 @@ let currentProduct = null; // لتخزين المنتج الحالي مؤقتا�
 window.updateStock = async function(id) {
     if (!hasPermission('inventory')) return;
     
-    // ابحث عن المنتج في currentInventory
     const p = DataStore.getProducts().find(p => p.id === id);
     if (!p) return;
-    currentProduct = p; // حفظ مرجع
+    currentProduct = p;
+    const langObj = translations[currentLang] || translations['en'];
 
-    // تعبئة الحقول الأساسية
     document.getElementById('editProductId').value = p.id;
     document.getElementById('editProductName').value = p.name;
     document.getElementById('editProductSKU').value = p.sku || '';
@@ -420,18 +421,23 @@ window.updateStock = async function(id) {
     document.getElementById('editProductActive').checked = p.active == 1;
     document.getElementById('editUnitCost').value = p.quantity > 0 ? (p.total_cost / p.quantity).toFixed(2) : p.price.toFixed(2);
 
-    // حالة المخزون
+    // ✅ حالة المخزون مترجمة
     const stockStatusEl = document.getElementById('editStockStatus');
     if (stockStatusEl) {
-        const statusText = p.quantity === 0 ? 'Out of Stock' : (p.quantity <= p.reorderLevel ? 'Low Stock' : 'In Stock');
-        stockStatusEl.textContent = statusText;
-        stockStatusEl.style.color = p.quantity === 0 ? 'var(--danger)' : (p.quantity <= p.reorderLevel ? 'var(--warning)' : 'var(--secondary)');
+        if (p.quantity === 0) {
+            stockStatusEl.textContent = langObj.outOfStockText || 'Out of Stock';
+            stockStatusEl.style.color = 'var(--danger)';
+        } else if (p.quantity <= p.reorderLevel) {
+            stockStatusEl.textContent = langObj.lowStockText || 'Low Stock';
+            stockStatusEl.style.color = 'var(--warning)';
+        } else {
+            stockStatusEl.textContent = langObj.inStockText || 'In Stock';
+            stockStatusEl.style.color = 'var(--secondary)';
+        }
     }
 
-    // ملء قوائم الموردين والفئات (اختياري لكن يفيد)
     await loadSuppliersAndCategoriesForEdit();
     
-    // ضبط القيم المختارة
     setTimeout(() => {
         document.getElementById('editProductCategory').value = p.category || '';
         document.getElementById('editProductSupplier').value = p.supplier_id || '';
@@ -443,7 +449,9 @@ window.updateStock = async function(id) {
 // دالة مساعدة لتحميل الموردين والفئات دون تفريغ باقي الحقول
 async function loadSuppliersAndCategoriesForEdit() {
     const apiSuppliersData = await apiGetSuppliers(1, 9999);
-	DataStore.setSuppliers(apiSuppliersData.suppliers);
+    DataStore.setSuppliers(apiSuppliersData.suppliers);
+    const langObj = translations[currentLang] || translations['en'];
+    
     const supplierSelect = document.getElementById('editProductSupplier');
     if (supplierSelect) {
         supplierSelect.innerHTML = '';
@@ -456,11 +464,11 @@ async function loadSuppliersAndCategoriesForEdit() {
     if (catSelect) {
         const cats = [...new Set(
             DataStore.getProducts()
-				.filter(p => p.name !== '__category_placeholder__')
-				.map(p => p.category)
+                .filter(p => p.name !== '__category_placeholder__')
+                .map(p => p.category)
                 .filter(Boolean)
         )].sort();
-        catSelect.innerHTML = '<option value="">Select category</option>';
+        catSelect.innerHTML = `<option value="">${langObj.selectCategoryText || 'Select category'}</option>`;
         cats.forEach(c => {
             catSelect.innerHTML += `<option value="${c}">${c}</option>`;
         });
@@ -482,7 +490,9 @@ window.deleteProduct = async function(id) {
 // تحميل قائمة الموردين والفئات
 async function loadSuppliersAndCategories() {
     const apiSuppliersData = await apiGetSuppliers(1, 9999);
-	DataStore.setSuppliers(apiSuppliersData.suppliers);
+    DataStore.setSuppliers(apiSuppliersData.suppliers);
+    const langObj = translations[currentLang] || translations['en'];
+    
     const supplierSelect = document.getElementById('productSupplier');
     if (supplierSelect) {
         supplierSelect.innerHTML = '';
@@ -491,15 +501,15 @@ async function loadSuppliersAndCategories() {
         });
     }
 
-        const catSelect = document.getElementById('productCategory');
+    const catSelect = document.getElementById('productCategory');
     if (catSelect) {
         const cats = [...new Set(
             DataStore.getProducts()
-				.filter(p => p.name !== '__category_placeholder__')
-				.map(p => p.category)
+                .filter(p => p.name !== '__category_placeholder__')
+                .map(p => p.category)
                 .filter(Boolean)
         )].sort();
-        catSelect.innerHTML = '<option value="">Select category</option>';
+        catSelect.innerHTML = `<option value="">${langObj.selectCategoryText || 'Select category'}</option>`;
         cats.forEach(c => {
             catSelect.innerHTML += `<option value="${c}">${c}</option>`;
         });

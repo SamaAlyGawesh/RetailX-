@@ -84,8 +84,10 @@ async function loadCashiersPage() {
 function renderCashiersTable() {
     const tbody = document.getElementById('cashiersTable');
     if (!tbody) return;
+    const langObj = translations[currentLang] || translations['en'];
+    
     if (cashierStats.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No cashiers data found.</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">${langObj.noCashiers || 'No cashiers data found.'}</td></tr>`;
         return;
     }
     tbody.innerHTML = cashierStats.map((c, index) => `
@@ -97,7 +99,7 @@ function renderCashiersTable() {
             <td>${c.lastSaleDate || '—'}</td>
             <td>
                 <button class="btn btn-sm btn-primary view-cashier-sales" data-cashier="${c.name}">
-                    <i class="fas fa-eye"></i> View Sales
+                    <i class="fas fa-eye"></i> <span data-translate="viewSalesBtn">${langObj.viewSalesBtn || 'View Sales'}</span>
                 </button>
             </td>
         </tr>
@@ -107,19 +109,21 @@ function renderCashiersTable() {
 function showCashierSales(cashierName) {
     const cashier = cashierStats.find(c => c.name === cashierName);
     if (!cashier) return;
+    
+    const langObj = translations[currentLang] || translations['en'];
 
-    document.getElementById('cashierSalesModalTitle').innerText = `Sales of ${cashierName}`;
+    document.getElementById('cashierSalesModalTitle').innerText = `${langObj.cashierSalesModalTitle || 'Sales of Cashier'}: ${cashierName}`;
 
-    const grouped = groupSales(cashier.sales); // from sales.js
+    const grouped = groupSales(cashier.sales);
     let html = `
     <table class="inventory-table">
         <thead>
             <tr>
-                <th>Invoice ID</th>
-                <th>Date</th>
-                <th>Customer</th>
-                <th>Items</th>
-                <th>Total</th>
+                <th>${langObj.invoiceIDCol || 'Invoice ID'}</th>
+                <th>${langObj.invoiceDateLabel || 'Date'}</th>
+                <th>${langObj.invoiceCustomerLabel || 'Customer'}</th>
+                <th>${langObj.invoiceItemsCol || 'Items'}</th>
+                <th>${langObj.invoiceTotalCol || 'Total'}</th>
             </tr>
         </thead>
         <tbody>

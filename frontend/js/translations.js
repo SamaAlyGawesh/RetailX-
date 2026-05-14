@@ -446,6 +446,45 @@ const translations = {
         invoiceTaxLabel: "Tax",
         invoiceGrandTotalLabel: "Grand Total",
         totalAmountLabel: "Total Amount",
+
+        // Cashier Sales Modal
+        cashierSalesModalTitle: "Sales of Cashier",
+        invoiceIDCol: "Invoice ID",
+        invoiceItemsCol: "Items",
+        
+        // Inventory Status
+        outOfStockText: "Out of Stock",
+        lowStockText: "Low Stock",
+        inStockText: "In Stock",
+        activeText: "Active",
+        inactiveText: "Inactive",
+        
+        // Edit Product Modal
+        selectCategoryText: "Select category",
+
+        // Edit Product Modal
+        editProductModalTitle: "Edit Product",
+        productNameLabel2: "Product Name *",
+        productSkuLabel2: "SKU *",
+        productCategoryLabel2: "Category",
+        productSupplierLabel2: "Supplier",
+        productPriceLabel2: "Price *",
+        unitCostLabel: "Unit Cost",
+        productReorderLabel2: "Reorder Level *",
+        currentStockLabel: "Current Stock",
+        newStockLabel: "New Stock Quantity",
+        descriptionLabel2: "Description",
+        locationLabel2: "Location",
+        receivedDateLabel2: "Received Date",
+        expiryDateLabel2: "Expiry Date",
+        activeLabel2: "Active",
+        imageLabel2: "Image",
+        cancelBtnText2: "Cancel",
+        saveChangesBtnText: "Save Changes",
+        outOfStockText: "Out of Stock",
+        lowStockText: "Low Stock",
+        inStockText: "In Stock",
+        selectCategoryText: "Select category",
     },
     
     ar: {
@@ -893,5 +932,44 @@ const translations = {
         invoiceTaxLabel: "الضريبة",
         invoiceGrandTotalLabel: "الإجمالي الكلي",
         totalAmountLabel: "المبلغ الإجمالي",
+
+        // Cashier Sales Modal
+        cashierSalesModalTitle: "مبيعات الكاشير",
+        invoiceIDCol: "رقم الفاتورة",
+        invoiceItemsCol: "المنتجات",
+        
+        // Inventory Status
+        outOfStockText: "نفد من المخزون",
+        lowStockText: "مخزون منخفض",
+        inStockText: "متوفر",
+        activeText: "نشط",
+        inactiveText: "غير نشط",
+        
+        // Edit Product Modal
+        selectCategoryText: "اختر الفئة",
+
+        // Edit Product Modal
+        editProductModalTitle: "تعديل منتج",
+        productNameLabel2: "اسم المنتج *",
+        productSkuLabel2: "الرمز *",
+        productCategoryLabel2: "الفئة",
+        productSupplierLabel2: "المورد",
+        productPriceLabel2: "السعر *",
+        unitCostLabel: "تكلفة الوحدة",
+        productReorderLabel2: "حد إعادة الطلب *",
+        currentStockLabel: "المخزون الحالي",
+        newStockLabel: "الكمية الجديدة",
+        descriptionLabel2: "الوصف",
+        locationLabel2: "الموقع",
+        receivedDateLabel2: "تاريخ الاستلام",
+        expiryDateLabel2: "تاريخ الانتهاء",
+        activeLabel2: "نشط",
+        imageLabel2: "صورة",
+        cancelBtnText2: "إلغاء",
+        saveChangesBtnText: "حفظ التغييرات",
+        outOfStockText: "نفد من المخزون",
+        lowStockText: "مخزون منخفض",
+        inStockText: "متوفر",
+        selectCategoryText: "اختر الفئة",
     }
 };
