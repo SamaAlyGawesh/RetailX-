@@ -141,13 +141,9 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         if (isProcessingSale) return;
         if (!appState.isAuthenticated || !hasPermission('sales')) return;
-        // تأكد من أن الكاشير لديه وردية نشطة
+
+        // 1. التحقق من الوردية
         try {
-            // await loadSalesPage(currentSalesPage);
-            // تحديث فوري لجدول POS (لو الشيفت نشط)
-            // if (typeof window.loadPOSData === 'function') {
-            //     window.loadPOSData();
-            // }
             const res = await fetch(`${API_BASE}/shifts/my-shift`, {
                 headers: { 'Authorization': `Bearer ${appState.token}` }
             });
@@ -161,9 +157,9 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('Error verifying shift status', 'error');
             return;
         }
-        
-        if (saleItems.length === 0) { showToast('Add at least one product.', 'error'); return; }
 
+        // 2. التحقق من صحة المنتجات والكميات
+        if (saleItems.length === 0) { showToast('Add at least one product.', 'error'); return; }
         for (let i = 0; i < saleItems.length; i++) {
             const item = saleItems[i];
             if (!item.productId) { showToast(`Please select a product for row ${i + 1}.`, 'error'); return; }
@@ -202,37 +198,33 @@ document.addEventListener('DOMContentLoaded', () => {
         const items = saleItems.map(item => ({
             productId: item.productId,
             quantity: item.quantity,
-            category: item.category || '' // إرسال الفئة مع كل منتج
+            category: item.category || ''
         }));
 
         try {
             const taxPercent = parseFloat(document.getElementById('saleTax')?.value) || 0;
             await apiCreateMultiSale(customer, items, discount, taxPercent, paymentMethod, notes, appState.currentUser.name, utcDateStr);
-            // تحديث المخزون في DataStore
-			const prodsData = await apiGetProducts(1, 9999);
-			DataStore.setProducts(prodsData.products);
+
+            const prodsData = await apiGetProducts(1, 9999);
+            DataStore.setProducts(prodsData.products);
             await loadSalesPage(currentSalesPage);
-            if (typeof window.loadPOSData === 'function') {
-                window.loadPOSData();
-            }
+
+            // if (typeof window.checkShift === 'function') {
+                await window.checkShift();     // ✅ يضمن تحديث POS بعد التأكد من الشيفت
+            // }
+
             renderInventoryTable();
             renderDashboardInventory();
             updateDashboardStats();
+
             document.getElementById('newSaleModal').classList.remove('active');
             showToast('Sale completed!', 'success');
-            // تحديث صفحة POS لو كانت مفتوحة
-            // if (typeof window.refreshPOS === 'function') {
-            //     window.refreshPOS();
-            // }
         } catch (err) {
             showToast(err.message, 'error');
         } finally {
             isProcessingSale = false;
             btn.disabled = false;
             btn.innerHTML = 'Process Sale';
-            if (typeof window.checkShift === 'function') {
-                window.checkShift();
-            }
         }
     };
 
