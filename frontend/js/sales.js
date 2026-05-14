@@ -10,6 +10,7 @@ let saleItems = [];
 let isProcessingSale = false;
 let allSalesForFilter = [];
 
+
 // ========== دوال تجميع الفواتير ==========
 function groupSales(salesArray) {
     const grouped = {};
@@ -563,6 +564,8 @@ function updateStockCell(row, productId) {
 window.viewInvoice = function(baseId) {
     const group = groupSales(DataStore.getSales()).find(g => g.id === baseId);
     if (!group) return;
+    
+    const langObj = translations[currentLang] || translations['en'];
 
     const productsHtml = group.products.map(p => `
         <tr>
@@ -576,27 +579,39 @@ window.viewInvoice = function(baseId) {
 
     document.getElementById('invoiceDetailContent').innerHTML = `
         <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
-            <div><strong>Invoice:</strong> ${group.id}<br><strong>Date:</strong> ${group.date}<br><strong>Customer:</strong> ${group.customer}<br><strong>Cashier:</strong> ${group.cashier || '—'}</div>
-            <div><strong>Status:</strong> ${group.status}</div>
+            <div>
+                <strong>${langObj.invoiceLabel || 'Invoice'}:</strong> ${group.id}<br>
+                <strong>${langObj.invoiceDateLabel || 'Date'}:</strong> ${group.date}<br>
+                <strong>${langObj.invoiceCustomerLabel || 'Customer'}:</strong> ${group.customer}<br>
+                <strong>${langObj.invoiceCashierLabel || 'Cashier'}:</strong> ${group.cashier || '—'}
+            </div>
+            <div><strong>${langObj.invoiceStatusLabel || 'Status'}:</strong> ${group.status}</div>
         </div>
         <table class="inventory-table">
-            <thead><tr><th>Product</th><th>Category</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead>
+            <thead><tr>
+                <th>${langObj.invoiceProductCol || 'Product'}</th>
+                <th>${langObj.invoiceCategoryCol || 'Category'}</th>
+                <th>${langObj.invoiceQtyCol || 'Qty'}</th>
+                <th>${langObj.invoiceUnitPriceCol || 'Unit Price'}</th>
+                <th>${langObj.invoiceTotalCol || 'Total'}</th>
+            </tr></thead>
             <tbody>${productsHtml}</tbody>
             <tfoot>
-                <tr><td colspan="4" style="text-align:right;">Subtotal</td><td>${formatPrice(group.subtotal)}</td></tr>
-                <tr><td colspan="4" style="text-align:right;">Discount (${group.discount_percent}%)</td><td>-${formatPrice(group.discountAmount)}</td></tr>
-                <tr><td colspan="4" style="text-align:right;">Tax (${group.tax_percent}%)</td><td>+${formatPrice(group.taxAmount)}</td></tr>
-                <tr style="font-weight:bold;"><td colspan="4">Grand Total</td><td>${formatPrice(group.total)}</td></tr>
+                <tr><td colspan="4" style="text-align:right;">${langObj.invoiceSubtotalLabel || 'Subtotal'}</td><td>${formatPrice(group.subtotal)}</td></tr>
+                <tr><td colspan="4" style="text-align:right;">${langObj.invoiceDiscountLabel || 'Discount'} (${group.discount_percent}%)</td><td>-${formatPrice(group.discountAmount)}</td></tr>
+                <tr><td colspan="4" style="text-align:right;">${langObj.invoiceTaxLabel || 'Tax'} (${group.tax_percent}%)</td><td>+${formatPrice(group.taxAmount)}</td></tr>
+                <tr style="font-weight:bold;"><td colspan="4">${langObj.invoiceGrandTotalLabel || 'Grand Total'}</td><td>${formatPrice(group.total)}</td></tr>
             </tfoot>
         </table>
     `;
 
-    // تخزين baseId لزر الطباعة
     document.getElementById('printInvoiceBtn').onclick = () => {
         printInvoiceFromGroup(group);
     };
 
     document.getElementById('pdfInvoiceBtn').onclick = () => {
+        const en = translations['en']; // دايمًا إنجليزي
+        
         const doc = new jspdf.jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
         const pageWidth = doc.internal.pageSize.getWidth();
 
@@ -633,7 +648,6 @@ window.viewInvoice = function(baseId) {
             startY: 80,
             theme: 'striped',
             headStyles: { fillColor: [109, 40, 217] },
-            // تغيير لون التذييل إلى رمادي أغمق ليكون النص واضحاً
             footStyles: { fillColor: [200, 200, 200], textColor: [0, 0, 0] },
             foot: [
                 ['', '', '', 'Subtotal', formatPrice(group.subtotal)],
@@ -657,12 +671,13 @@ window.viewInvoice = function(baseId) {
 };
 
 function printInvoiceFromGroup(group) {
+    const langObj = translations[currentLang] || translations['en'];
     const win = window.open('', '_blank');
     const productsRows = group.products.map(p => `
         <tr><td>${p.name}</td><td>${p.quantity}</td><td>${formatPrice(p.unitPrice)}</td><td>${formatPrice(p.total)}</td></tr>
     `).join('');
     win.document.write(`
-        <html><head><title>Invoice ${group.id}</title>
+        <html><head><title>${langObj.invoiceLabel || 'Invoice'} ${group.id}</title>
         <style>
             body { font-family: 'Segoe UI', Arial; padding: 20px; background: #f5f5f5; }
             .invoice { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
@@ -681,24 +696,33 @@ function printInvoiceFromGroup(group) {
         <div class="invoice">
             <div class="header"><h1>RetailX</h1><p>Smart Inventory Management</p></div>
             <div class="details">
-                <div><strong>Invoice:</strong> ${group.id}<br><strong>Date:</strong> ${group.date}<br><strong>Customer:</strong> ${group.customer}<br><strong>Cashier:</strong> ${group.cashier || '—'}</div>
-                <div><strong>Status:</strong> ${group.status}</div>
+                <div>
+                    <strong>${langObj.invoiceLabel || 'Invoice'}:</strong> ${group.id}<br>
+                    <strong>${langObj.invoiceDateLabel || 'Date'}:</strong> ${group.date}<br>
+                    <strong>${langObj.invoiceCustomerLabel || 'Customer'}:</strong> ${group.customer}<br>
+                    <strong>${langObj.invoiceCashierLabel || 'Cashier'}:</strong> ${group.cashier || '—'}
+                </div>
+                <div><strong>${langObj.invoiceStatusLabel || 'Status'}:</strong> ${group.status}</div>
             </div>
             <table>
-                <thead><tr><th>Product</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead>
+                <thead><tr>
+                    <th>${langObj.invoiceProductCol || 'Product'}</th>
+                    <th>${langObj.invoiceQtyCol || 'Qty'}</th>
+                    <th>${langObj.invoiceUnitPriceCol || 'Unit Price'}</th>
+                    <th>${langObj.invoiceTotalCol || 'Total'}</th>
+                </tr></thead>
                 <tbody>${productsRows}</tbody>
-                <!-- ✅ إضافة صفوف الخصم والضريبة -->
                 <tfoot>
-                    <tr><td colspan="3" style="text-align:right;">Subtotal</td><td>${formatPrice(group.subtotal)}</td></tr>
-                    <tr><td colspan="3" style="text-align:right;">Discount (${group.discount_percent}%)</td><td>-${formatPrice(group.discountAmount)}</td></tr>
-                    <tr><td colspan="3" style="text-align:right;">Tax (${group.tax_percent}%)</td><td>+${formatPrice(group.taxAmount)}</td></tr>
-                    <tr style="font-weight:bold;"><td colspan="3" style="text-align:right;">Grand Total</td><td>${formatPrice(group.total)}</td></tr>
+                    <tr><td colspan="3" style="text-align:right;">${langObj.invoiceSubtotalLabel || 'Subtotal'}</td><td>${formatPrice(group.subtotal)}</td></tr>
+                    <tr><td colspan="3" style="text-align:right;">${langObj.invoiceDiscountLabel || 'Discount'} (${group.discount_percent}%)</td><td>-${formatPrice(group.discountAmount)}</td></tr>
+                    <tr><td colspan="3" style="text-align:right;">${langObj.invoiceTaxLabel || 'Tax'} (${group.tax_percent}%)</td><td>+${formatPrice(group.taxAmount)}</td></tr>
+                    <tr style="font-weight:bold;"><td colspan="3" style="text-align:right;">${langObj.invoiceGrandTotalLabel || 'Grand Total'}</td><td>${formatPrice(group.total)}</td></tr>
                 </tfoot>
             </table>
-            <div class="total">Total Amount: ${formatPrice(group.total)}</div>
+            <div class="total">${langObj.totalAmountLabel || 'Total Amount'}: ${formatPrice(group.total)}</div>
             <div class="footer"><p>Thank you for shopping with RetailX!</p><p>support@retailx.com | Alexandria, Egypt</p></div>
         </div>
-        <div style="text-align:center;"><button onclick="window.print()">Print Invoice</button></div>
+        <div style="text-align:center;"><button onclick="window.print()">${langObj.printInvoiceBtnText || 'Print Invoice'}</button></div>
         </body></html>
     `);
     win.document.close();

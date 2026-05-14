@@ -429,6 +429,23 @@ const translations = {
         // Report Modal
         reportTitle: "Report",
         exportReportText: "Export to CSV",
+
+        // Invoice Detail
+        invoiceLabel: "Invoice",
+        invoiceDateLabel: "Date",
+        invoiceCustomerLabel: "Customer",
+        invoiceCashierLabel: "Cashier",
+        invoiceStatusLabel: "Status",
+        invoiceProductCol: "Product",
+        invoiceCategoryCol: "Category",
+        invoiceQtyCol: "Qty",
+        invoiceUnitPriceCol: "Unit Price",
+        invoiceTotalCol: "Total",
+        invoiceSubtotalLabel: "Subtotal",
+        invoiceDiscountLabel: "Discount",
+        invoiceTaxLabel: "Tax",
+        invoiceGrandTotalLabel: "Grand Total",
+        totalAmountLabel: "Total Amount",
     },
     
     ar: {
@@ -859,5 +876,22 @@ const translations = {
         // Report Modal
         reportTitle: "تقرير",
         exportReportText: "تصدير إلى CSV",
+
+        // Invoice Detail
+        invoiceLabel: "الفاتورة",
+        invoiceDateLabel: "التاريخ",
+        invoiceCustomerLabel: "العميل",
+        invoiceCashierLabel: "الكاشير",
+        invoiceStatusLabel: "الحالة",
+        invoiceProductCol: "المنتج",
+        invoiceCategoryCol: "الفئة",
+        invoiceQtyCol: "الكمية",
+        invoiceUnitPriceCol: "سعر الوحدة",
+        invoiceTotalCol: "الإجمالي",
+        invoiceSubtotalLabel: "المجموع الفرعي",
+        invoiceDiscountLabel: "الخصم",
+        invoiceTaxLabel: "الضريبة",
+        invoiceGrandTotalLabel: "الإجمالي الكلي",
+        totalAmountLabel: "المبلغ الإجمالي",
     }
 };
