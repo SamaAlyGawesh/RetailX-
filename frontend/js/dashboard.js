@@ -14,6 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	document.getElementById('refreshDashboard').onclick = async () => {
 		showLoader();
 		try {
+            const btn = document.getElementById('refreshDashboard');
+            setButtonLoading(btn, 'Refreshing...');
 			const allProducts = await apiGetProducts(1, 9999);
 			const allSales = await apiGetSales(1, 9999);
 			DataStore.setProducts(allProducts.products);
@@ -24,9 +26,11 @@ document.addEventListener('DOMContentLoaded', () => {
 			updateDashboardStats();
 			renderDashboardInventory();
 			renderRecentActivity();
+            resetButton(btn);
 		} catch (err) {
 			showToast('Error refreshing dashboard', 'error');
 		} finally {
+            
 			hideLoader();
 		}
 	};

@@ -13,12 +13,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('saveSettings').onclick = () => {
         if (!hasPermission('settings')) return;
+        const btn = document.getElementById('saveSettings');
+        setButtonLoading(btn, 'Saving...');
         const newCurrency = document.getElementById('currencySelect').value;
         if (newCurrency !== appState.currency) {
             appState.currency = newCurrency;
             updateAllPrices();
         }
         showToast('Settings saved!', 'success');
+        resetButton(btn);
     };
 
     document.getElementById('createBackup').onclick = async () => {

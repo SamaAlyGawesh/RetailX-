@@ -142,7 +142,6 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         if (isProcessingSale) return;
         if (!appState.isAuthenticated || !hasPermission('sales')) return;
-
         // 1. التحقق من الوردية
         try {
             const res = await fetch(`${API_BASE}/shifts/my-shift`, {
@@ -190,9 +189,9 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('Future date is not allowed for sales.', 'error');
             return;
         }
-
-        isProcessingSale = true;
         const btn = document.getElementById('processSale');
+        setButtonLoading(btn, 'Processing...');
+        isProcessingSale = true;
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
 
@@ -226,6 +225,8 @@ document.addEventListener('DOMContentLoaded', () => {
             isProcessingSale = false;
             btn.disabled = false;
             btn.innerHTML = 'Process Sale';
+            isProcessingSale = false;
+            resetButton(btn);
         }
     };
 
@@ -610,6 +611,9 @@ window.viewInvoice = function(baseId) {
     };
 
     document.getElementById('pdfInvoiceBtn').onclick = () => {
+        const btn = document.getElementById('pdfInvoiceBtn');
+        setButtonLoading(btn, 'Generating PDF...');
+
         const en = translations['en']; // دايمًا إنجليزي
         
         const doc = new jspdf.jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -665,6 +669,7 @@ window.viewInvoice = function(baseId) {
         doc.text('support@retailx.com | Alexandria, Egypt', pageWidth / 2, finalY + 6, { align: 'center' });
 
         doc.save(`Invoice_${group.id}.pdf`);
+        resetButton(btn);
     };
 
     document.getElementById('invoiceDetailModal').classList.add('active');

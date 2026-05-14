@@ -50,6 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (startBtn) {
         startBtn.onclick = async () => {
+            setButtonLoading(startBtn, 'Starting...');
             if (newSaleBtn) newSaleBtn.disabled = true;
             try {
                 // 1. بدء الشيفت في الباك إند
@@ -79,6 +80,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 showToast(err.message, 'error');
                 checkShift();
             }
+            finally {
+                resetButton(startBtn);
+            }
         };
     }
 
@@ -86,6 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
         endBtn.onclick = async () => {
             if (!confirm('End your shift?')) return;
             // ✅ تعطيل الزر مؤقتًا
+            setButtonLoading(endBtn, 'Ending...');
             if (newSaleBtn) newSaleBtn.disabled = true;
             try {
                 const res = await fetch(`${API_BASE}/shifts/end`, {
@@ -93,12 +98,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     headers: { 'Authorization': `Bearer ${appState.token}` }
                 });
                 if (!res.ok) throw new Error((await res.json()).error);
+
                 showToast('Shift ended.', 'success');
                 window.updateShiftStatus(null);
                 await checkShift(); // ✅ انتظر التحديث (هيعطل الزر لأن مفيش شيفت)
             } catch (err) {
                 showToast(err.message, 'error');
                 checkShift();
+            }finally {
+                resetButton(endBtn);
             }
         };
     }

@@ -485,6 +485,7 @@ const translations = {
         lowStockText: "Low Stock",
         inStockText: "In Stock",
         selectCategoryText: "Select category",
+        loadingText: "Loading...",
     },
     
     ar: {
@@ -971,5 +972,6 @@ const translations = {
         lowStockText: "مخزون منخفض",
         inStockText: "متوفر",
         selectCategoryText: "اختر الفئة",
+        loadingText: "جاري التحميل...",
     }
 };

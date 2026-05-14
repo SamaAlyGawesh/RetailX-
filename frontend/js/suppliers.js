@@ -75,7 +75,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         showToast(`Please select a file for the document "${type}".`, 'error');
                         return;
                     }
-
+                    const btn = document.getElementById('submitSupplier');
+                    setButtonLoading(btn, 'Saving...');
                     const formData = new FormData();
                     formData.append('file', fileInput.files[0]);
                     formData.append('document_type', type);
@@ -86,6 +87,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         await apiUploadSupplierDocument(supplierEditingId || supplier.id, formData);
                     } catch (err) {
                         console.error('Failed to upload doc', err);
+                    }
+                    finally {
+                        resetButton(btn);
                     }
                 }
             }

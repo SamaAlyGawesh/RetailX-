@@ -31,7 +31,8 @@ document.addEventListener('DOMContentLoaded', () => {
 			showToast('Please fill in Product Name, SKU, and a valid Quantity.', 'error');
 			return;
 		}
-
+		const btn = document.getElementById('submitProduct');
+		setButtonLoading(btn, 'Saving...');
 		formData.append('name', name);
 		formData.append('sku', sku);
 		formData.append('category', document.getElementById('productCategory').value);
@@ -62,7 +63,12 @@ document.addEventListener('DOMContentLoaded', () => {
 			document.getElementById('addProductModal').classList.remove('active');
 			resetProductForm(); // يمسح الحقول بعد الإغلاق
 			showToast('Product added successfully!', 'success');
-		} catch (err) { showToast(err.message, 'error'); }
+		} catch (err) { 
+			showToast(err.message, 'error'); 
+		}
+		finally {
+			resetButton(btn);
+		}
 	};
 
     document.getElementById('saveProductChanges').onclick = async () => {

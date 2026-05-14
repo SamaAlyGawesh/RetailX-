@@ -224,3 +224,22 @@ function hideLoader() {
     const loader = document.getElementById('globalLoader');
     if (loader) loader.style.display = 'none';
 }
+
+// ========== Button Loading Utility ==========
+function setButtonLoading(btn, loadingText = 'Loading...') {
+    if (!btn) return;
+    btn.disabled = true;
+    btn.classList.add('loading');
+    btn.dataset.originalText = btn.innerHTML;
+    btn.innerHTML = `<span class="spinner"></span> ${loadingText}`;
+}
+
+function resetButton(btn) {
+    if (!btn) return;
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    if (btn.dataset.originalText) {
+        btn.innerHTML = btn.dataset.originalText;
+        delete btn.dataset.originalText;
+    }
+}

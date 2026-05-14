@@ -24,6 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Sign In
     document.getElementById('signInForm').onsubmit = async (e) => {
         e.preventDefault();
+        const btn = e.target.querySelector('button[type="submit"]');
+        setButtonLoading(btn, 'Signing in...');
         const email = document.getElementById('authEmail').value;
         const password = document.getElementById('authPassword').value;
         try {
@@ -58,6 +60,8 @@ document.addEventListener('DOMContentLoaded', () => {
             updateAuthUI();
         } catch (err) {
             showToast(err.message || 'Invalid credentials', 'error');
+        }finally {
+            resetButton(btn);
         }
     };
 
@@ -70,12 +74,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const confirm = document.getElementById('signupConfirmPassword').value;
         const role = document.getElementById('signupRole').value;
         if (password !== confirm) { showToast('Passwords do not match', 'error'); return; }
+        const btn = e.target.querySelector('button[type="submit"]');
+        setButtonLoading(btn, 'Creating account...');
         try {
             await apiRegister(name, email, password, role);
             showToast('Account created! Please sign in.', 'success');
             document.getElementById('signInTab').click();
         } catch (err) {
             showToast(err.message || 'Registration failed', 'error');
+        }finally {
+            const btn = e.target.querySelector('button[type="submit"]');
+            resetButton(btn);
         }
     };
 
