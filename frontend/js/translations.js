@@ -546,8 +546,8 @@ const translations = {
         myShiftInvoicesTitle: "فواتير ورديتي",
         
         // Cashiers Page
-        cashiersTitle: "أداء الكاشيرات",
-        liveActiveCashiersTitle: "الكاشيرات النشطة حالياً",
+        cashiersTitle: "أداء الكاشير",
+        liveActiveCashiersTitle: "الكاشير النشطة حالياً",
         refreshCashiersText: "تحديث",
         cashierNameCol: "اسم الكاشير",
         cashierSalesCol: "إجمالي المبيعات",
