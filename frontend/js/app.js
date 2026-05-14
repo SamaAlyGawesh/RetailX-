@@ -183,6 +183,25 @@ function navigateToPage(pageId) {
         setTimeout(() => {
             if (typeof renderMonthlySalesChart === 'function') renderMonthlySalesChart();
             if (typeof renderTopProductsChart === 'function') renderTopProductsChart();
+            
+            // ✅ نجيب الفئات و نحدّث الـ dropdown
+            const stockCatFilter = document.getElementById('stockCategoryFilter');
+            if (stockCatFilter) {
+                const cats = [...new Set(
+                    DataStore.getProducts()
+                        .filter(p => p.name !== '__category_placeholder__')
+                        .map(p => p.category)
+                        .filter(Boolean)
+                )].sort();
+                const currentValue = stockCatFilter.value;
+                stockCatFilter.innerHTML = '<option value="">All Categories</option>';
+                cats.forEach(cat => {
+                    stockCatFilter.innerHTML += `<option value="${cat}">${cat}</option>`;
+                });
+                if (currentValue && cats.includes(currentValue)) {
+                    stockCatFilter.value = currentValue;
+                }
+            }
         }, 200);
     }
     if (pageId === 'usersPage' && typeof loadUserPage === 'function') loadUserPage(1);

@@ -79,19 +79,33 @@ let editingSupplierId = null;
 
 function applyLanguage() {
     const langObj = translations[currentLang] || translations['en'];
+    
+    // ترجمة العناصر بالـ ID
     for (const id in langObj) {
         const el = document.getElementById(id);
         if (el) {
             if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
                 if (el.placeholder !== undefined) el.placeholder = langObj[id];
+            } else if (el.tagName === 'OPTION') {
+                el.text = langObj[id];
             } else {
                 el.innerText = langObj[id];
             }
         }
     }
-    // Update the language button text
+    
+    // ترجمة العناصر بالـ data-translate (للعناصر المتكررة)
+    document.querySelectorAll('[data-translate]').forEach(el => {
+        const key = el.getAttribute('data-translate');
+        if (langObj[key]) {
+            el.innerText = langObj[key];
+        }
+    });
+    
+    // تحديث زر اللغة
     const langSpan = document.querySelector('#languageToggle span');
     if (langSpan) langSpan.innerText = currentLang === 'en' ? 'العربية' : 'English';
+    
     // RTL support
     document.body.classList.toggle('rtl', currentLang === 'ar');
 }

@@ -121,27 +121,42 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTopProductsChart();
     }
 
-    // Populate category filter on page load (فقط إذا كان المستخدم مسجلاً)
-    const stockCatFilter = document.getElementById('stockCategoryFilter');
-    if (stockCatFilter && appState.isAuthenticated) {
+    // Populate category filter on page load
+    async function populateStockCategories() {
         if (!appState.isAuthenticated) return;
-        const populateCategories = async () => {
+        
+        // نجيب المنتجات إذا مش موجودة
+        if (DataStore.getProducts().length === 0) {
             await apiGetProducts(1, 9999);
-            const cats = [...new Set(
-                DataStore.getProducts()
-                    .filter(p => p.name !== '__category_placeholder__')
-                    .map(p => p.category)
-                    .filter(Boolean)
-            )].sort();
-            const stockCatFilter = document.getElementById('stockCategoryFilter');
-            if (stockCatFilter) {
-                stockCatFilter.innerHTML = '<option value="">All Categories</option>';
-                cats.forEach(cat => {
-                    stockCatFilter.innerHTML += `<option value="${cat}">${cat}</option>`;
-                });
-            }
-        };
-        populateCategories();
+        }
+        
+        const stockCatFilter = document.getElementById('stockCategoryFilter');
+        if (!stockCatFilter) return;
+        
+        const cats = [...new Set(
+            DataStore.getProducts()
+                .filter(p => p.name !== '__category_placeholder__')
+                .map(p => p.category)
+                .filter(Boolean)
+        )].sort();
+        
+        // حفظ القيمة الحالية قبل إعادة البناء
+        const currentValue = stockCatFilter.value;
+        
+        stockCatFilter.innerHTML = '<option value="">All Categories</option>';
+        cats.forEach(cat => {
+            stockCatFilter.innerHTML += `<option value="${cat}">${cat}</option>`;
+        });
+        
+        // استعادة القيمة المختارة
+        if (currentValue && cats.includes(currentValue)) {
+            stockCatFilter.value = currentValue;
+        }
+    }
+
+    // تشغيل عند تحميل الصفحة
+    if (document.getElementById('reportsPage')) {
+        populateStockCategories();
     }
 });
 

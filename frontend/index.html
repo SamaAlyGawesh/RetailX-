@@ -40,28 +40,28 @@
 		<!-- ========== START SIDEBAR NAVIGATION ========== -->
 		<nav class="sidebar" id="sidebar">
 			<a href="#" class="sidebar-item active" data-page="dashboardPage">
-				<i class="fas fa-chart-line"></i> Dashboard <span class="notification-badge" id="dashboardBadge">0</span>
+				<i class="fas fa-chart-line"></i> <span id="navDashboardText">Dashboard</span> <span class="notification-badge" id="dashboardBadge">0</span>
 			</a>
 			<a href="#" class="sidebar-item" data-page="suppliersPage">
-				<i class="fas fa-truck"></i> Suppliers
+				<i class="fas fa-truck"></i> <span id="navSuppliersText">Suppliers</span>
 			</a>
 			<a href="#" class="sidebar-item" data-page="inventoryPage">
-				<i class="fas fa-box-open"></i> Inventory
+				<i class="fas fa-box-open"></i> <span id="navInventoryText">Inventory</span>
 			</a>
 			<a href="#" class="sidebar-item" data-page="salesPage">
-				<i class="fas fa-shopping-cart"></i> Sales
+				<i class="fas fa-shopping-cart"></i> <span id="navSalesText">Sales</span>
 			</a>
 			<a href="#" class="sidebar-item" data-page="posPage">
-				<i class="fas fa-cash-register"></i> POS
+				<i class="fas fa-cash-register"></i> <span id="navPOSText">POS</span>
 			</a>
 			<a href="#" class="sidebar-item" data-page="cashiersPage">
-				<i class="fas fa-user-tie"></i> Cashiers
+				<i class="fas fa-user-tie"></i> <span id="navCashiersText">Cashiers</span>
 			</a>
 			<a href="#" class="sidebar-item" data-page="reportsPage">
-				<i class="fas fa-chart-pie"></i> Reports
+				<i class="fas fa-chart-pie"></i> <span id="navReportsText">Reports</span>
 			</a>
 			<a href="#" class="sidebar-item" data-page="usersPage">
-				<i class="fas fa-users"></i> Users
+				<i class="fas fa-users"></i> <span id="navUsersText">Users</span>
 			</a>
 		</nav>
 		<!-- ========== END SIDEBAR NAVIGATION ========== -->
@@ -154,12 +154,12 @@
 								<table class="inventory-table sticky-header" id="dashboardInventoryTableMain">
 									<thead>
 										<tr>
-											<th>#</th>   <!-- عمود الترقيم -->
-											<th data-sort="name">Product <span class="sort-arrow"></span></th>
-											<th data-sort="sku">SKU <span class="sort-arrow"></span></th>
-											<th data-sort="quantity">Quantity <span class="sort-arrow"></span></th>
-											<th data-sort="status">Status <span class="sort-arrow"></span></th>
-											<th>Actions</th>
+											<th>#</th>
+											<th data-sort="name"><span data-translate="productCol">Product</span> <span class="sort-arrow"></span></th>
+											<th data-sort="sku"><span data-translate="skuCol">SKU</span> <span class="sort-arrow"></span></th>
+											<th data-sort="quantity"><span data-translate="qtyCol">Quantity</span> <span class="sort-arrow"></span></th>
+											<th data-sort="status"><span data-translate="statusCol">Status</span> <span class="sort-arrow"></span></th>
+											<th><span data-translate="actionsCol">Actions</span></th>
 										</tr>
 										<tr id="dashboardFilterRow">
 											<th></th>    <!-- فاضي للترقيم -->
@@ -196,13 +196,13 @@
 								<thead>
 									<tr>
 										<th>#</th>
-										<th>Code</th>
-										<th data-sort="name">Supplier Name <span class="sort-arrow"></span></th>
-										<th data-sort="contact">Contact Person <span class="sort-arrow"></span></th>
-										<th data-sort="email">Email <span class="sort-arrow"></span></th>
-										<th data-sort="phone">Phone <span class="sort-arrow"></span></th>
-										<th>Categories Supplied</th>
-										<th>Actions</th>
+										<th><span data-translate="codeCol">Code</span></th>
+										<th data-sort="name"><span data-translate="supplierNameCol">Supplier Name</span> <span class="sort-arrow"></span></th>
+										<th data-sort="contact"><span data-translate="contactCol">Contact Person</span> <span class="sort-arrow"></span></th>
+										<th data-sort="email"><span data-translate="emailCol">Email</span> <span class="sort-arrow"></span></th>
+										<th data-sort="phone"><span data-translate="phoneCol">Phone</span> <span class="sort-arrow"></span></th>
+										<th><span data-translate="categoriesSuppliedCol">Categories Supplied</span></th>
+										<th><span data-translate="actionsCol">Actions</span></th>
 									</tr>
 									<tr id="supplierFilterRow">
 										<th></th>
@@ -234,22 +234,22 @@
 								<thead>
 									<tr>
 										<th>#</th>
-										<th>Image</th>
-										<th data-sort="name">Product Name <span class="sort-arrow"></span></th>
-										<th>Supplier Code</th>   <!-- العمود الجديد -->
-										<th data-sort="sku">SKU <span class="sort-arrow"></span></th>
-										<th data-sort="category">Category <span class="sort-arrow"></span></th>
-										<th data-sort="quantity">Quantity <span class="sort-arrow"></span></th>
-										<th data-sort="reorderLevel">Reorder Level <span class="sort-arrow"></span></th>
-										<th data-sort="price">Price <span class="sort-arrow"></span></th>
-										<th>Avg Cost</th>
-										<th>Total Value</th>
-										<th>Location</th>
-										<th>Received</th>
-										<th>Expiry</th>
-										<th>Stock Status</th>
-										<th>Active</th>
-										<th>Actions</th>
+										<th><span data-translate="imageCol">Image</span></th>
+										<th data-sort="name"><span data-translate="productNameCol">Product Name</span> <span class="sort-arrow"></span></th>
+										<th><span data-translate="supplierCodeCol">Supplier Code</span></th>
+										<th data-sort="sku"><span data-translate="skuCol2">SKU</span> <span class="sort-arrow"></span></th>
+										<th data-sort="category"><span data-translate="categoryCol">Category</span> <span class="sort-arrow"></span></th>
+										<th data-sort="quantity"><span data-translate="qtyCol2">Quantity</span> <span class="sort-arrow"></span></th>
+										<th data-sort="reorderLevel"><span data-translate="reorderCol">Reorder Level</span> <span class="sort-arrow"></span></th>
+										<th data-sort="price"><span data-translate="priceCol">Price</span> <span class="sort-arrow"></span></th>
+										<th><span data-translate="avgCostCol">Avg Cost</span></th>
+										<th><span data-translate="totalValueCol">Total Value</span></th>
+										<th><span data-translate="locationCol">Location</span></th>
+										<th><span data-translate="receivedCol">Received</span></th>
+										<th><span data-translate="expiryCol">Expiry</span></th>
+										<th><span data-translate="stockStatusCol">Stock Status</span></th>
+										<th><span data-translate="activeCol">Active</span></th>
+										<th><span data-translate="actionsCol">Actions</span></th>
 									</tr>
 									<tr id="inventoryFilterRow">
 										<th></th>
@@ -298,14 +298,14 @@
 									<thead>
 										<tr>
 											<th>#</th>
-											<th data-sort="date">Date <span class="sort-arrow"></span></th>
-											<th data-sort="id">Invoice ID <span class="sort-arrow"></span></th>
-											<th data-sort="customer">Customer <span class="sort-arrow"></span></th>
-											<th data-sort="items">Items <span class="sort-arrow"></span></th>
-											<th data-sort="total">Total <span class="sort-arrow"></span></th>
-											<th>Category</th>
-											<th data-sort="status">Status <span class="sort-arrow"></span></th>
-											<th>Actions</th>
+											<th data-sort="date"><span data-translate="dateCol">Date</span> <span class="sort-arrow"></span></th>
+											<th data-sort="id"><span data-translate="transIdCol">Invoice ID</span> <span class="sort-arrow"></span></th>
+											<th data-sort="customer"><span data-translate="customerCol">Customer</span> <span class="sort-arrow"></span></th>
+											<th data-sort="items"><span data-translate="itemsCol">Items</span> <span class="sort-arrow"></span></th>
+											<th data-sort="total"><span data-translate="totalCol">Total</span> <span class="sort-arrow"></span></th>
+											<th><span data-translate="categoryCol">Category</span></th>
+											<th data-sort="status"><span data-translate="statusCol">Status</span> <span class="sort-arrow"></span></th>
+											<th><span data-translate="actionsCol">Actions</span></th>
 										</tr>
 										<tr id="salesFilterRow">
 											<th></th>
@@ -340,23 +340,33 @@
 			<section id="posPage" class="page">
 				<div class="container">
 					<div class="dashboard-header">
-						<h2>My Shift (POS)</h2>
+						<h2><span id="posPageTitle">My Shift (POS)</span></h2>
 						<div style="display:flex; gap:10px;">
-							<button class="btn btn-success" id="posStartShift"><i class="fas fa-play"></i> Start Shift</button>
-							<button class="btn btn-danger" id="posEndShift" style="display:none;"><i class="fas fa-stop"></i> End Shift</button>
+							<button class="btn btn-success" id="posStartShift"><i class="fas fa-play"></i> <span id="startShiftText">Start Shift</span></button>
+							<button class="btn btn-danger" id="posEndShift" style="display:none;"><i class="fas fa-stop"></i> <span id="endShiftText">End Shift</span></button>
 							<span id="posShiftStatus" style="align-self:center; color:#10b981;"></span>
-							<button class="btn btn-primary" id="posNewSale"><i class="fas fa-plus"></i> New Sale</button>
+							<button class="btn btn-primary" id="posNewSale"><i class="fas fa-plus"></i> <span id="newSalePosText">New Sale</span></button>
 						</div>
 					</div>
 					<div class="stats-grid">
-						<div class="stat-card"><h4>Shift Sales</h4><div class="value" id="posTotalSales">$0.00</div></div>
-						<div class="stat-card"><h4>Invoices</h4><div class="value" id="posTotalInvoices">0</div></div>
-						<div class="stat-card"><h4>Items Sold</h4><div class="value" id="posTotalItems">0</div></div>
+						<div class="stat-card"><h4><span id="shiftSalesLabel">Shift Sales</span></h4><div class="value" id="posTotalSales">$0.00</div></div>
+						<div class="stat-card"><h4><span id="invoicesLabel">Invoices</span></h4><div class="value" id="posTotalInvoices">0</div></div>
+						<div class="stat-card"><h4><span id="itemsSoldLabel">Items Sold</span></h4><div class="value" id="posTotalItems">0</div></div>
 					</div>
 					<div class="card">
-						<h3>My Shift Invoices</h3>
+						<h3><span id="myShiftInvoicesTitle">My Shift Invoices</span></h3>
 						<table class="inventory-table sticky-header" id="posSalesTableMain">
-							<thead><tr><th>#</th><th>ID</th><th>Date</th><th>Customer</th><th>Items</th><th>Total</th><th>Actions</th></tr></thead>
+							<thead>
+								<tr>
+									<th>#</th>
+									<th><span data-translate="idCol">ID</span></th>
+									<th><span data-translate="dateCol">Date</span></th>
+									<th><span data-translate="customerCol">Customer</span></th>
+									<th><span data-translate="itemsCol">Items</span></th>
+									<th><span data-translate="totalCol">Total</span></th>
+									<th><span data-translate="actionsCol">Actions</span></th>
+								</tr>
+							</thead>
 							<tbody id="posSalesTable"></tbody>
 						</table>
 					</div>
@@ -366,10 +376,10 @@
 			<section id="cashiersPage" class="page">
 				<div class="container">
 					<div class="dashboard-header">
-						<h2 id="cashiersTitle">Cashiers Performance</h2>
-						<button class="btn btn-primary" id="refreshCashiers"><i class="fas fa-sync-alt"></i> Refresh</button>
+						<h2 id="cashiersTitle"> Cashiers Performance</h2>
+						<button class="btn btn-primary" id="refreshCashiers"><i class="fas fa-sync-alt"></i> <span id="refreshCashiersText">Refresh</span></button>
 					</div>
-					<h3>Live Active Cashiers</h3>
+					<h3><span id="liveActiveCashiersTitle">Live Active Cashiers</span></h3>
 					<div id="liveCashiersContainer"></div>	
 					<div class="card">
 						<div>
@@ -399,11 +409,11 @@
 					<!-- رسوم بيانية جديدة -->
 					<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
 						<div class="card">
-							<h3 style="margin-bottom: 20px;">Monthly Sales</h3>
+							<h3 style="margin-bottom: 20px;" id="monthlySalesTitle">Monthly Sales</h3>
 							<canvas id="monthlySalesChart" height="250"></canvas>
 						</div>
 						<div class="card">
-							<h3 style="margin-bottom: 20px;">Top 5 Selling Products</h3>
+							<h3 style="margin-bottom: 20px;" id="topProductsTitle">Top 5 Selling Products</h3>
 							<canvas id="topProductsChart" height="250"></canvas>
 						</div>
 					</div>
@@ -417,30 +427,30 @@
 								<div class="report-option">
 									<h4 id="report1Title">Stock Summary</h4>
 									<select id="stockCategoryFilter" class="report-filter-select">
-										<option value="">All Categories</option>
+										<option value="" id="allCategoriesOption">All Categories</option>
 									</select>
 									<div class="report-actions">
 										<button class="btn btn-sm btn-outline view-report" data-report="stock">
-											<i class="fas fa-eye"></i> <span id="viewBtnText">View</span>
+											<i class="fas fa-eye"></i> <span data-translate="viewBtnText">View</span>
 										</button>
 										<button class="btn btn-sm btn-outline download-report" data-report="stock">
-											<i class="fas fa-download"></i> <span id="downloadBtnText">Download</span>
+											<i class="fas fa-download"></i> <span data-translate="downloadBtnText">Download</span>
 										</button>
 										<button class="btn btn-sm btn-outline pdf-report" data-report="stock">
-											<i class="fas fa-file-pdf"></i> PDF
+											<i class="fas fa-file-pdf"></i> <span data-translate="pdfBtnText">PDF</span>
 										</button>
 									</div>
 								</div>
 								<div class="report-option">
 									<h4 id="report2Title">Low Stock Alert</h4>
 									<button class="btn btn-sm btn-outline view-report" data-report="lowstock">
-										<i class="fas fa-eye"></i> <span id="viewBtnText2">View</span>
+										<i class="fas fa-eye"></i> <span data-translate="viewBtnText">View</span>
 									</button> 
 									<button class="btn btn-sm btn-outline download-report" data-report="lowstock">
-										<i class="fas fa-download"></i> <span id="downloadBtnText2">Download</span>
+										<i class="fas fa-download"></i> <span data-translate="downloadBtnText">Download</span>
 									</button>
 									<button class="btn btn-sm btn-outline pdf-report" data-report="lowstock">
-										<i class="fas fa-file-pdf"></i> PDF
+										<i class="fas fa-file-pdf"></i> <span data-translate="pdfBtnText">PDF</span>
 									</button>
 								</div>
 								<!-- Sales Report with Date Range Filter -->
@@ -452,26 +462,26 @@
 									</div>
 									<div class="report-actions">
 										<button class="btn btn-sm btn-outline view-report" data-report="sales">
-											<i class="fas fa-eye"></i> <span id="viewBtnText3">View</span>
+											<i class="fas fa-eye"></i> <span data-translate="viewBtnText">View</span>
 										</button>
 										<button class="btn btn-sm btn-outline download-report" data-report="sales">
-											<i class="fas fa-download"></i> <span id="downloadBtnText3">Download</span>
+											<i class="fas fa-download"></i> <span data-translate="downloadBtnText">Download</span>
 										</button>
 										<button class="btn btn-sm btn-outline pdf-report" data-report="sales">
-											<i class="fas fa-file-pdf"></i> PDF
+											<i class="fas fa-file-pdf"></i> <span data-translate="pdfBtnText">PDF</span>
 										</button>
 									</div>
 								</div>
 								<div class="report-option">
 									<h4 id="report4Title">Inventory Value</h4>
 									<button class="btn btn-sm btn-outline view-report" data-report="value">
-										<i class="fas fa-eye"></i> <span id="viewBtnText4">View</span>
+										<i class="fas fa-eye"></i> <span data-translate="viewBtnText">View</span>
 									</button>
 									<button class="btn btn-sm btn-outline download-report" data-report="value">
-										<i class="fas fa-download"></i> <span id="downloadBtnText4">Download</span>
+										<i class="fas fa-download"></i> <span data-translate="downloadBtnText">Download</span>
 									</button>
 									<button class="btn btn-sm btn-outline pdf-report" data-report="value">
-										<i class="fas fa-file-pdf"></i> PDF
+										<i class="fas fa-file-pdf"></i> <span data-translate="pdfBtnText">PDF</span>
 									</button>
 								</div>
 								<div class="report-option">
@@ -482,26 +492,26 @@
 									</div>
 									<div class="report-actions">
 										<button class="btn btn-sm btn-outline view-report" data-report="topselling">
-											<i class="fas fa-eye"></i> <span id="viewBtnText5">View</span>
+											<i class="fas fa-eye"></i> <span data-translate="viewBtnText">View</span>
 										</button>
 										<button class="btn btn-sm btn-outline download-report" data-report="topselling">
-											<i class="fas fa-download"></i> <span id="downloadBtnText5">Download</span>
+											<i class="fas fa-download"></i> <span data-translate="downloadBtnText">Download</span>
 										</button>
 										<button class="btn btn-sm btn-outline pdf-report" data-report="topselling">
-											<i class="fas fa-file-pdf"></i> PDF
+											<i class="fas fa-file-pdf"></i> <span data-translate="pdfBtnText">PDF</span>
 										</button>
 									</div>
 								</div>
 								<div class="report-option">
 									<h4 id="report6Title">Supplier Performance</h4>
 									<button class="btn btn-sm btn-outline view-report" data-report="supplier">
-										<i class="fas fa-eye"></i> <span id="viewBtnText6">View</span>
+										<i class="fas fa-eye"></i> <span data-translate="viewBtnText">View</span>
 									</button>
 									<button class="btn btn-sm btn-outline download-report" data-report="supplier">
-										<i class="fas fa-download"></i> <span id="downloadBtnText6">Download</span>
+										<i class="fas fa-download"></i> <span data-translate="downloadBtnText">Download</span>
 									</button>
 									<button class="btn btn-sm btn-outline pdf-report" data-report="supplier">
-										<i class="fas fa-file-pdf"></i> PDF
+										<i class="fas fa-file-pdf"></i> <span data-translate="pdfBtnText">PDF</span>
 									</button>
 								</div>
 							</div>
@@ -522,16 +532,16 @@
 								<thead>
 									<tr>
 										<th>#</th>
-										<th data-sort="id">ID <span class="sort-arrow"></span></th>
-										<th data-sort="name">Name <span class="sort-arrow"></span></th>
-										<th data-sort="email">Email <span class="sort-arrow"></span></th>
-										<th data-sort="role">Role <span class="sort-arrow"></span></th>
-										<th data-sort="status">Status <span class="sort-arrow"></span></th>
-										<th>Change Role</th>
-										<th data-sort="created_at">Created At <span class="sort-arrow"></span></th>
-										<th data-sort="last_login">Last Login <span class="sort-arrow"></span></th>
-										<th data-sort="branch">Branch <span class="sort-arrow"></span></th>
-										<th>Actions</th>
+										<th data-sort="id"><span data-translate="idCol">ID</span> <span class="sort-arrow"></span></th>
+										<th data-sort="name"><span data-translate="nameCol">Name</span> <span class="sort-arrow"></span></th>
+										<th data-sort="email"><span data-translate="emailCol">Email</span> <span class="sort-arrow"></span></th>
+										<th data-sort="role"><span data-translate="roleCol">Role</span> <span class="sort-arrow"></span></th>
+										<th data-sort="status"><span data-translate="statusCol">Status</span> <span class="sort-arrow"></span></th>
+										<th><span data-translate="changeRoleCol">Change Role</span></th>
+										<th data-sort="created_at"><span data-translate="createdAtCol">Created At</span> <span class="sort-arrow"></span></th>
+										<th data-sort="last_login"><span data-translate="lastLoginCol">Last Login</span> <span class="sort-arrow"></span></th>
+										<th data-sort="branch"><span data-translate="branchCol">Branch</span> <span class="sort-arrow"></span></th>
+										<th><span data-translate="actionsCol">Actions</span></th>
 									</tr>
 									<tr id="filterRow">
 										<th></th>
@@ -691,7 +701,7 @@
 	<div class="modal" id="editProductModal">
 		<div class="modal-content" style="max-width: 700px; max-height: 85vh; overflow-y: auto;">
 			<div style="display: flex; justify-content: space-between; margin-bottom: 20px; position: sticky; top: 0; background: var(--dark-card); z-index: 10;">
-				<h3><i class="fas fa-edit"></i> Edit Product</h3>
+				<h3><i class="fas fa-edit"></i> <span id="editProductModalTitle">Edit Product</span></h3>
 				<button class="close-modal" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button>
 			</div>
 			<input type="hidden" id="editProductId">
@@ -727,13 +737,13 @@
 	<div class="modal" id="invoiceDetailModal">
 		<div class="modal-content" style="max-width: 950px; max-height: 80vh; overflow-y: auto;">
 			<div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--primary); padding-bottom: 15px; margin-bottom: 20px;">
-				<h2 style="margin:0;">Invoice Details</h2>
+				<h2 style="margin:0;"><span id="invoiceDetailTitle">Invoice Details</span></h2>
 				<button class="close-modal" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button>
 			</div>
 			<div id="invoiceDetailContent"></div>
 			<div style="text-align: right; margin-top: 20px;">
-				<button class="btn btn-primary" id="printInvoiceBtn"><i class="fas fa-print"></i> Print Invoice</button>
-				<button class="btn btn-danger" id="pdfInvoiceBtn"><i class="fas fa-file-pdf"></i> Download PDF</button>
+				<button class="btn btn-primary" id="printInvoiceBtn"><i class="fas fa-print"></i> <span id="printInvoiceBtn">Print Invoice</span></button>
+				<button class="btn btn-danger" id="pdfInvoiceBtn"><i class="fas fa-file-pdf"></i> <span id="downloadPdfBtn">Download PDF</span></button>
 				<button class="btn btn-outline close-modal">Close</button>
 			</div>
 		</div>
@@ -802,7 +812,7 @@
         <div class="modal-content">
             <div style="display: flex; justify-content: space-between; margin-bottom: 20px;"><h3 id="reportTitle">Report</h3><button class="close-modal" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button></div>
             <div id="reportContent"></div>
-            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;"><button class="btn btn-primary" id="exportReportBtn"><span id="exportReportText">Export to CSV</span></button><button class="btn btn-outline close-modal"><span id="closeReportText">Close</span></button></div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;"><button class="btn btn-primary" id="exportReportBtn"><span id="exportReportText">Export to CSV</span></button><button class="btn btn-outline close-modal"><span id="closeBtnText">Close</span></button></div>
         </div>
     </div>
 	<!-- ========== END MODALS ========== -->
