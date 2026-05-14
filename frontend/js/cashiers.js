@@ -38,23 +38,29 @@ function computeCashierStats() {
     const sales = DataStore.getSales();
     const cashierMap = {};
 
-    sales.forEach(s => {
-        const name = s.cashier || 'Unknown';
+    // 1. تجميع كل الفواتير
+    const groupedSales = groupSales(sales);
+
+    // 2. حساب الإحصائيات من الفواتير المجمعة
+    groupedSales.forEach(g => {
+        const name = g.cashier || 'Unknown';
         if (!cashierMap[name]) {
             cashierMap[name] = {
                 name,
                 totalSales: 0,
-                totalTransactions: 0,
+                totalTransactions: 0,  // عدد الفواتير
                 lastSaleDate: '',
                 sales: []
             };
         }
-        cashierMap[name].totalSales += s.total || 0;
-        cashierMap[name].totalTransactions += 1;
-        if (!cashierMap[name].lastSaleDate || s.date > cashierMap[name].lastSaleDate) {
-            cashierMap[name].lastSaleDate = s.date;
+        cashierMap[name].totalSales += g.total || 0;
+        cashierMap[name].totalTransactions += 1;  // ✅ كل فاتورة = 1 ترانزاكشن
+        if (!cashierMap[name].lastSaleDate || g.date > cashierMap[name].lastSaleDate) {
+            cashierMap[name].lastSaleDate = g.date;
         }
-        cashierMap[name].sales.push(s);
+        // تخزين الصفوف الأصلية للفاتورة
+        const originalSales = sales.filter(s => s.id.startsWith(g.id));
+        cashierMap[name].sales.push(...originalSales);
     });
 
     cashierStats = Object.values(cashierMap).sort((a, b) => b.totalTransactions - a.totalTransactions);

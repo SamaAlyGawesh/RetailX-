@@ -209,9 +209,9 @@ document.addEventListener('DOMContentLoaded', () => {
             DataStore.setProducts(prodsData.products);
             await loadSalesPage(currentSalesPage);
 
-            // if (typeof window.checkShift === 'function') {
-                await window.checkShift();     // ✅ يضمن تحديث POS بعد التأكد من الشيفت
-            // }
+            if (typeof window.checkShift === 'function') {
+                await window.checkShift();
+            }
 
             renderInventoryTable();
             renderDashboardInventory();

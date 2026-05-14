@@ -50,21 +50,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (startBtn) {
         startBtn.onclick = async () => {
-            // ✅ تعطيل زر New Sale فوراً لمنع أي ضغط قبل ما checkShift تخلص
             if (newSaleBtn) newSaleBtn.disabled = true;
             try {
+                // 1. بدء الشيفت في الباك إند
                 const res = await fetch(`${API_BASE}/shifts/start`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${appState.token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ branch: 'Main Branch', department: 'General' })
                 });
                 if (!res.ok) throw new Error((await res.json()).error);
+                
                 showToast('Shift started!', 'success');
+                
+                // 2. نجيب أحدث بيانات المبيعات من السيرفر
+                const salesRes = await fetch(`${API_BASE}/sales?page=1&limit=9999`, {
+                    headers: { 'Authorization': `Bearer ${appState.token}` }
+                });
+                if (salesRes.ok) {
+                    const salesData = await salesRes.json();
+                    DataStore.setSales(salesData.sales);
+                }
+                
+                // 3. دلوقتي checkShift هتلاقي DataStore محدثة
+                await checkShift();
                 window.updateShiftStatus({ start_time: new Date().toLocaleString() });
-                await checkShift(); // هيفعّل الزر تلقائيًا بعد ما posShift تتعين
+                
             } catch (err) {
                 showToast(err.message, 'error');
-                checkShift(); // يعيد ضبط الحالة
+                checkShift();
             }
         };
     }
